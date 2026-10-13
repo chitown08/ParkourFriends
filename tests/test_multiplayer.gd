@@ -92,6 +92,27 @@ func test_crouching_shows_up_on_the_other_screen() -> void:
 	expect(puppet_visual.scale.y > 0.95, "and standing again afterwards, scale is %.2f" % puppet_visual.scale.y)
 
 
+func test_wall_run_lean_shows_up_on_the_other_screen() -> void:
+	host_main.local_player.set_controls_enabled(false)
+	var client_self: Player = client_main.local_player
+	client_self.global_position = Vector3(3.3, 0.05, 18) # Wall Yard, lined up with the wall-run wall.
+	client_self.reset_physics_interpolation()
+	client_self.camera_rig.yaw = PI
+	await ticks(20)
+	Input.action_press(&"sprint")
+	Input.action_press(&"move_forward")
+	var puppet_visual: Node3D = _find(host_main, client_self.name.to_int()).get_node("Visual")
+	var biggest_lean := 0.0
+	for i in 200:
+		await ticks(1)
+		if client_self.global_position.z > 29.4:
+			Input.action_press(&"jump")
+		biggest_lean = maxf(biggest_lean, absf(puppet_visual.rotation.z))
+		if client_self.global_position.z > 38.0:
+			break
+	expect(biggest_lean > 0.25, "host should see the client lean while wall running, max lean %.2f" % biggest_lean)
+
+
 func test_client_leaving_removes_their_character() -> void:
 	client_main.leave_game()
 	for i in 120:

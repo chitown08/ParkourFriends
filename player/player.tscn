@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://player/states/climb.gd" id="7_climb"]
 [ext_resource type="Script" path="res://player/states/crouch.gd" id="8_crouch"]
 [ext_resource type="Script" path="res://player/states/slide.gd" id="9_slide"]
+[ext_resource type="Script" path="res://player/states/wall_run.gd" id="10_wall_run"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -41,6 +42,9 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:sync_state")
 properties/2/spawn = false
 properties/2/replication_mode = 2
+properties/3/path = NodePath(".:sync_lean")
+properties/3/spawn = false
+properties/3/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")
@@ -90,6 +94,9 @@ script = ExtResource("8_crouch")
 
 [node name="Slide" type="Node" parent="States"]
 script = ExtResource("9_slide")
+
+[node name="WallRun" type="Node" parent="States"]
+script = ExtResource("10_wall_run")
 
 [node name="PlayerInput" type="Node" parent="."]
 script = ExtResource("2_input")

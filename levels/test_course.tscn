@@ -147,7 +147,7 @@ material = ExtResource("7_wall")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.5, 4.8, 6)
 billboard = 1
 pixel_size = 0.01
-text = "WALL\n(for wall-running later)"
+text = "PRACTICE WALL\n(try a wall jump)"
 font_size = 56
 outline_size = 14
 
@@ -549,5 +549,59 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 2.5, -5)
 billboard = 1
 pixel_size = 0.01
 text = "8m GAP\nslide down the slope, then jump!"
+font_size = 56
+outline_size = 14
+
+[node name="WallYard" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 20)
+use_collision = true
+size = Vector3(20, 2, 20)
+material = ExtResource("3_ground")
+
+[node name="LabelWallYard" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 11)
+billboard = 1
+pixel_size = 0.01
+text = "WALL YARD"
+font_size = 56
+outline_size = 14
+
+[node name="ChimneyWallA" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8, 3.5, 20)
+use_collision = true
+size = Vector3(2, 7, 6)
+material = ExtResource("7_wall")
+
+[node name="ChimneyWallB" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 3.5, 20)
+use_collision = true
+size = Vector3(2, 7, 6)
+material = ExtResource("7_wall")
+
+[node name="LabelChimney" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 8.2, 15.5)
+billboard = 1
+pixel_size = 0.01
+text = "CHIMNEY\nwall-jump between the walls"
+font_size = 56
+outline_size = 14
+
+[node name="WallRunWall" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, -7.5, 35)
+use_collision = true
+size = Vector3(1, 25, 18)
+material = ExtResource("7_wall")
+
+[node name="WallRunLanding" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, -10, 44)
+use_collision = true
+size = Vector3(5, 20, 6)
+material = ExtResource("6_goal")
+
+[node name="LabelWallRun" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3.2, 26)
+billboard = 1
+pixel_size = 0.01
+text = "WALL RUN\nsprint, jump, hold forward along the wall"
 font_size = 56
 outline_size = 14

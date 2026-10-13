@@ -2,6 +2,10 @@ extends PlayerState
 ## Standing, running or sprinting on the floor.
 
 
+func enter(_data: Dictionary) -> void:
+	player.last_wall_normal = Vector3.ZERO # Landed: every wall is usable again.
+
+
 func physics_update(delta: float) -> void:
 	var jumped := player.consume_jump()
 	if jumped:

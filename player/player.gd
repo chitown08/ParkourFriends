@@ -64,6 +64,19 @@ signal state_changed(new_state: StringName)
 @export var slide_max_speed := 14.0
 @export var slide_end_speed := 3.0 ## The slide ends (you're just crouching) below this speed.
 
+@export_group("Walls")
+@export var wall_detect_distance := 0.6 ## How far beyond your body a wall counts as "next to you".
+@export var wall_jump_push := 7.0 ## How hard a wall jump pushes you away from the wall.
+@export var wall_jump_height := 1.4 ## How high a wall jump goes (meters).
+@export var wall_jump_control_lock := 0.25 ## After a wall jump, steering is ignored this long so you clear the wall.
+@export var wall_run_min_speed := 5.0 ## Need to be moving along the wall at least this fast.
+@export var wall_run_speed := 8.0 ## Minimum speed while wall running.
+@export var wall_run_lift := 2.0 ## Upward speed when a wall run starts.
+@export var wall_run_gravity := 4.0 ## Much weaker than normal, so you stay up for a while.
+@export var wall_run_max_time := 1.3 ## Seconds before you peel off the wall.
+@export var wall_run_min_height := 0.8 ## Must be at least this high off the ground to start.
+@export var wall_run_lean_degrees := 20.0 ## How far the body leans away from the wall.
+
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
 
@@ -87,6 +100,7 @@ var respawn_position := Vector3.ZERO
 var sync_position := Vector3.ZERO
 var sync_facing := 0.0
 var sync_state := &"Air"
+var sync_lean := 0.0
 
 ## Which of COLORS this player wears. Chosen by the host and sent to everyone
 ## (HostSync node), so it's the same on every screen.
@@ -118,6 +132,12 @@ const CROUCHED_STATES: Array[StringName] = [&"Crouch", &"Slide"]
 
 ## True while the body is shrunk down (crouching or sliding).
 var is_crouched := false
+## Sideways body lean in radians (wall running). Reset whenever the state changes.
+var lean := 0.0
+## The wall last jumped or run off. You can't use the same wall again until
+## you land (so you can't climb a single wall forever). Zero = none.
+var last_wall_normal := Vector3.ZERO
+var wall_jump_velocity: float
 
 
 func _enter_tree() -> void:
@@ -137,6 +157,7 @@ func _ready() -> void:
 	jump_velocity = 2.0 * jump_height / jump_time_to_peak
 	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
 	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
+	wall_jump_velocity = sqrt(2.0 * _rise_gravity * wall_jump_height)
 
 	for child in _states.get_children():
 		var player_state := child as PlayerState
@@ -168,10 +189,11 @@ func _physics_process(delta: float) -> void:
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
 
-	_squash_visual(is_crouched, delta)
+	_pose_visual(is_crouched, lean, delta)
 	sync_position = global_position
 	sync_facing = _visual.rotation.y
 	sync_state = state.name
+	sync_lean = lean
 
 
 ## Moves this puppet toward where its owner says it is.
@@ -183,17 +205,21 @@ func _follow_network(delta: float) -> void:
 		var weight := 1.0 - exp(-puppet_smoothing * delta)
 		global_position = global_position.lerp(sync_position, weight)
 	_visual.rotation.y = lerp_angle(_visual.rotation.y, sync_facing, 1.0 - exp(-puppet_smoothing * delta))
-	_squash_visual(sync_state in CROUCHED_STATES, delta)
+	_pose_visual(sync_state in CROUCHED_STATES, sync_lean, delta)
 
 
-## Squashes the body model down while crouched (until there are animations).
-func _squash_visual(crouched: bool, delta: float) -> void:
-	var target := crouch_height / stand_height if crouched else 1.0
-	_visual.scale.y = lerpf(_visual.scale.y, target, 1.0 - exp(-20.0 * delta))
+## Squashes the body model down while crouched and leans it sideways while
+## wall running (stand-ins until there are animations).
+func _pose_visual(crouched: bool, lean_angle: float, delta: float) -> void:
+	var weight := 1.0 - exp(-20.0 * delta)
+	var target_scale := crouch_height / stand_height if crouched else 1.0
+	_visual.scale.y = lerpf(_visual.scale.y, target_scale, weight)
+	_visual.rotation.z = lerp_angle(_visual.rotation.z, lean_angle, weight)
 
 
 ## Switches to the state (child of the States node) with this name.
 func change_state(state_name: StringName, data: Dictionary = {}) -> void:
+	lean = 0.0
 	if state:
 		state.exit()
 	state = _states.get_node(NodePath(state_name))
@@ -242,6 +268,11 @@ func consume_jump() -> bool:
 	return false
 
 
+## True if jump was pressed recently, without using it up.
+func has_jump_buffered() -> bool:
+	return _jump_buffer_timer > 0.0
+
+
 func apply_gravity(delta: float) -> void:
 	var gravity := _rise_gravity if velocity.y > 0.0 else _fall_gravity
 	velocity.y = maxf(velocity.y - gravity * delta, -max_fall_speed)
@@ -278,6 +309,58 @@ func set_crouched(crouched: bool) -> void:
 ## True if there's room to stand up right here (always true if not crouched).
 func can_stand() -> bool:
 	return not is_crouched or _body_fits(global_position)
+
+
+## Looks around the body (8 directions) for the closest wall within
+## wall_detect_distance. With `tall_only`, the wall must also cover your knees
+## and head (so blocks and low ledges don't count). Returns
+## {"normal": flat direction out of the wall, "point": where it was hit},
+## or an empty dictionary if there's no wall.
+func find_wall(tall_only: bool = false) -> Dictionary:
+	var reach := body_radius + wall_detect_distance
+	var best := {}
+	var best_distance := INF
+	for i in 8:
+		var direction := Vector3.FORWARD.rotated(Vector3.UP, i * TAU / 8.0)
+		var hit := _wall_hit(global_position + Vector3.UP * 0.9, direction, reach)
+		if hit.is_empty():
+			continue
+		if tall_only and (_wall_hit(global_position + Vector3.UP * 0.3, direction, reach).is_empty()
+				or _wall_hit(global_position + Vector3.UP * 1.6, direction, reach).is_empty()):
+			continue
+		var distance: float = (hit.position - global_position).length()
+		if distance < best_distance:
+			best_distance = distance
+			best = {"normal": hit.normal, "point": hit.position}
+	return best
+
+
+## True unless this is the wall you last jumped or ran off (see last_wall_normal).
+func can_use_wall(wall_normal: Vector3) -> bool:
+	return last_wall_normal == Vector3.ZERO or wall_normal.dot(last_wall_normal) < 0.7
+
+
+## Kicks off a wall: away from it and upward, keeping any speed you had
+## along it (`along`).
+func wall_jump(wall_normal: Vector3, along: Vector3) -> void:
+	velocity = along + wall_normal * wall_jump_push
+	velocity.y = wall_jump_velocity
+	last_wall_normal = wall_normal
+	change_state(&"Air", {"jumped": true, "control_lock": wall_jump_control_lock})
+
+
+## True if there's ground within `distance` below your feet.
+func is_near_ground(distance: float) -> bool:
+	var from := global_position + Vector3.UP * 0.05
+	return not _raycast(from, from + Vector3.DOWN * (distance + 0.05)).is_empty()
+
+
+func _wall_hit(from: Vector3, direction: Vector3, reach: float) -> Dictionary:
+	var hit := _raycast(from, from + direction * reach)
+	if hit.is_empty() or absf(hit.normal.y) > 0.3:
+		return {}
+	hit.normal = Vector3(hit.normal.x, 0.0, hit.normal.z).normalized()
+	return hit
 
 
 ## Smoothly turns the body to face `direction` (ignored if it's ~zero).
