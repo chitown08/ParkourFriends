@@ -29,7 +29,14 @@ class ErrorCatcher:
 		return taken
 
 
+const TIME_LIMIT_SECONDS := 600.0
+
+
 func _initialize() -> void:
+	# Safety net: if a test gets stuck, give up instead of hanging forever.
+	create_timer(TIME_LIMIT_SECONDS).timeout.connect(func() -> void:
+		print("\nFAIL: the tests took longer than %d seconds - something is stuck." % TIME_LIMIT_SECONDS)
+		quit(1))
 	_run_all.call_deferred()
 
 
@@ -42,9 +49,16 @@ func _run_all() -> void:
 	for file in DirAccess.get_files_at(TEST_DIR):
 		if not (file.begins_with("test_") and file.ends_with(".gd")):
 			continue
-		var suite: GameTest = load(TEST_DIR + file).new()
-		root.add_child(suite)
 		print("\n%s" % file)
+		var script := load(TEST_DIR + file) as GDScript
+		if script == null or not script.can_instantiate():
+			# Usually a typo in the test file; the error is printed above.
+			failed += 1
+			catcher.take_errors()
+			print("  FAIL  (the file couldn't be loaded - see the error above)")
+			continue
+		var suite: GameTest = script.new()
+		root.add_child(suite)
 		for method in suite.get_method_list():
 			var test_name: String = method.name
 			if not test_name.begins_with("test_"):

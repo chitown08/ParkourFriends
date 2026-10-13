@@ -13,6 +13,8 @@ const PLAYER_SCENE := preload("res://player/player.tscn")
 
 ## The character this computer controls (null while in the main menu).
 var local_player: Player
+## The solo practice buddy, once called (see call_buddy()).
+var buddy: Player
 var is_paused := false
 
 @onready var level: Level = $TestCourse
@@ -48,9 +50,17 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and local_player != null:
+	if local_player == null:
+		return
+	if event.is_action_pressed("pause"):
 		set_paused(not is_paused)
 		get_viewport().set_input_as_handled()
+	elif is_paused:
+		return
+	elif event.is_action_pressed("call_buddy"):
+		call_buddy()
+	elif event.is_action_pressed("buddy_toss_me"):
+		buddy_toss_me()
 
 
 func start_solo() -> void:
@@ -95,6 +105,36 @@ func set_paused(paused: bool) -> void:
 	if local_player:
 		local_player.set_controls_enabled(not paused)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if paused else Input.MOUSE_MODE_CAPTURED
+
+
+## Solo only: brings the practice buddy (creating it the first time) to stand
+## 1.5 m in front of you (within toss reach), facing you. It respawns here if it falls.
+func call_buddy() -> void:
+	if network.is_online() or local_player == null:
+		return
+	if not is_instance_valid(buddy):
+		buddy = PLAYER_SCENE.instantiate() as Player
+		buddy.name = "Buddy"
+		buddy.is_bot = true
+		players.add_child(buddy)
+	var forward := Vector3.FORWARD.rotated(Vector3.UP, local_player.camera_rig.yaw)
+	var spot := local_player.global_position + forward * 1.5 + Vector3.UP * 0.05
+	buddy.set_checkpoint(spot)
+	buddy.respawn()
+	buddy.face_direction(-forward, 1.0)
+
+
+## Solo only: the practice buddy tosses you the way your camera faces, if
+## you're within its reach (works mid-jump too, like a mid-air toss).
+func buddy_toss_me() -> void:
+	if not is_instance_valid(buddy) or local_player == null:
+		return
+	var offset := local_player.global_position - buddy.global_position
+	var flat_distance := Vector2(offset.x, offset.z).length()
+	if flat_distance > buddy.toss_range or absf(offset.y) > buddy.toss_range:
+		hud.show_message("Get closer to your buddy")
+		return
+	local_player.apply_toss(buddy.toss_velocity(local_player.camera_rig.yaw))
 
 
 ## Creates a character for the player with this network id. Host only.
@@ -162,14 +202,14 @@ func _on_player_added(node: Node) -> void:
 
 
 func _on_player_ready(player: Player) -> void:
-	if player.is_local:
+	if player.is_local and not player.is_bot:
 		local_player = player
 		hud.player = player
 		player.tree_exiting.connect(func() -> void: local_player = null)
 
 
 func _on_checkpoint_reached(player: Player) -> void:
-	if player.is_local:
+	if player == local_player:
 		hud.show_message("Checkpoint!")
 
 

@@ -25,7 +25,7 @@ var enabled := true
 ## only when this character belongs to this machine.
 func gather(camera_yaw: float) -> void:
 	if not enabled:
-		_clear()
+		clear()
 		return
 	var stick := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	move_direction = Vector3(stick.x, 0.0, stick.y).rotated(Vector3.UP, camera_yaw)
@@ -38,7 +38,8 @@ func gather(camera_yaw: float) -> void:
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")
 
 
-func _clear() -> void:
+## Lets go of every button (used while controls are off, and by the practice buddy).
+func clear() -> void:
 	move_direction = Vector3.ZERO
 	jump_just_pressed = false
 	jump_held = false

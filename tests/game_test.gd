@@ -60,6 +60,20 @@ func tap(action: StringName) -> void:
 	await hold(action, 3)
 
 
+## Sends a one-off button press through the game's normal input handling
+## (for things handled as input events, like the pause menu).
+func press_event(action: StringName) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = true
+	Input.parse_input_event(event)
+	await ticks(3)
+	event = event.duplicate()
+	event.pressed = false
+	Input.parse_input_event(event)
+	await ticks(3)
+
+
 ## Teleports the player, standing still, with the camera facing `yaw`.
 func place(feet: Vector3, yaw: float) -> void:
 	release_all()

@@ -35,7 +35,7 @@ func _process(_delta: float) -> void:
 		player.get_horizontal_speed(),
 		player.global_position.y,
 		network.describe(),
-		player.get_parent().get_child_count(),
+		_count_people(),
 		Engine.get_frames_per_second(),
 	]
 
@@ -68,3 +68,12 @@ func _on_tossed_someone(_target: Player) -> void:
 
 func _on_got_tossed() -> void:
 	show_message("Launched!")
+
+
+## Players in the game, not counting the practice buddy.
+func _count_people() -> int:
+	var count := 0
+	for other in player.get_parent().get_children():
+		if other is Player and not other.is_bot:
+			count += 1
+	return count

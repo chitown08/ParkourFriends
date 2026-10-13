@@ -71,6 +71,13 @@ func test_wall_run_lean_shows_up_on_the_other_screen() -> void:
 	expect(biggest_lean > 0.25, "host should see the client lean while wall running, max lean %.2f" % biggest_lean)
 
 
+func test_no_practice_buddy_in_online_games() -> void:
+	await press_event(&"call_buddy")
+	await ticks(10)
+	expect(host_main.buddy == null and client_main.buddy == null, "the buddy is solo-only")
+	expect(_player_count(host_main) == 2 and _player_count(client_main) == 2, "still just the two players")
+
+
 func test_client_leaving_removes_their_character() -> void:
 	client_main.leave_game()
 	for i in 120:

@@ -12,7 +12,7 @@ func _ready() -> void:
 
 func _on_body_entered(body: Node3D) -> void:
 	var player := body as Player
-	if player == null or not player.is_local or player.respawn_position.is_equal_approx(global_position):
+	if player == null or not player.is_local or player.is_bot or player.respawn_position.is_equal_approx(global_position):
 		return
 	player.set_checkpoint(global_position)
 	reached.emit(player)

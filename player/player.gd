@@ -105,8 +105,14 @@ const COLORS: Array[Color] = [
 	Color(0.85, 0.3, 0.75), # pink
 ]
 
+## Grey colour for the practice buddy.
+const BUDDY_COLOR := Color(0.75, 0.75, 0.72)
+
 ## True if this character is controlled by this computer.
 var is_local := true
+## True for the solo practice buddy: run by this computer, but with no
+## camera and no controls. Set before adding it to the scene.
+var is_bot := false
 var respawn_position := Vector3.ZERO
 
 # Sent from the controlling player's computer to everyone else (NetworkSync node).
@@ -166,7 +172,11 @@ var _toss_recoil_velocity: float
 func _enter_tree() -> void:
 	# The player whose network id matches our name is in charge of us
 	# (Godot calls this the "multiplayer authority").
-	set_multiplayer_authority(str(name).to_int())
+	# (The practice buddy has no player of its own; this computer runs it.)
+	if is_bot:
+		set_multiplayer_authority(multiplayer.get_unique_id())
+	else:
+		set_multiplayer_authority(str(name).to_int())
 	# ...except the HostSync node, which carries things only the host decides.
 	$HostSync.set_multiplayer_authority(1)
 
@@ -193,7 +203,7 @@ func _ready() -> void:
 
 	respawn_position = global_position
 	sync_position = global_position
-	camera_rig.set_active(is_local)
+	camera_rig.set_active(is_local and not is_bot)
 	change_state(&"Air")
 
 
@@ -202,7 +212,10 @@ func _physics_process(delta: float) -> void:
 		_follow_network(delta)
 		return
 
-	input.gather(camera_rig.yaw)
+	if is_bot:
+		input.clear()
+	else:
+		input.gather(camera_rig.yaw)
 	if input.jump_just_pressed:
 		_jump_buffer_timer = jump_buffer_time
 	else:
@@ -283,7 +296,7 @@ func _apply_color() -> void:
 	# Each player gets their own copy of the material, so recolouring one
 	# doesn't recolour everyone.
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
-	material.albedo_color = COLORS[color_index % COLORS.size()]
+	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
 	_body_mesh.material_override = material
 
 
@@ -305,7 +318,10 @@ func try_toss() -> bool:
 		return false
 
 	_toss_cooldown_timer = toss_cooldown
-	target.receive_toss.rpc_id(target.get_multiplayer_authority(), toss_velocity(camera_rig.yaw))
+	if target.is_multiplayer_authority():
+		target.apply_toss(toss_velocity(camera_rig.yaw)) # Run by this computer (the practice buddy).
+	else:
+		target.receive_toss.rpc_id(target.get_multiplayer_authority(), toss_velocity(camera_rig.yaw))
 	if airborne:
 		# Pushing off your friend gives you a little hop: a co-op double jump.
 		can_toss_in_air = false
