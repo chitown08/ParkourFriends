@@ -4,12 +4,16 @@ extends CharacterBody3D
 ##
 ## How it's organized:
 ## - PlayerInput (child node) turns controls into plain variables. Movement
-##   never reads the keyboard directly, so in multiplayer a remote player's
-##   input can drive this exact same code.
+##   never reads the keyboard directly.
 ## - The States node holds one child per "mode" (Ground, Air, Hang, Climb).
 ##   Only the active state runs each tick; it decides how to move and when to
 ##   switch to another state. This script holds the settings and the shared
 ##   helpers the states use.
+## - Multiplayer: the character is named after the network id of the player
+##   who controls it. Only that player's computer runs the movement code; it
+##   publishes the sync_* variables, which the MultiplayerSynchronizer node
+##   sends to everyone else. On their screens this character is a "puppet"
+##   that smoothly follows those values.
 ##
 ## Tip: every value under "@export" shows up in the Inspector panel when you
 ## select the Player in Godot, so you can tweak the feel without coding.
@@ -51,10 +55,18 @@ signal state_changed(new_state: StringName)
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
 
-## True if this character is controlled by this computer. In multiplayer this
-## will be decided by who "owns" the character (Godot calls it the authority).
+@export_group("Multiplayer")
+@export var puppet_smoothing := 25.0 ## How quickly other players' characters catch up to where they really are.
+@export var puppet_teleport_distance := 3.0 ## Further off than this, just jump there (e.g. after a respawn).
+
+## True if this character is controlled by this computer.
 var is_local := true
 var respawn_position := Vector3.ZERO
+
+# Sent from the controlling player's computer to everyone else.
+var sync_position := Vector3.ZERO
+var sync_facing := 0.0
+var sync_state := &"Air"
 var state: PlayerState
 
 var jump_velocity: float
@@ -70,7 +82,16 @@ var _jump_buffer_timer := 0.0
 @onready var body_radius: float = _body_shape.radius
 
 
+func _enter_tree() -> void:
+	# The player whose network id matches our name is in charge of us
+	# (Godot calls this the "multiplayer authority").
+	set_multiplayer_authority(str(name).to_int())
+
+
 func _ready() -> void:
+	is_local = is_multiplayer_authority()
+	add_to_group(&"players")
+
 	# Work out jump physics from designer-friendly numbers (height + timing).
 	jump_velocity = 2.0 * jump_height / jump_time_to_peak
 	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
@@ -82,14 +103,17 @@ func _ready() -> void:
 		player_state.input = input
 
 	respawn_position = global_position
+	sync_position = global_position
 	camera_rig.set_active(is_local)
 	change_state(&"Air")
 
 
 func _physics_process(delta: float) -> void:
-	if is_local:
-		input.gather(camera_rig.yaw)
+	if not is_local:
+		_follow_network(delta)
+		return
 
+	input.gather(camera_rig.yaw)
 	if input.jump_just_pressed:
 		_jump_buffer_timer = jump_buffer_time
 	else:
@@ -99,6 +123,21 @@ func _physics_process(delta: float) -> void:
 
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
+
+	sync_position = global_position
+	sync_facing = _visual.rotation.y
+	sync_state = state.name
+
+
+## Moves this puppet toward where its owner says it is.
+func _follow_network(delta: float) -> void:
+	if global_position.distance_to(sync_position) > puppet_teleport_distance:
+		global_position = sync_position
+		reset_physics_interpolation()
+	else:
+		var weight := 1.0 - exp(-puppet_smoothing * delta)
+		global_position = global_position.lerp(sync_position, weight)
+	_visual.rotation.y = lerp_angle(_visual.rotation.y, sync_facing, 1.0 - exp(-puppet_smoothing * delta))
 
 
 ## Switches to the state (child of the States node) with this name.

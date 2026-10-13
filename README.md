@@ -6,7 +6,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 1. Double-click `Godot_v4.7.2-stable_win64.exe` (it's in this folder, but it is not committed to Git).
 2. In the Project Manager, click **Import**, pick this folder's `project.godot`, then **Import** / **Edit**.
-3. Press **F5** (or the ▶ "Run Project" button at the top right) to play.
+3. Press **F5** (or the ▶ "Run Project" button at the top right) to play, then click **Play Solo**.
 
 ## Controls
 
@@ -27,7 +27,8 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 Folders are organized by *feature*: each scene (`.tscn`) sits next to its script (`.gd`).
 
 ```
-game/       main.tscn + main.gd   – starts the game, loads the level, spawns players
+game/       main.tscn + main.gd   – menu → solo/host/join, loads the level, spawns players
+            network.gd            – hosting, joining and leaving online games
 player/     player.tscn           – the character
             player.gd             – settings + shared movement helpers + ledge detection
             player_input.gd       – turns keyboard/gamepad into plain variables
@@ -40,7 +41,8 @@ player/states/                    – one script per movement "mode" (state mach
 levels/     test_course.tscn      – grey-box test course
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
-ui/         hud.tscn/.gd          – debug overlay (speed, height, controls)
+ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
+            main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
 ```
 
@@ -52,17 +54,30 @@ Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 =
 2. In `player.tscn`, add a `Node` under **States** with that name and attach the script.
 3. From another state, switch to it with `player.change_state(&"<Name>")`.
 
-## Built for multiplayer later
+## Multiplayer
 
-- **Movement never reads the keyboard.** The states only read `PlayerInput`'s variables
-  (`move_direction`, `jump_held`, …). Later, remote players' `PlayerInput` gets filled from the network.
-- **`is_local`** marks the one character this computer controls (camera + input). This becomes
-  Godot's "multiplayer authority" check.
-- **`main.gd` → `spawn_player(peer_id, is_local)`** already names players by network id, which is
-  what Godot's `MultiplayerSpawner` / `MultiplayerSynchronizer` expect.
-- **Players are on their own physics layer** and don't collide with each other (or the camera)
-  yet — that's a design choice to revisit for co-op (e.g. boosting a friend up a wall).
+**Trying it on one computer:** in the Godot editor, open the **Debug** menu → **Customize Run Instances…**,
+tick **Enable Multiple Instances**, set the count to **2**, and click **OK**. Now **F5** opens two game windows:
+click **Host a Game** in one and **Join** (address `127.0.0.1`) in the other.
 
+**Shortcut:** launching with `-- --solo`, `-- --host` or `-- --join=ADDRESS` skips the menu
+(in Customize Run Instances, put these in each instance's *Launch Arguments*).
+
+**How it works:**
+- One player **hosts**; others **join** them (ENet over UDP port 7777, up to 4 players). See `game/network.gd`.
+- **Each player's own computer runs their character's movement** and publishes `sync_position`,
+  `sync_facing` and `sync_state`. The `NetworkSync` node (a `MultiplayerSynchronizer`) sends those to everyone
+  else, where the character is a smoothed "puppet". Simple and responsive; fine for co-op, where nobody needs
+  to be stopped from cheating.
+- **Characters are named after their player's network id** (`1` = the host). Only the host creates and removes
+  them (`main.gd`); the `PlayerSpawner` node (a `MultiplayerSpawner`) copies them to everyone, including people
+  who join later.
+- **A new move needs nothing extra for multiplayer** unless it changes something other players must see
+  beyond position, facing and state; then add it to the `sync_*` variables and the NetworkSync node.
+- **Players don't collide with each other** (or block each other's cameras) yet. That's a design choice to
+  revisit for co-op, e.g. boosting a friend up a wall.
+- **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam), and a pause menu
+  to leave a game.
 ## Automated tests
 
 `tests/` holds gameplay tests that play the game in code (no window) and check the results:

@@ -3,12 +3,23 @@
 [ext_resource type="Script" path="res://game/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://levels/test_course.tscn" id="2_course"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://ui/main_menu.tscn" id="4_menu"]
+[ext_resource type="Script" path="res://game/network.gd" id="5_network"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
+
+[node name="Network" type="Node" parent="."]
+script = ExtResource("5_network")
 
 [node name="TestCourse" parent="." instance=ExtResource("2_course")]
 
 [node name="Players" type="Node3D" parent="."]
 
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://player/player.tscn")
+spawn_path = NodePath("../Players")
+
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="MainMenu" parent="." instance=ExtResource("4_menu")]

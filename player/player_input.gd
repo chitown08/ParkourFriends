@@ -3,9 +3,9 @@ extends Node
 ## Turns the keyboard/gamepad into a few plain variables the Player reads.
 ##
 ## Why a separate node? The Player's movement code never touches the keyboard
-## directly — it only reads these variables. In multiplayer, each machine only
-## gathers input for its *own* character; for everyone else these variables
-## will be filled in from the network instead (e.g. by a MultiplayerSynchronizer).
+## directly — it only reads these variables. That keeps controls in one place
+## (and lets the automated tests "press" buttons). In multiplayer, only the
+## computer that controls a character gathers input for it.
 
 ## Which way the player wants to move, in world space, already turned to match
 ## the camera. Flat (y = 0) with a length between 0 and 1.
