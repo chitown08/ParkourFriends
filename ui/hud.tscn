@@ -20,13 +20,17 @@ anchor_right = 1.0
 offset_left = -300.0
 offset_top = 12.0
 offset_right = -16.0
-offset_bottom = 200.0
+offset_bottom = 280.0
 grow_horizontal = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 text = "WASD / left stick - move
 Shift / L3 - sprint
 Space / A - jump (hold = higher)
+Jump into a wall - grab the ledge
+  Space / A - climb up
+  A, D / stick - shimmy along
+  C, Ctrl / B - let go
 Mouse / right stick - camera
 R / Back - respawn
 Esc - free the mouse (click to recapture)

@@ -113,7 +113,7 @@ outline_size = 14
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 2.7, -3)
 billboard = 1
 pixel_size = 0.01
-text = "2.0m (too high)"
+text = "2.0m (vault: hold forward)"
 font_size = 56
 outline_size = 14
 
@@ -328,5 +328,95 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 6.5, -100)
 billboard = 1
 pixel_size = 0.01
 text = "GOAL!"
+font_size = 56
+outline_size = 14
+
+[node name="LedgeYard" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, -1, 0)
+use_collision = true
+size = Vector3(20, 2, 20)
+material = ExtResource("3_ground")
+
+[node name="LabelLedgeYard" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 5.5, 0)
+billboard = 1
+pixel_size = 0.01
+text = "LEDGE YARD"
+font_size = 56
+outline_size = 14
+
+[node name="Ledge25" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 1.25, 5)
+use_collision = true
+size = Vector3(3, 2.5, 4)
+material = ExtResource("4_platform")
+
+[node name="Ledge30" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 1.5, 0)
+use_collision = true
+size = Vector3(3, 3.0, 4)
+material = ExtResource("4_platform")
+
+[node name="Ledge38" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 1.9, -5)
+use_collision = true
+size = Vector3(3, 3.8, 4)
+material = ExtResource("4_platform")
+
+[node name="LabelLedge25" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 3.4, 5)
+billboard = 1
+pixel_size = 0.01
+text = "2.5m (vault)"
+font_size = 56
+outline_size = 14
+
+[node name="LabelLedge30" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 3.9, 0)
+billboard = 1
+pixel_size = 0.01
+text = "3.0m ledge"
+font_size = 56
+outline_size = 14
+
+[node name="LabelLedge38" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 4.7, -5)
+billboard = 1
+pixel_size = 0.01
+text = "3.8m (max reach)"
+font_size = 56
+outline_size = 14
+
+[node name="ShimmyWall" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26, 1.5, 0)
+use_collision = true
+size = Vector3(2, 3.0, 16)
+material = ExtResource("4_platform")
+
+[node name="ShimmyBlocker" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24.75, 2.25, -7.5)
+use_collision = true
+size = Vector3(0.5, 4.5, 1)
+material = ExtResource("7_wall")
+
+[node name="LabelShimmy" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 4.6, 3)
+billboard = 1
+pixel_size = 0.01
+text = "SHIMMY WALL\n(hang, then move sideways)"
+font_size = 56
+outline_size = 14
+
+[node name="TooTall" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 2.75, -9)
+use_collision = true
+size = Vector3(3, 5.5, 1.5)
+material = ExtResource("7_wall")
+
+[node name="LabelTooTall" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 5, -9)
+billboard = 1
+pixel_size = 0.01
+text = "5.5m (can't reach)"
 font_size = 56
 outline_size = 14

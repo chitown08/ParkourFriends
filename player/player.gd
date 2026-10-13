@@ -1,15 +1,21 @@
 class_name Player
 extends CharacterBody3D
-## The parkour character: running, sprinting and jumping.
+## The parkour character.
 ##
-## Movement only ever reads from the PlayerInput child node, never from the
-## keyboard. That's what will let a remote player's input drive this same code
-## once multiplayer is added.
+## How it's organized:
+## - PlayerInput (child node) turns controls into plain variables. Movement
+##   never reads the keyboard directly, so in multiplayer a remote player's
+##   input can drive this exact same code.
+## - The States node holds one child per "mode" (Ground, Air, Hang, Climb).
+##   Only the active state runs each tick; it decides how to move and when to
+##   switch to another state. This script holds the settings and the shared
+##   helpers the states use.
 ##
 ## Tip: every value under "@export" shows up in the Inspector panel when you
 ## select the Player in Godot, so you can tweak the feel without coding.
 
 signal respawned
+signal state_changed(new_state: StringName)
 
 @export_group("Running")
 @export var run_speed := 6.0
@@ -29,6 +35,19 @@ signal respawned
 @export var jump_buffer_time := 0.12 ## Pressing jump this early before landing still counts.
 @export var max_fall_speed := 40.0
 
+@export_group("Ledges")
+@export var ledge_max_height := 2.2 ## Highest ledge (above your feet) you can grab.
+@export var hang_min_height := 1.2 ## Ledges lower than this are vaulted over instead of hung from.
+@export var mantle_min_height := 0.15 ## Ledges lower than this are just stepped onto.
+@export var ledge_detect_distance := 0.35 ## How far in front of your body to look for walls.
+@export var ledge_grab_max_rise_speed := 1.0 ## Can't grab while still rising faster than this.
+@export var hang_height := 1.7 ## How far your feet hang below the ledge.
+@export var hang_snap_speed := 8.0 ## How fast you slide into the hanging spot.
+@export var shimmy_speed := 2.0
+@export var climb_up_time := 0.45 ## Seconds to pull up from hanging.
+@export var mantle_time := 0.25 ## Seconds to vault over a low ledge.
+@export var ledge_regrab_delay := 0.35 ## After letting go, can't re-grab for this long.
+
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
 
@@ -36,42 +55,59 @@ signal respawned
 ## will be decided by who "owns" the character (Godot calls it the authority).
 var is_local := true
 var respawn_position := Vector3.ZERO
+var state: PlayerState
 
-var _jump_velocity: float
+var jump_velocity: float
 var _rise_gravity: float
 var _fall_gravity: float
-var _coyote_timer := 0.0
 var _jump_buffer_timer := 0.0
-var _is_jumping := false
 
 @onready var input: PlayerInput = $PlayerInput
 @onready var camera_rig: CameraRig = $CameraRig
 @onready var _visual: Node3D = $Visual
+@onready var _states: Node = $States
+@onready var _body_shape: CapsuleShape3D = $CollisionShape3D.shape
+@onready var body_radius: float = _body_shape.radius
 
 
 func _ready() -> void:
 	# Work out jump physics from designer-friendly numbers (height + timing).
-	_jump_velocity = 2.0 * jump_height / jump_time_to_peak
+	jump_velocity = 2.0 * jump_height / jump_time_to_peak
 	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
 	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
 
+	for child in _states.get_children():
+		var player_state := child as PlayerState
+		player_state.player = self
+		player_state.input = input
+
 	respawn_position = global_position
 	camera_rig.set_active(is_local)
+	change_state(&"Air")
 
 
 func _physics_process(delta: float) -> void:
 	if is_local:
 		input.gather(camera_rig.yaw)
 
-	_update_timers(delta)
-	_apply_gravity(delta)
-	_try_jump()
-	_apply_horizontal_movement(delta)
-	move_and_slide()
-	_turn_to_face_movement(delta)
+	if input.jump_just_pressed:
+		_jump_buffer_timer = jump_buffer_time
+	else:
+		_jump_buffer_timer -= delta
+
+	state.physics_update(delta)
 
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
+
+
+## Switches to the state (child of the States node) with this name.
+func change_state(state_name: StringName, data: Dictionary = {}) -> void:
+	if state:
+		state.exit()
+	state = _states.get_node(NodePath(state_name))
+	state.enter(data)
+	state_changed.emit(state_name)
 
 
 func set_checkpoint(position_: Vector3) -> void:
@@ -81,7 +117,7 @@ func set_checkpoint(position_: Vector3) -> void:
 func respawn() -> void:
 	global_position = respawn_position
 	velocity = Vector3.ZERO
-	_is_jumping = false
+	change_state(&"Air")
 	reset_physics_interpolation() # Teleport instantly instead of "sliding" there.
 	respawned.emit()
 
@@ -90,60 +126,106 @@ func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
 
 
-func _update_timers(delta: float) -> void:
-	if is_on_floor():
-		_coyote_timer = coyote_time
-		if velocity.y <= 0.0:
-			_is_jumping = false
-	else:
-		_coyote_timer -= delta
+# --- Helpers shared by the states --------------------------------------------
 
-	if input.jump_just_pressed:
-		_jump_buffer_timer = jump_buffer_time
-	else:
-		_jump_buffer_timer -= delta
+## True (once) if jump was pressed recently. Lets a slightly-early press count.
+func consume_jump() -> bool:
+	if _jump_buffer_timer > 0.0:
+		_jump_buffer_timer = 0.0
+		return true
+	return false
 
 
-func _apply_gravity(delta: float) -> void:
-	if is_on_floor():
-		return
+func apply_gravity(delta: float) -> void:
 	var gravity := _rise_gravity if velocity.y > 0.0 else _fall_gravity
 	velocity.y = maxf(velocity.y - gravity * delta, -max_fall_speed)
 
 
-func _try_jump() -> void:
-	if _jump_buffer_timer > 0.0 and _coyote_timer > 0.0:
-		velocity.y = _jump_velocity
-		_is_jumping = true
-		_jump_buffer_timer = 0.0
-		_coyote_timer = 0.0
-
-	# Variable jump height: let go of jump early for a short hop.
-	if _is_jumping and not input.jump_held and velocity.y > 0.0:
-		velocity.y *= jump_cut
-		_is_jumping = false
-
-
-func _apply_horizontal_movement(delta: float) -> void:
+## Speeds up toward the input direction (or slows down if there's no input).
+func move_horizontally(delta: float, acceleration: float, friction: float) -> void:
 	var wish_dir := input.move_direction
 	var target_speed := sprint_speed if input.sprint_held else run_speed
-	var target_velocity := wish_dir * target_speed
-
-	var rate: float
-	if is_on_floor():
-		rate = ground_acceleration if wish_dir != Vector3.ZERO else ground_friction
-	else:
-		rate = air_acceleration if wish_dir != Vector3.ZERO else air_friction
-
-	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(target_velocity, rate * delta)
+	var rate := acceleration if wish_dir != Vector3.ZERO else friction
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(wish_dir * target_speed, rate * delta)
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
 
 
-func _turn_to_face_movement(delta: float) -> void:
-	var dir := input.move_direction
-	if dir.length_squared() < 0.01:
+## Smoothly turns the body to face `direction` (ignored if it's ~zero).
+func face_direction(direction: Vector3, delta: float) -> void:
+	if Vector2(direction.x, direction.z).length_squared() < 0.01:
 		return
-	# The model's "front" is -Z, so atan2(-x, -z) gives the angle to face `dir`.
-	var target_yaw := atan2(-dir.x, -dir.z)
+	# The model's "front" is -Z, so atan2(-x, -z) gives the angle to face `direction`.
+	var target_yaw := atan2(-direction.x, -direction.z)
 	_visual.rotation.y = lerp_angle(_visual.rotation.y, target_yaw, 1.0 - exp(-turn_speed * delta))
+
+
+## Where the player's feet go when hanging from `ledge`.
+func hang_position(ledge: Ledge) -> Vector3:
+	return ledge.position + ledge.normal * (body_radius + 0.05) + Vector3.DOWN * hang_height
+
+
+## Where the player's feet go after climbing up onto `ledge`.
+func stand_position(ledge: Ledge) -> Vector3:
+	return ledge.position - ledge.normal * (body_radius + 0.15) + Vector3.UP * 0.02
+
+
+## Looks for a grabbable ledge in front of a player standing at `feet` and
+## facing `forward`. Returns null if there isn't one.
+func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
+	forward = Vector3(forward.x, 0.0, forward.z).normalized()
+	if forward == Vector3.ZERO:
+		return null
+	var reach := body_radius + ledge_detect_distance
+
+	# 1. Is there a wall in front of us? Check at a few heights.
+	var wall := {}
+	for height: float in [0.3, 0.9, 1.5]:
+		var from := feet + Vector3.UP * height
+		wall = _raycast(from, from + forward * reach)
+		if not wall.is_empty():
+			break
+	if wall.is_empty():
+		return null
+	var wall_normal: Vector3 = wall.normal
+	if absf(wall_normal.y) > 0.3:
+		return null # That's a slope or floor, not a wall.
+	wall_normal = Vector3(wall_normal.x, 0.0, wall_normal.z).normalized()
+
+	# 2. Find the top of the wall by looking down from above, just behind its face.
+	var above: Vector3 = wall.position - wall_normal * 0.2
+	above.y = feet.y + ledge_max_height + 0.1
+	var top := _raycast(above, Vector3(above.x, feet.y + mantle_min_height, above.z))
+	if top.is_empty() or top.normal.y < 0.7:
+		return null # No flat top within reach.
+
+	var ledge := Ledge.new()
+	ledge.normal = wall_normal
+	ledge.position = Vector3(wall.position.x, top.position.y, wall.position.z)
+	ledge.height = ledge.position.y - feet.y
+
+	# 3. Is there open space above the edge, room to pull up, and room to stand?
+	var over_edge := ledge.position + wall_normal * reach + Vector3.UP * 0.15
+	if not _raycast(over_edge, over_edge - wall_normal * (reach + 0.3)).is_empty():
+		return null # The wall keeps going up; that "top" was something else.
+	var hang_column := hang_position(ledge)
+	hang_column.y = ledge.position.y + 0.05
+	if not _body_fits(hang_column) or not _body_fits(stand_position(ledge)):
+		return null
+	return ledge
+
+
+func _raycast(from: Vector3, to: Vector3) -> Dictionary:
+	var query := PhysicsRayQueryParameters3D.create(from, to, collision_mask, [get_rid()])
+	return get_world_3d().direct_space_state.intersect_ray(query)
+
+
+## True if the player's body would fit with its feet at `feet` without
+## overlapping the level.
+func _body_fits(feet: Vector3) -> bool:
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = _body_shape
+	query.transform = Transform3D(Basis.IDENTITY, feet + Vector3.UP * (_body_shape.height * 0.5 + 0.02))
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()

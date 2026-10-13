@@ -13,6 +13,8 @@ var move_direction := Vector3.ZERO
 var jump_just_pressed := false
 var jump_held := false
 var sprint_held := false
+var crouch_just_pressed := false
+var crouch_held := false
 var respawn_just_pressed := false
 
 
@@ -24,4 +26,6 @@ func gather(camera_yaw: float) -> void:
 	jump_just_pressed = Input.is_action_just_pressed("jump")
 	jump_held = Input.is_action_pressed("jump")
 	sprint_held = Input.is_action_pressed("sprint")
+	crouch_just_pressed = Input.is_action_just_pressed("crouch")
+	crouch_held = Input.is_action_pressed("crouch")
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")

@@ -3,6 +3,10 @@
 [ext_resource type="Script" path="res://player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://player/player_input.gd" id="2_input"]
 [ext_resource type="Script" path="res://player/camera_rig.gd" id="3_rig"]
+[ext_resource type="Script" path="res://player/states/ground.gd" id="4_ground"]
+[ext_resource type="Script" path="res://player/states/air.gd" id="5_air"]
+[ext_resource type="Script" path="res://player/states/hang.gd" id="6_hang"]
+[ext_resource type="Script" path="res://player/states/climb.gd" id="7_climb"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -48,6 +52,20 @@ mesh = SubResource("CapsuleMesh_body")
 [node name="Visor" type="MeshInstance3D" parent="Visual"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, -0.32)
 mesh = SubResource("BoxMesh_visor")
+
+[node name="States" type="Node" parent="."]
+
+[node name="Ground" type="Node" parent="States"]
+script = ExtResource("4_ground")
+
+[node name="Air" type="Node" parent="States"]
+script = ExtResource("5_air")
+
+[node name="Hang" type="Node" parent="States"]
+script = ExtResource("6_hang")
+
+[node name="Climb" type="Node" parent="States"]
+script = ExtResource("7_climb")
 
 [node name="PlayerInput" type="Node" parent="."]
 script = ExtResource("2_input")

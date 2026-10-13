@@ -14,10 +14,10 @@ var player: Player:
 func _process(_delta: float) -> void:
 	if player == null:
 		return
-	_stats.text = "Speed: %.1f m/s\nHeight: %.1f m\nOn ground: %s\nFPS: %d" % [
+	_stats.text = "State: %s\nSpeed: %.1f m/s\nHeight: %.1f m\nFPS: %d" % [
+		player.state.name,
 		player.get_horizontal_speed(),
 		player.global_position.y,
-		"yes" if player.is_on_floor() else "no",
 		Engine.get_frames_per_second(),
 	]
 
