@@ -17,9 +17,9 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
-| Camera | Mouse | Right stick |
+| Camera | Mouse or arrow keys | Right stick |
 | Respawn at checkpoint | R | Back / Select |
-| Free the mouse | Esc (click to recapture) | |
+| Pause menu (sensitivity, invert, leave, quit) | Esc | Start |
 | Hide help | F1 | |
 
 ## Project layout
@@ -76,12 +76,14 @@ click **Host a Game** in one and **Join** (address `127.0.0.1`) in the other.
   beyond position, facing and state; then add it to the `sync_*` variables and the NetworkSync node.
 - **Players don't collide with each other** (or block each other's cameras) yet. That's a design choice to
   revisit for co-op, e.g. boosting a friend up a wall.
-- **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam), and a pause menu
-  to leave a game.
+- **Each player gets their own colour**, chosen by the host and sent to everyone by the `HostSync` node
+  (the one synchronizer the host controls, rather than the character's owner).
+- **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam).
 ## Automated tests
 
 `tests/` holds gameplay tests that play the game in code (no window) and check the results:
-speeds, jump height, ledge grabs, shimmying, checkpoints, and so on.
+speeds, jump height, ledge grabs, shimmying, checkpoints, menus, and multiplayer (a host and a joiner run
+side by side in one program and must see each other move).
 
 - **Run them:** double-click `run_tests.cmd`, or run it from a terminal. It prints PASS/FAIL for each test.
 - **Run them after every change** to make sure nothing that used to work has broken.
