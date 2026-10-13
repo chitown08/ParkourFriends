@@ -8,6 +8,8 @@ extends GameTest
 ## Not the normal port, so tests don't clash with a game you have open.
 const TEST_PORT := 7788
 
+## Which world the host loads. Test files can change it in _init().
+var world_id := "test_course"
 var host_main: Node
 var client_main: Node
 var _host_side: Node
@@ -23,7 +25,7 @@ func before_each() -> void:
 	_client_side.add_child(client_main)
 	await ticks(2)
 
-	host_main.start_host(TEST_PORT, "test_course")
+	host_main.start_host(TEST_PORT, world_id)
 	client_main.start_join("127.0.0.1", TEST_PORT)
 	for i in 300:
 		await ticks(1)

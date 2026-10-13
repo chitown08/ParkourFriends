@@ -23,6 +23,7 @@ var _show_help := true
 @onready var _stats: Label = $Stats
 @onready var _help: Label = $Help
 @onready var _message: Label = $Message
+@onready var _relics: Label = $Relics
 
 
 func _process(_delta: float) -> void:
@@ -77,3 +78,9 @@ func _count_people() -> int:
 		if other is Player and not other.is_bot:
 			count += 1
 	return count
+
+
+## Shows "Relics found / total" (hidden in worlds without relics).
+func set_relic_count(found: int, total: int) -> void:
+	_relics.visible = total > 0
+	_relics.text = "Relics %d / %d" % [found, total]
