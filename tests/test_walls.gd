@@ -67,10 +67,31 @@ func test_cannot_wall_jump_the_same_wall_twice() -> void:
 	await tap(&"jump")
 	await ticks(8)
 	await tap(&"jump") # First wall jump: allowed.
-	await ticks(12)
-	await hold(&"move_forward", 15) # Drift back to the same wall...
-	await tap(&"jump") # ...and try again: not allowed.
+	expect(player.velocity.x < -5.0, "first wall jump should push away")
+	await ticks(5)
+	# You'd normally land before you could get back, so put the player back
+	# beside the same wall, still in mid-air, and try again.
+	player.global_position = Vector3(8.6, player.global_position.y, 6)
+	player.velocity = Vector3.ZERO
+	player.reset_physics_interpolation()
+	await ticks(1)
+	expect_state(&"Air")
+	expect(not player.find_wall().is_empty(), "test setup: should be right next to the wall")
+	await tap(&"jump")
 	expect(player.velocity.x > -1.0, "second jump off the same wall should not push away, vx = %.2f" % player.velocity.x)
+
+
+func test_can_wall_jump_the_same_wall_after_landing() -> void:
+	await place(Vector3(8.5, 0.05, 6), FACE_EAST)
+	await tap(&"jump")
+	await ticks(8)
+	await tap(&"jump")
+	await ticks(60) # Land.
+	await place(Vector3(8.5, 0.05, 6), FACE_EAST)
+	await tap(&"jump")
+	await ticks(8)
+	await tap(&"jump")
+	expect(player.velocity.x < -5.0, "after landing the same wall works again, vx = %.2f" % player.velocity.x)
 
 
 func test_chimney_climb() -> void:

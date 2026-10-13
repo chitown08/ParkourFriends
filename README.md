@@ -16,6 +16,8 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Sprint | Shift | Click left stick |
 | Crouch / slide (crouch while running) | C or Ctrl (hold) | B / Circle |
 | Slide-jump (keeps your speed) | Space during a slide | A |
+| Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
+| Wall run | Sprint, jump alongside a tall wall, hold forward | |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
@@ -41,6 +43,7 @@ player/states/                    – one script per movement "mode" (state mach
             ground.gd, air.gd     – running; jumping/falling (+ starts ledge grabs)
             hang.gd, climb.gd     – hanging/shimmying; pulling up / vaulting
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
+            wall_run.gd           – running along walls (wall jumps live in air.gd)
 levels/     test_course.tscn      – grey-box test course
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
