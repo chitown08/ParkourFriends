@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://ui/main_menu.tscn" id="4_menu"]
 [ext_resource type="Script" path="res://game/network.gd" id="5_network"]
+[ext_resource type="PackedScene" path="res://ui/pause_menu.tscn" id="6_pause"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
@@ -23,3 +24,5 @@ spawn_path = NodePath("../Players")
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
 
 [node name="MainMenu" parent="." instance=ExtResource("4_menu")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("6_pause")]

@@ -40,6 +40,11 @@ properties/2/path = NodePath(".:sync_state")
 properties/2/spawn = false
 properties/2/replication_mode = 2
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
+properties/0/path = NodePath(".:color_index")
+properties/0/spawn = true
+properties/0/replication_mode = 2
+
 [sub_resource type="SphereShape3D" id="SphereShape3D_camera"]
 radius = 0.25
 
@@ -96,3 +101,6 @@ fov = 75.0
 
 [node name="NetworkSync" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_player")
+
+[node name="HostSync" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_host")

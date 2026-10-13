@@ -31,7 +31,7 @@ func _process(_delta: float) -> void:
 		player.get_horizontal_speed(),
 		player.global_position.y,
 		network.describe(),
-		get_tree().get_node_count_in_group(&"players"),
+		player.get_parent().get_child_count(),
 		Engine.get_frames_per_second(),
 	]
 

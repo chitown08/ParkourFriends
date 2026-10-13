@@ -59,14 +59,31 @@ signal state_changed(new_state: StringName)
 @export var puppet_smoothing := 25.0 ## How quickly other players' characters catch up to where they really are.
 @export var puppet_teleport_distance := 3.0 ## Further off than this, just jump there (e.g. after a respawn).
 
+## Body colours, one per player slot.
+const COLORS: Array[Color] = [
+	Color(0.2, 0.55, 0.95), # blue
+	Color(0.95, 0.5, 0.15), # orange
+	Color(0.3, 0.8, 0.35), # green
+	Color(0.85, 0.3, 0.75), # pink
+]
+
 ## True if this character is controlled by this computer.
 var is_local := true
 var respawn_position := Vector3.ZERO
 
-# Sent from the controlling player's computer to everyone else.
+# Sent from the controlling player's computer to everyone else (NetworkSync node).
 var sync_position := Vector3.ZERO
 var sync_facing := 0.0
 var sync_state := &"Air"
+
+## Which of COLORS this player wears. Chosen by the host and sent to everyone
+## (HostSync node), so it's the same on every screen.
+var color_index := 0:
+	set(value):
+		color_index = value
+		if is_node_ready():
+			_apply_color()
+
 var state: PlayerState
 
 var jump_velocity: float
@@ -77,6 +94,7 @@ var _jump_buffer_timer := 0.0
 @onready var input: PlayerInput = $PlayerInput
 @onready var camera_rig: CameraRig = $CameraRig
 @onready var _visual: Node3D = $Visual
+@onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _states: Node = $States
 @onready var _body_shape: CapsuleShape3D = $CollisionShape3D.shape
 @onready var body_radius: float = _body_shape.radius
@@ -86,11 +104,14 @@ func _enter_tree() -> void:
 	# The player whose network id matches our name is in charge of us
 	# (Godot calls this the "multiplayer authority").
 	set_multiplayer_authority(str(name).to_int())
+	# ...except the HostSync node, which carries things only the host decides.
+	$HostSync.set_multiplayer_authority(1)
 
 
 func _ready() -> void:
 	is_local = is_multiplayer_authority()
 	add_to_group(&"players")
+	_apply_color()
 
 	# Work out jump physics from designer-friendly numbers (height + timing).
 	jump_velocity = 2.0 * jump_height / jump_time_to_peak
@@ -163,6 +184,20 @@ func respawn() -> void:
 
 func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
+
+
+## Turns the player's controls and camera on or off (e.g. while a menu is open).
+func set_controls_enabled(enabled: bool) -> void:
+	input.enabled = enabled
+	camera_rig.controls_enabled = enabled
+
+
+func _apply_color() -> void:
+	# Each player gets their own copy of the material, so recolouring one
+	# doesn't recolour everyone.
+	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
+	material.albedo_color = COLORS[color_index % COLORS.size()]
+	_body_mesh.material_override = material
 
 
 # --- Helpers shared by the states --------------------------------------------
