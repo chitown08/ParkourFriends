@@ -6,3 +6,6 @@
 *.wav binary
 *.ogg binary
 *.exe binary
+
+# Windows batch files need Windows line endings
+*.cmd text eol=crlf

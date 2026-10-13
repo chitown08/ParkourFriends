@@ -1,0 +1,105 @@
+class_name GameTest
+extends Node
+## Base class for automated gameplay tests.
+##
+## Each test file extends this and adds functions whose names start with
+## "test_". Before each one, a fresh copy of the game is started; the test
+## then "presses" buttons in code and checks what happened with expect().
+
+const MAIN_SCENE := preload("res://game/main.tscn")
+const ACTIONS: Array[StringName] = [
+	&"move_forward", &"move_back", &"move_left", &"move_right",
+	&"jump", &"sprint", &"crouch", &"respawn",
+]
+
+## Camera angles: which way "forward" points.
+const FACE_NORTH := 0.0 ## Toward -Z (the main course).
+const FACE_WEST := PI / 2 ## Toward -X (the Ledge Yard).
+
+var main: Node
+var player: Player
+var failures: Array[String] = []
+
+
+func before_each() -> void:
+	main = MAIN_SCENE.instantiate()
+	add_child(main)
+	await ticks(5)
+	player = main.get_node("Players/1")
+
+
+func after_each() -> void:
+	release_all()
+	main.queue_free()
+	await ticks(2)
+
+
+# --- Controls ----------------------------------------------------------------
+
+func ticks(count: int) -> void:
+	for i in count:
+		await get_tree().physics_frame
+
+
+func release_all() -> void:
+	for action in ACTIONS:
+		Input.action_release(action)
+
+
+## Hold a button for some physics ticks (60 ticks = 1 second).
+func hold(action: StringName, tick_count: int) -> void:
+	Input.action_press(action)
+	await ticks(tick_count)
+	Input.action_release(action)
+
+
+## Quick press and release.
+func tap(action: StringName) -> void:
+	await hold(action, 3)
+
+
+## Teleports the player, standing still, with the camera facing `yaw`.
+func place(feet: Vector3, yaw: float) -> void:
+	release_all()
+	player.global_position = feet
+	player.velocity = Vector3.ZERO
+	player.change_state(&"Air")
+	player.reset_physics_interpolation()
+	player.camera_rig.yaw = yaw
+	await ticks(30)
+
+
+## Runs forward and jumps once the player passes `jump_at` along the running
+## direction. Stops holding forward as soon as the player grabs a ledge,
+## climbs, or lands somewhere higher than they started.
+func run_and_jump(jump_at: float, axis := Vector3.FORWARD, max_ticks := 120) -> void:
+	var start_y := player.global_position.y
+	var jumped := false
+	Input.action_press(&"move_forward")
+	for i in max_ticks:
+		await ticks(1)
+		if not jumped and player.global_position.dot(axis) > jump_at:
+			Input.action_press(&"jump")
+			jumped = true
+		if player.state.name in [&"Hang", &"Climb"]:
+			break
+		if jumped and player.state.name == &"Ground" and player.global_position.y > start_y + 0.3:
+			break
+	release_all()
+
+
+# --- Checks ------------------------------------------------------------------
+
+func expect(condition: bool, message: String) -> void:
+	if not condition:
+		failures.append(message)
+
+
+func expect_near(actual: float, expected: float, tolerance: float, what: String) -> void:
+	expect(absf(actual - expected) <= tolerance,
+			"%s: expected %.2f (±%.2f), got %.2f" % [what, expected, tolerance, actual])
+
+
+func expect_state(expected: StringName) -> void:
+	expect(player.state.name == expected,
+			"expected state %s, got %s" % [expected, player.state.name])

@@ -62,3 +62,13 @@ Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 =
   what Godot's `MultiplayerSpawner` / `MultiplayerSynchronizer` expect.
 - **Players are on their own physics layer** and don't collide with each other (or the camera)
   yet — that's a design choice to revisit for co-op (e.g. boosting a friend up a wall).
+
+## Automated tests
+
+`tests/` holds gameplay tests that play the game in code (no window) and check the results:
+speeds, jump height, ledge grabs, shimmying, checkpoints, and so on.
+
+- **Run them:** double-click `run_tests.cmd`, or run it from a terminal. It prints PASS/FAIL for each test.
+- **Run them after every change** to make sure nothing that used to work has broken.
+- **Add a test:** add a `func test_something() -> void:` to a `tests/test_*.gd` file (or make a new one).
+  The helpers in `tests/game_test.gd` (`place`, `hold`, `tap`, `run_and_jump`, `expect`, …) do most of the work.
