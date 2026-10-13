@@ -18,6 +18,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Slide-jump (keeps your speed) | Space during a slide | A |
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
 | Wall run | Sprint, jump alongside a tall wall, hold forward | |
+| Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
@@ -82,16 +83,20 @@ click **Host a Game** in one and **Join** (address `127.0.0.1`) in the other.
   beyond position, facing and state; then add it to the `sync_*` variables and the NetworkSync node.
 - **Players don't collide with each other** (or block each other's cameras) yet. That's a design choice to
   revisit for co-op, e.g. boosting a friend up a wall.
+- **Tossing** (`try_toss` / `receive_toss` in `player.gd`): the thrower's computer picks a friend in reach and
+  sends their owner a `receive_toss` RPC; the owner checks the thrower is nearby and applies the launch. Once
+  per air time each player can toss once and be tossed once (`limit_tosses_per_air` turns that off).
 - **Each player gets their own colour**, chosen by the host and sent to everyone by the `HostSync` node
   (the one synchronizer the host controls, rather than the character's owner).
 - **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam).
 ## Automated tests
 
 `tests/` holds gameplay tests that play the game in code (no window) and check the results:
-speeds, jump height, ledge grabs, shimmying, checkpoints, menus, and multiplayer (a host and a joiner run
+speeds, jump height, ledge grabs, slides, wall moves, tossing, checkpoints, menus, and multiplayer (a host and a joiner run
 side by side in one program and must see each other move).
 
 - **Run them:** double-click `run_tests.cmd`, or run it from a terminal. It prints PASS/FAIL for each test.
 - **Run them after every change** to make sure nothing that used to work has broken.
 - **Add a test:** add a `func test_something() -> void:` to a `tests/test_*.gd` file (or make a new one).
   The helpers in `tests/game_test.gd` (`place`, `hold`, `tap`, `run_and_jump`, `expect`, …) do most of the work.
+- **Two-player tests** extend `MultiplayerTest` (`tests/multiplayer_test.gd`), which provides `host_main` and `client_main`.
