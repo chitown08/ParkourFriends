@@ -1,0 +1,15 @@
+# Godot's local cache (rebuilt automatically, never commit)
+.godot/
+*.tmp
+
+# The Godot editor itself lives in this folder for convenience; don't commit it
+Godot_*.exe
+Godot_*.zip
+
+# Exports / builds
+build/
+export_presets.cfg
+
+# OS junk
+Thumbs.db
+.DS_Store

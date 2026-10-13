@@ -1,0 +1,8 @@
+# Normalize line endings so Windows/Mac/Linux teammates don't get noisy diffs
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.glb binary
+*.wav binary
+*.ogg binary
+*.exe binary
