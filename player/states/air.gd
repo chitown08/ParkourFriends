@@ -27,7 +27,7 @@ func physics_update(delta: float) -> void:
 		_holding_jump = false
 
 	player.apply_gravity(delta)
-	player.move_horizontally(delta, player.air_acceleration, player.air_friction)
+	player.move_horizontally(delta, player.air_acceleration, player.air_friction, -1.0, true)
 	player.move_and_slide()
 	player.face_direction(input.move_direction, delta)
 

@@ -420,3 +420,134 @@ pixel_size = 0.01
 text = "5.5m (can't reach)"
 font_size = 56
 outline_size = 14
+
+[node name="SlideYard" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, -1, 0)
+use_collision = true
+size = Vector3(30, 2, 20)
+material = ExtResource("3_ground")
+
+[node name="LabelSlideYard" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 5.5, 0)
+billboard = 1
+pixel_size = 0.01
+text = "SLIDE YARD"
+font_size = 56
+outline_size = 14
+
+[node name="LowBar18" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 1.4, 4)
+use_collision = true
+size = Vector3(0.4, 0.4, 4)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostA18" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 2.15)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostB18" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0.8, 5.85)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LowBar22" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 1.4, 4)
+use_collision = true
+size = Vector3(0.4, 0.4, 4)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostA22" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0.8, 2.15)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostB22" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0.8, 5.85)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LowBar26" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 1.4, 4)
+use_collision = true
+size = Vector3(0.4, 0.4, 4)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostA26" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0.8, 2.15)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LowBarPostB26" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26, 0.8, 5.85)
+use_collision = true
+size = Vector3(0.3, 1.6, 0.3)
+material = ExtResource("7_wall")
+
+[node name="LabelLowBars" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2.8, 4)
+billboard = 1
+pixel_size = 0.01
+text = "SLIDE UNDER\n(run, then C)"
+font_size = 56
+outline_size = 14
+
+[node name="SlideStep1" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0.5, -5)
+use_collision = true
+size = Vector3(2, 1, 4)
+material = ExtResource("4_platform")
+
+[node name="SlideStep2" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 1, -5)
+use_collision = true
+size = Vector3(2, 2, 4)
+material = ExtResource("4_platform")
+
+[node name="SlideStep3" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17, 1.5, -5)
+use_collision = true
+size = Vector3(2, 3, 4)
+material = ExtResource("4_platform")
+
+[node name="SlideTop" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 1.5, -5)
+use_collision = true
+size = Vector3(4, 3, 4)
+material = ExtResource("4_platform")
+
+[node name="SlideCheckpoint" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 3, -5)
+
+[node name="SlideSlope" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(0.970143, 0.242536, 0, -0.242536, 0.970143, 0, 0, 0, 1, 27.9394, 1.25747, -5)
+use_collision = true
+size = Vector3(12.3693, 0.5, 4)
+material = ExtResource("4_platform")
+
+[node name="LabelSlope" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21, 5.2, -5)
+billboard = 1
+pixel_size = 0.01
+text = "SLIDE SLOPE"
+font_size = 56
+outline_size = 14
+
+[node name="SlideGapLanding" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 54, -10, -5)
+use_collision = true
+size = Vector3(12, 20, 6)
+material = ExtResource("6_goal")
+
+[node name="LabelSlideGap" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 2.5, -5)
+billboard = 1
+pixel_size = 0.01
+text = "8m GAP\nslide down the slope, then jump!"
+font_size = 56
+outline_size = 14

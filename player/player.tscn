@@ -7,6 +7,8 @@
 [ext_resource type="Script" path="res://player/states/air.gd" id="5_air"]
 [ext_resource type="Script" path="res://player/states/hang.gd" id="6_hang"]
 [ext_resource type="Script" path="res://player/states/climb.gd" id="7_climb"]
+[ext_resource type="Script" path="res://player/states/crouch.gd" id="8_crouch"]
+[ext_resource type="Script" path="res://player/states/slide.gd" id="9_slide"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -82,6 +84,12 @@ script = ExtResource("6_hang")
 
 [node name="Climb" type="Node" parent="States"]
 script = ExtResource("7_climb")
+
+[node name="Crouch" type="Node" parent="States"]
+script = ExtResource("8_crouch")
+
+[node name="Slide" type="Node" parent="States"]
+script = ExtResource("9_slide")
 
 [node name="PlayerInput" type="Node" parent="."]
 script = ExtResource("2_input")

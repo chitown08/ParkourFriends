@@ -52,6 +52,18 @@ signal state_changed(new_state: StringName)
 @export var mantle_time := 0.25 ## Seconds to vault over a low ledge.
 @export var ledge_regrab_delay := 0.35 ## After letting go, can't re-grab for this long.
 
+@export_group("Crouching & Sliding")
+@export var stand_height := 1.8 ## Body height when standing (meters).
+@export var crouch_height := 1.0 ## Body height when crouched or sliding; you fit under gaps taller than this.
+@export var crouch_speed := 3.0
+@export var slide_min_start_speed := 5.0 ## Need to be moving at least this fast to slide (otherwise you just crouch).
+@export var slide_boost := 1.0 ## Extra speed when a slide starts (only up to sprint speed + this).
+@export var slide_friction := 4.0 ## How fast a slide slows down on flat ground (m/s per second).
+@export var slide_slope_gravity := 40.0 ## How strongly slopes speed you up (or slow you down) while sliding.
+@export var slide_steer_speed := 1.5 ## How fast you can turn while sliding (radians per second).
+@export var slide_max_speed := 14.0
+@export var slide_end_speed := 3.0 ## The slide ends (you're just crouching) below this speed.
+
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
 
@@ -96,8 +108,16 @@ var _jump_buffer_timer := 0.0
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _states: Node = $States
-@onready var _body_shape: CapsuleShape3D = $CollisionShape3D.shape
-@onready var body_radius: float = _body_shape.radius
+@onready var _collision: CollisionShape3D = $CollisionShape3D
+## The standing body shape, used to check "would I fit here?". Never resized.
+@onready var _stand_shape: CapsuleShape3D = _collision.shape
+@onready var body_radius: float = _stand_shape.radius
+
+## Which states keep the body low.
+const CROUCHED_STATES: Array[StringName] = [&"Crouch", &"Slide"]
+
+## True while the body is shrunk down (crouching or sliding).
+var is_crouched := false
 
 
 func _enter_tree() -> void:
@@ -123,6 +143,9 @@ func _ready() -> void:
 		player_state.player = self
 		player_state.input = input
 
+	# Our own copy of the body shape, so crouching only shrinks *this* player.
+	_collision.shape = _stand_shape.duplicate()
+
 	respawn_position = global_position
 	sync_position = global_position
 	camera_rig.set_active(is_local)
@@ -145,6 +168,7 @@ func _physics_process(delta: float) -> void:
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
 
+	_squash_visual(is_crouched, delta)
 	sync_position = global_position
 	sync_facing = _visual.rotation.y
 	sync_state = state.name
@@ -159,6 +183,13 @@ func _follow_network(delta: float) -> void:
 		var weight := 1.0 - exp(-puppet_smoothing * delta)
 		global_position = global_position.lerp(sync_position, weight)
 	_visual.rotation.y = lerp_angle(_visual.rotation.y, sync_facing, 1.0 - exp(-puppet_smoothing * delta))
+	_squash_visual(sync_state in CROUCHED_STATES, delta)
+
+
+## Squashes the body model down while crouched (until there are animations).
+func _squash_visual(crouched: bool, delta: float) -> void:
+	var target := crouch_height / stand_height if crouched else 1.0
+	_visual.scale.y = lerpf(_visual.scale.y, target, 1.0 - exp(-20.0 * delta))
 
 
 ## Switches to the state (child of the States node) with this name.
@@ -177,6 +208,7 @@ func set_checkpoint(position_: Vector3) -> void:
 func respawn() -> void:
 	global_position = respawn_position
 	velocity = Vector3.ZERO
+	set_crouched(false)
 	change_state(&"Air")
 	reset_physics_interpolation() # Teleport instantly instead of "sliding" there.
 	respawned.emit()
@@ -216,13 +248,36 @@ func apply_gravity(delta: float) -> void:
 
 
 ## Speeds up toward the input direction (or slows down if there's no input).
-func move_horizontally(delta: float, acceleration: float, friction: float) -> void:
+## `max_speed` overrides the usual run/sprint speed. With `keep_momentum`,
+## going faster than that (e.g. jumping out of a slide) isn't slowed down while
+## you keep pushing; you can still steer.
+func move_horizontally(delta: float, acceleration: float, friction: float,
+		max_speed: float = -1.0, keep_momentum: bool = false) -> void:
 	var wish_dir := input.move_direction
-	var target_speed := sprint_speed if input.sprint_held else run_speed
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	var target_speed := max_speed
+	if target_speed < 0.0:
+		target_speed = sprint_speed if input.sprint_held else run_speed
+	if keep_momentum and wish_dir != Vector3.ZERO:
+		target_speed = maxf(target_speed, horizontal.length())
 	var rate := acceleration if wish_dir != Vector3.ZERO else friction
-	var horizontal := Vector3(velocity.x, 0.0, velocity.z).move_toward(wish_dir * target_speed, rate * delta)
+	horizontal = horizontal.move_toward(wish_dir * target_speed, rate * delta)
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
+
+
+## Shrinks the body (for crouching/sliding) or returns it to full height.
+## Check can_stand() before standing up.
+func set_crouched(crouched: bool) -> void:
+	is_crouched = crouched
+	var shape := _collision.shape as CapsuleShape3D
+	shape.height = crouch_height if crouched else stand_height
+	_collision.position.y = shape.height * 0.5
+
+
+## True if there's room to stand up right here (always true if not crouched).
+func can_stand() -> bool:
+	return not is_crouched or _body_fits(global_position)
 
 
 ## Smoothly turns the body to face `direction` (ignored if it's ~zero).
@@ -298,8 +353,8 @@ func _raycast(from: Vector3, to: Vector3) -> Dictionary:
 ## overlapping the level.
 func _body_fits(feet: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
-	query.shape = _body_shape
-	query.transform = Transform3D(Basis.IDENTITY, feet + Vector3.UP * (_body_shape.height * 0.5 + 0.02))
+	query.shape = _stand_shape
+	query.transform = Transform3D(Basis.IDENTITY, feet + Vector3.UP * (_stand_shape.height * 0.5 + 0.02))
 	query.collision_mask = collision_mask
 	query.exclude = [get_rid()]
 	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()

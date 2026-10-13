@@ -6,6 +6,14 @@ func physics_update(delta: float) -> void:
 	var jumped := player.consume_jump()
 	if jumped:
 		player.velocity.y = player.jump_velocity
+	elif input.crouch_held:
+		# Fast enough: slide. Otherwise: just crouch.
+		if player.get_horizontal_speed() >= player.slide_min_start_speed:
+			player.change_state(&"Slide")
+		else:
+			player.change_state(&"Crouch")
+		player.state.physics_update(delta)
+		return
 
 	player.move_horizontally(delta, player.ground_acceleration, player.ground_friction)
 	player.move_and_slide()

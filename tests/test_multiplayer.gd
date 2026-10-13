@@ -79,6 +79,19 @@ func test_movement_shows_up_on_the_other_screen() -> void:
 			"client should see the host where the host really is")
 
 
+func test_crouching_shows_up_on_the_other_screen() -> void:
+	host_main.local_player.set_controls_enabled(false)
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	await hold(&"crouch", 30)
+	Input.action_press(&"crouch")
+	await ticks(30)
+	var puppet_visual: Node3D = _find(host_main, client_id).get_node("Visual")
+	expect(puppet_visual.scale.y < 0.7, "host should see the client squashed down, scale is %.2f" % puppet_visual.scale.y)
+	Input.action_release(&"crouch")
+	await ticks(40)
+	expect(puppet_visual.scale.y > 0.95, "and standing again afterwards, scale is %.2f" % puppet_visual.scale.y)
+
+
 func test_client_leaving_removes_their_character() -> void:
 	client_main.leave_game()
 	for i in 120:
