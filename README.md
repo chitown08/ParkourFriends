@@ -19,6 +19,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
 | Wall run | Sprint, jump alongside a tall wall, hold forward | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
+| Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
@@ -86,6 +87,8 @@ click **Host a Game** in one and **Join** (address `127.0.0.1`) in the other.
 - **Tossing** (`try_toss` / `receive_toss` in `player.gd`): the thrower's computer picks a friend in reach and
   sends their owner a `receive_toss` RPC; the owner checks the thrower is nearby and applies the launch. Once
   per air time each player can toss once and be tossed once (`limit_tosses_per_air` turns that off).
+- **Practice buddy** (solo only, `call_buddy` / `buddy_toss_me` in `main.gd`): a grey `Player` with `is_bot` set,
+  run by this computer with no camera or controls, for practising tosses alone.
 - **Each player gets their own colour**, chosen by the host and sent to everyone by the `HostSync` node
   (the one synchronizer the host controls, rather than the character's owner).
 - **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam).
