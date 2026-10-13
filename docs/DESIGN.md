@@ -130,11 +130,11 @@ the next friend up.
 
 ## 8. Roadmap
 
-1. **First slice (next):** grey-box the city hub and the ancient Greece island, with
+1. **First slice (in progress):** grey-box the city hub and the ancient Greece island (done), with
    spawn, landmarks, a handful of relics, and the glider to find. See
    [first_slice_map.svg](first_slice_map.svg).
    - Glider item and the item-carrying system (one hand slot)
-   - Relics (team-shared) and a simple counter on screen
+   - ~~Relics (team-shared) and a simple counter on screen~~ (done)
 2. **Play it with friends** (needs internet play) and adjust.
 3. **More items**: bat, pogo, shoes; backpack/belt slots.
 4. **Saving** progress.

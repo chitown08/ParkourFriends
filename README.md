@@ -51,6 +51,7 @@ levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Gr
             test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
+            relic.tscn/.gd        – collectible gem (team-shared; logic in game/main.gd)
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
