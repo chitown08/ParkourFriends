@@ -20,7 +20,7 @@ anchor_right = 1.0
 offset_left = -300.0
 offset_top = 12.0
 offset_right = -16.0
-offset_bottom = 360.0
+offset_bottom = 380.0
 grow_horizontal = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
@@ -30,6 +30,7 @@ C, Ctrl / B - crouch (while running: slide)
   Jump during a slide - slide-jump
 Jump next to a wall - wall jump
 Sprint + jump alongside a tall wall - wall run
+E / RB - toss a nearby friend (aim with camera)
 Space / A - jump (hold = higher)
 Jump into a wall - grab the ledge
   Space / A - climb up

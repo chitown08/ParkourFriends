@@ -15,6 +15,7 @@ var jump_held := false
 var sprint_held := false
 var crouch_just_pressed := false
 var crouch_held := false
+var toss_just_pressed := false
 var respawn_just_pressed := false
 ## False while a menu is open: gather() then reports "no buttons pressed".
 var enabled := true
@@ -33,6 +34,7 @@ func gather(camera_yaw: float) -> void:
 	sprint_held = Input.is_action_pressed("sprint")
 	crouch_just_pressed = Input.is_action_just_pressed("crouch")
 	crouch_held = Input.is_action_pressed("crouch")
+	toss_just_pressed = Input.is_action_just_pressed("toss")
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")
 
 
@@ -43,4 +45,5 @@ func _clear() -> void:
 	sprint_held = false
 	crouch_just_pressed = false
 	crouch_held = false
+	toss_just_pressed = false
 	respawn_just_pressed = false

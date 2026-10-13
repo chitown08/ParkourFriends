@@ -20,6 +20,8 @@ extends CharacterBody3D
 
 signal respawned
 signal state_changed(new_state: StringName)
+signal tossed_someone(target: Player)
+signal got_tossed
 
 @export_group("Running")
 @export var run_speed := 6.0
@@ -77,6 +79,17 @@ signal state_changed(new_state: StringName)
 @export var wall_run_min_height := 0.8 ## Must be at least this high off the ground to start.
 @export var wall_run_lean_degrees := 20.0 ## How far the body leans away from the wall.
 
+@export_group("Tossing")
+@export var toss_range := 2.0 ## How close a friend must be to toss them (meters, not behind you).
+@export var toss_height := 4.5 ## How high a toss launches a friend.
+@export var toss_forward_speed := 6.0 ## How fast a toss sends them the way your camera faces.
+@export var toss_recoil_height := 1.0 ## Tossing someone while you're in the air gives you a hop this high.
+@export var toss_control_lock := 0.3 ## A tossed player can't steer for this long.
+@export var toss_cooldown := 0.4 ## Seconds between tosses.
+## On: once in the air you can be tossed only once, and toss only once, until
+## you land, grab a ledge, or touch a wall. Off: unlimited juggling.
+@export var limit_tosses_per_air := true
+
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
 
@@ -101,6 +114,7 @@ var sync_position := Vector3.ZERO
 var sync_facing := 0.0
 var sync_state := &"Air"
 var sync_lean := 0.0
+var sync_can_be_tossed := true
 
 ## Which of COLORS this player wears. Chosen by the host and sent to everyone
 ## (HostSync node), so it's the same on every screen.
@@ -139,6 +153,15 @@ var lean := 0.0
 var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
+## States you can toss a friend from.
+const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide"]
+## Used up by tossing someone / being tossed while in the air (see
+## limit_tosses_per_air). Refilled by refresh_air_moves().
+var can_toss_in_air := true
+var can_be_tossed := true
+var _toss_cooldown_timer := 0.0
+var _toss_recoil_velocity: float
+
 
 func _enter_tree() -> void:
 	# The player whose network id matches our name is in charge of us
@@ -158,6 +181,7 @@ func _ready() -> void:
 	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
 	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
 	wall_jump_velocity = sqrt(2.0 * _rise_gravity * wall_jump_height)
+	_toss_recoil_velocity = sqrt(2.0 * _rise_gravity * toss_recoil_height)
 
 	for child in _states.get_children():
 		var player_state := child as PlayerState
@@ -184,6 +208,10 @@ func _physics_process(delta: float) -> void:
 	else:
 		_jump_buffer_timer -= delta
 
+	_toss_cooldown_timer -= delta
+	if input.toss_just_pressed:
+		try_toss()
+
 	state.physics_update(delta)
 
 	if input.respawn_just_pressed or global_position.y < kill_height:
@@ -194,6 +222,7 @@ func _physics_process(delta: float) -> void:
 	sync_facing = _visual.rotation.y
 	sync_state = state.name
 	sync_lean = lean
+	sync_can_be_tossed = can_be_tossed or not limit_tosses_per_air
 
 
 ## Moves this puppet toward where its owner says it is.
@@ -256,6 +285,95 @@ func _apply_color() -> void:
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
 	material.albedo_color = COLORS[color_index % COLORS.size()]
 	_body_mesh.material_override = material
+
+
+# --- Tossing friends -----------------------------------------------------------
+#
+# The thrower's computer picks a target and sends it a "you've been tossed"
+# message (receive_toss). Only the target's own computer can move the target,
+# so that's where the launch actually happens.
+
+## Tosses the nearest friend in reach, if any. Returns true if someone was tossed.
+func try_toss() -> bool:
+	if state.name not in TOSS_STATES or _toss_cooldown_timer > 0.0:
+		return false
+	var airborne := state.name == &"Air"
+	if airborne and limit_tosses_per_air and not can_toss_in_air:
+		return false
+	var target := find_toss_target()
+	if target == null:
+		return false
+
+	_toss_cooldown_timer = toss_cooldown
+	target.receive_toss.rpc_id(target.get_multiplayer_authority(), toss_velocity(camera_rig.yaw))
+	if airborne:
+		# Pushing off your friend gives you a little hop: a co-op double jump.
+		can_toss_in_air = false
+		velocity.y = maxf(velocity.y, _toss_recoil_velocity)
+	tossed_someone.emit(target)
+	return true
+
+
+## The closest other player within toss_range who isn't behind you and can be
+## tossed right now, or null.
+func find_toss_target() -> Player:
+	var forward := Vector3.FORWARD.rotated(Vector3.UP, camera_rig.yaw)
+	var best: Player = null
+	var best_distance := INF
+	for other in get_parent().get_children():
+		var friend := other as Player
+		if friend == null or friend == self or friend.is_queued_for_deletion() or not friend.sync_can_be_tossed:
+			continue
+		var offset := friend.global_position - global_position
+		var flat := Vector3(offset.x, 0.0, offset.z)
+		if absf(offset.y) > toss_range or flat.length() > toss_range:
+			continue
+		if flat.length() > 0.3 and flat.normalized().dot(forward) < -0.2:
+			continue # Behind you.
+		if flat.length() < best_distance:
+			best_distance = flat.length()
+			best = friend
+	return best
+
+
+## The launch a toss gives, aimed with a camera facing `yaw`.
+func toss_velocity(yaw: float) -> Vector3:
+	var forward := Vector3.FORWARD.rotated(Vector3.UP, yaw)
+	return forward * toss_forward_speed + Vector3.UP * sqrt(2.0 * _rise_gravity * toss_height)
+
+
+## Sent by a thrower's computer to this character's owner.
+@rpc("any_peer", "call_remote", "reliable")
+func receive_toss(launch: Vector3) -> void:
+	if not is_local:
+		return
+	# Sanity check: the thrower should be (roughly) next to us. Generous,
+	# because their view of us is a fraction of a second old.
+	var thrower := get_parent().get_node_or_null(str(multiplayer.get_remote_sender_id())) as Player
+	if thrower == null or thrower.global_position.distance_to(global_position) > toss_range * 3.0:
+		return
+	apply_toss(launch)
+
+
+## Launches this player (the receiving end of a toss).
+func apply_toss(launch: Vector3) -> void:
+	if limit_tosses_per_air and not can_be_tossed:
+		return
+	if is_crouched:
+		if not can_stand():
+			return
+		set_crouched(false)
+	velocity = launch
+	can_be_tossed = false
+	change_state(&"Air", {"control_lock": toss_control_lock})
+	got_tossed.emit()
+
+
+## Lets you toss and be tossed again. Called when you land, grab a ledge,
+## or touch a wall.
+func refresh_air_moves() -> void:
+	can_toss_in_air = true
+	can_be_tossed = true
 
 
 # --- Helpers shared by the states --------------------------------------------
@@ -346,6 +464,7 @@ func wall_jump(wall_normal: Vector3, along: Vector3) -> void:
 	velocity = along + wall_normal * wall_jump_push
 	velocity.y = wall_jump_velocity
 	last_wall_normal = wall_normal
+	refresh_air_moves()
 	change_state(&"Air", {"jumped": true, "control_lock": wall_jump_control_lock})
 
 

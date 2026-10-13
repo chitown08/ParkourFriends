@@ -15,6 +15,7 @@ var _timer := 0.0
 func enter(data: Dictionary) -> void:
 	_wall_normal = data["wall_normal"]
 	player.last_wall_normal = _wall_normal
+	player.refresh_air_moves()
 	_timer = 0.0
 	var horizontal := Vector3(player.velocity.x, 0.0, player.velocity.z)
 	var along := horizontal - _wall_normal * horizontal.dot(_wall_normal)

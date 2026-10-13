@@ -10,6 +10,7 @@ var _ledge: Ledge
 func enter(data: Dictionary) -> void:
 	_ledge = data["ledge"]
 	player.velocity = Vector3.ZERO
+	player.refresh_air_moves()
 
 
 func physics_update(delta: float) -> void:

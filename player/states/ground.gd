@@ -4,6 +4,7 @@ extends PlayerState
 
 func enter(_data: Dictionary) -> void:
 	player.last_wall_normal = Vector3.ZERO # Landed: every wall is usable again.
+	player.refresh_air_moves()
 
 
 func physics_update(delta: float) -> void:

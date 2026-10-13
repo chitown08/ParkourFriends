@@ -9,10 +9,14 @@ var player: Player:
 		if player and player.respawned.is_connected(_on_respawned):
 			player.respawned.disconnect(_on_respawned)
 			player.tree_exiting.disconnect(_on_player_removed)
+			player.tossed_someone.disconnect(_on_tossed_someone)
+			player.got_tossed.disconnect(_on_got_tossed)
 		player = value
 		if player:
 			player.respawned.connect(_on_respawned)
 			player.tree_exiting.connect(_on_player_removed)
+			player.tossed_someone.connect(_on_tossed_someone)
+			player.got_tossed.connect(_on_got_tossed)
 
 var _show_help := true
 
@@ -56,3 +60,11 @@ func _on_respawned() -> void:
 
 func _on_player_removed() -> void:
 	player = null
+
+
+func _on_tossed_someone(_target: Player) -> void:
+	show_message("Toss!")
+
+
+func _on_got_tossed() -> void:
+	show_message("Launched!")
