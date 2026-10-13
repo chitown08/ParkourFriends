@@ -122,6 +122,17 @@ var sync_state := &"Air"
 var sync_lean := 0.0
 var sync_can_be_tossed := true
 
+## Where this player starts. Chosen by the host and sent along when the
+## character is created (HostSync node), so joining players don't need the
+## world loaded to know where they are.
+var spawn_position := Vector3.ZERO:
+	set(value):
+		spawn_position = value
+		position = value
+		if is_node_ready():
+			respawn_position = value
+			sync_position = value
+
 ## Which of COLORS this player wears. Chosen by the host and sent to everyone
 ## (HostSync node), so it's the same on every screen.
 var color_index := 0:

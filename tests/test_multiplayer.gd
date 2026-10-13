@@ -14,6 +14,16 @@ func test_everyone_sees_everyone() -> void:
 	expect(host_main.local_player.name == "1", "host controls character 1")
 
 
+func test_client_gets_the_hosts_world_and_start_position() -> void:
+	expect(client_main.level != null, "the client should have received a world")
+	if client_main.level:
+		expect(client_main.level.name == host_main.level.name, "client world %s should match host world %s" % [client_main.level.name, host_main.level.name])
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	var host_view := _find(host_main, client_id)
+	expect(_find(client_main, client_id).spawn_position == host_view.spawn_position,
+			"the client should start where the host placed them")
+
+
 func test_colours_are_different_and_match_on_both_screens() -> void:
 	var client_id: int = client_main.multiplayer.get_unique_id()
 	expect(_find(host_main, 1).color_index == 0, "host should be colour 0")

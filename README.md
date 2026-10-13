@@ -6,7 +6,8 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
-2. Press **F5** (or the ▶ "Run Project" button at the top right) to play, then click **Play Solo**.
+2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (Old Town, or the
+   Test Course playground), then **Play Solo** or **Host**. Joining players get the host's world.
 
 ## Controls
 
@@ -46,7 +47,8 @@ player/states/                    – one script per movement "mode" (state mach
             hang.gd, climb.gd     – hanging/shimmying; pulling up / vaulting
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
-levels/     test_course.tscn      – grey-box test course
+levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Greece island (see docs/)
+            test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)

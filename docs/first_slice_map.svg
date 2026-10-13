@@ -40,11 +40,11 @@
   <ellipse class="bonus" cx="0" cy="-138" rx="27" ry="16"/>
   <text class="name" x="0" y="-142">Sky Garden</text>
   <text class="note" x="0" y="-136">BONUS · floats at +55 m</text>
-  <text class="note" x="0" y="-131.5">3+ players: toss chain</text>
+  <text class="note" x="0" y="-131.5">3+ players: mechanic TBD</text>
   <circle class="hard" cx="20" cy="-147" r="2.4"/>
   <path class="route toss" d="M 0,-50 L 0,-124" marker-end="url(#arrowPink)"/>
-  <text class="noteL" x="2.5" y="-95">toss chain from the</text>
-  <text class="noteL" x="2.5" y="-90.5">Clock Tower top</text>
+  <text class="noteL" x="2.5" y="-95">multi-player lift?</text>
+  <text class="noteL" x="2.5" y="-90.5">(see DESIGN.md)</text>
 
   <!-- ===== Old Town hub island ===== -->
   <rect class="island" x="-82" y="-82" width="164" height="164" rx="22"/>
@@ -85,7 +85,7 @@
   <!-- ===== Ancient Greece island ===== -->
   <ellipse class="greek" cx="155" cy="0" rx="45" ry="42"/>
   <text class="name" x="155" y="-48">ANCIENT GREECE</text>
-  <text class="note" x="155" y="-53">ground at -10 m (lower than Old Town)</text>
+  <text class="note" x="155" y="-53">ground at -10 m · heights here from the island ground</text>
   <rect class="temple" x="143" y="-16" width="30" height="20"/>
   <text class="hd" x="158" y="-6.5">18</text>
   <text class="note" x="158" y="-1.5">temple</text>
@@ -110,8 +110,8 @@
   <!-- broken bridge -->
   <path class="route bridge" d="M 82,-30 L 88,-30 M 96,-30 L 100,-30 M 108,-30 L 113,-30"/>
   <text class="note" x="97" y="-35">broken bridge</text>
-  <text class="note" x="97" y="-25">gaps too wide alone:</text>
-  <text class="note" x="97" y="-21">toss each other across</text>
+  <text class="note" x="97" y="-25">6 m pillar mid-gap:</text>
+  <text class="note" x="97" y="-21">toss a friend up it</text>
 
   <!-- ===== Relics ===== -->
   <!-- easy -->

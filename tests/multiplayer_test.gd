@@ -23,7 +23,7 @@ func before_each() -> void:
 	_client_side.add_child(client_main)
 	await ticks(2)
 
-	host_main.start_host(TEST_PORT)
+	host_main.start_host(TEST_PORT, "test_course")
 	client_main.start_join("127.0.0.1", TEST_PORT)
 	for i in 300:
 		await ticks(1)

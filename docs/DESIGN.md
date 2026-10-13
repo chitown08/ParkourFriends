@@ -40,10 +40,11 @@ When a decision is unclear, these break the tie.
   - **Ancient Greece**: columns, temples, broken stairways, an acropolis to climb.
   - **Sci-fi**: platforms, pipes, antennas, moving parts.
   - *More later.*
-- **Getting between islands is a challenge in itself**: glide across, get tossed or
-  batted over a gap, swing on a grapple, or find the hidden broken-bridge route.
+- **Getting between islands is a challenge in itself**: glide across, get tossed up a
+  broken bridge pillar or batted over a gap, or swing on a grapple. (Tosses are mostly
+  *upward*, so they get you onto high things; crossing wide gaps is the bat's job.)
 - **Bonus islands for bigger groups**: some can only be reached with more players,
-  e.g. a gap only a 3-person toss chain can cross, or a gate needing several pressure
+  e.g. a gate or lift needing several pressure
   plates held at once. Always bonus, never required (pillar 2). The practice buddy
   doesn't count.
 
@@ -151,6 +152,10 @@ the next friend up.
 - **Double jump**: Graham has ideas to brainstorm (tossing already acts as a co-op double jump).
 - **Toss juggling**: keep the once-per-air limit, or try unlimited after playtesting?
 - **How many players** should the bonus islands need: 3? 4? Scalable?
+- **Toss chains don't exist (yet)**: with the once-per-air-time rule, everyone in the air
+  has already been tossed, so 3 players can't get higher than 2. Bonus areas for bigger
+  groups need another mechanic (pressure plates holding a lift up? a "human ladder"?),
+  or we loosen the toss rule. The Sky Garden is a placeholder until this is decided.
 
 ## 10. Ideas parking lot
 

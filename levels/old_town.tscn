@@ -1,0 +1,795 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://levels/checkpoint.tscn" id="2_checkpoint"]
+[ext_resource type="Material" path="res://materials/grid_ground.tres" id="3_ground"]
+[ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_platform"]
+[ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
+[ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
+[ext_resource type="Material" path="res://materials/grid_rock.tres" id="7_rock"]
+[ext_resource type="Material" path="res://materials/grid_stone.tres" id="8_stone"]
+[ext_resource type="Material" path="res://materials/grid_checkpoint.tres" id="9_checkpoint"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.32, 0.5, 0.78, 1)
+sky_horizon_color = Color(0.7, 0.76, 0.84, 1)
+ground_bottom_color = Color(0.45, 0.55, 0.7, 1)
+ground_horizon_color = Color(0.7, 0.76, 0.84, 1)
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 3
+tonemap_mode = 2
+ssao_enabled = true
+fog_enabled = true
+fog_light_color = Color(0.7, 0.76, 0.84, 1)
+fog_density = 0.0008
+
+[node name="OldTown" type="Node3D"]
+script = ExtResource("1_level")
+kill_height = -45.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.383, 0.3214, 0, 0.6428, 0.766, -0.5, -0.6634, 0.5567, 0, 60, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 150.0
+
+[node name="SpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 38)
+
+[node name="Islands" type="Node3D" parent="."]
+
+[node name="Buildings" type="Node3D" parent="."]
+
+[node name="Ledges" type="Node3D" parent="."]
+
+[node name="Greece" type="Node3D" parent="."]
+
+[node name="Bridge" type="Node3D" parent="."]
+
+[node name="Labels" type="Node3D" parent="."]
+
+[node name="Checkpoints" type="Node3D" parent="."]
+
+[node name="OldTownGround" type="CSGBox3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+use_collision = true
+size = Vector3(164, 6, 164)
+material = ExtResource("3_ground")
+
+[node name="OldTownRock1" type="CSGBox3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, 0)
+use_collision = true
+size = Vector3(120, 12, 120)
+material = ExtResource("7_rock")
+
+[node name="OldTownRock2" type="CSGBox3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -24, 0)
+use_collision = true
+size = Vector3(70, 12, 70)
+material = ExtResource("7_rock")
+
+[node name="SpawnPlaza" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 30)
+use_collision = true
+radius = 13
+height = 0.3
+sides = 24
+material = ExtResource("4_platform")
+
+[node name="Fountain" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 30)
+use_collision = true
+radius = 2.5
+height = 1.2
+sides = 24
+material = ExtResource("9_checkpoint")
+
+[node name="Shops" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 3, 40)
+use_collision = true
+size = Vector3(20, 6, 24)
+material = ExtResource("4_platform")
+
+[node name="Block12" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55, 6, 0)
+use_collision = true
+size = Vector3(18, 12, 30)
+material = ExtResource("4_platform")
+
+[node name="Apartments" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 10, -45)
+use_collision = true
+size = Vector3(24, 20, 20)
+material = ExtResource("5_wall")
+
+[node name="Block10" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 5, -10)
+use_collision = true
+size = Vector3(10, 10, 14)
+material = ExtResource("4_platform")
+
+[node name="Block14" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 7, -15)
+use_collision = true
+size = Vector3(10, 14, 10)
+material = ExtResource("4_platform")
+
+[node name="Corner4" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 2, 60)
+use_collision = true
+size = Vector3(14, 4, 12)
+material = ExtResource("4_platform")
+
+[node name="Corner5" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 62)
+use_collision = true
+size = Vector3(12, 5, 12)
+material = ExtResource("4_platform")
+
+[node name="Block8" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 4, 45)
+use_collision = true
+size = Vector3(22, 8, 18)
+material = ExtResource("4_platform")
+
+[node name="GliderRoof" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 7.5, 5)
+use_collision = true
+size = Vector3(20, 15, 26)
+material = ExtResource("4_platform")
+
+[node name="Offices" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 12.5, -45)
+use_collision = true
+size = Vector3(18, 25, 22)
+material = ExtResource("5_wall")
+
+[node name="ClockTower" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, -40)
+use_collision = true
+size = Vector3(12, 40, 12)
+material = ExtResource("5_wall")
+
+[node name="AlleyWall" type="CSGBox3D" parent="Buildings"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44.5, 5, -25)
+use_collision = true
+size = Vector3(1, 10, 14)
+material = ExtResource("5_wall")
+
+[node name="ShopsLedge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39, 2.5, 31)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block12Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 2.5, -11)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block12Ledge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 5.5, -8.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block12Ledge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 8.5, -11)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.5, 5.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 8.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge4" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.5, 11.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge5" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 14.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ApartmentsLedge6" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.5, 17.5, -34)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block10Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 2.5, -15)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block10Ledge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 5.5, -12.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block10Ledge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 8.5, -15)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block14Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 2.5, -9)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block14Ledge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 5.5, -9)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block14Ledge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 8.5, -9)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block14Ledge4" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 11.5, -9)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Corner4Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2.5, 67)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Corner5Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 2.5, 69)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block8Ledge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31, 2.5, 55)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="Block8Ledge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.5, 5.5, 55)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="GliderRoofLedge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 2.5, -5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="GliderRoofLedge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 5.5, -2.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="GliderRoofLedge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 8.5, -5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="GliderRoofLedge4" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 11.5, -2.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 2.5, -54)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 5.5, -51.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 8.5, -54)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge4" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 11.5, -51.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge5" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 14.5, -54)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge6" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 17.5, -51.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge7" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 20.5, -54)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="OfficesLedge8" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 55, 23.5, -51.5)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge1" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge2" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 5.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge3" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 8.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge4" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 11.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge5" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 14.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge6" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 17.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge7" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 20.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge8" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 23.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge9" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 26.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge10" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 29.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge11" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 32.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge12" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 35.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="ClockTowerLedge13" type="CSGBox3D" parent="Ledges"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 38.5, -33)
+use_collision = true
+size = Vector3(2, 1, 2)
+material = ExtResource("4_platform")
+
+[node name="GreeceGround" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 155, -13, 0)
+use_collision = true
+radius = 43
+height = 6
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="GreeceRock1" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 155, -22, 0)
+use_collision = true
+radius = 32
+height = 12
+sides = 24
+material = ExtResource("7_rock")
+
+[node name="GreeceRock2" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 155, -34, 0)
+use_collision = true
+radius = 18
+height = 12
+sides = 24
+material = ExtResource("7_rock")
+
+[node name="TempleBase" type="CSGBox3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, -9, -6)
+use_collision = true
+size = Vector3(30, 2, 20)
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN144_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144.5, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS144_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144.5, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN149" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 149, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS149" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 149, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN153_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 153.5, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS153_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 153.5, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN158" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS158" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN162_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 162.5, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS162_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 162.5, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN167" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 167, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS167" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 167, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnN171_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 171.5, -1.5, -14.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleColumnS171_5" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 171.5, -1.5, 2.5)
+use_collision = true
+radius = 0.9
+height = 13
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="TempleRoof" type="CSGBox3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, 6.5, -6)
+use_collision = true
+size = Vector3(31, 3, 21)
+material = ExtResource("6_goal")
+
+[node name="HopColumn170" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 170, -8.75, 24)
+use_collision = true
+radius = 1.5
+height = 2.5
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="HopColumn175" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, -8, 20)
+use_collision = true
+radius = 1.5
+height = 4
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="HopColumn179" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 179, -7.25, 15)
+use_collision = true
+radius = 1.5
+height = 5.5
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="HopColumn182" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 182, -6.5, 10)
+use_collision = true
+radius = 1.5
+height = 7
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="RowColumn140" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 140, -8.5, -22)
+use_collision = true
+radius = 1
+height = 3
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="RowColumn148" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 148, -8.5, -22)
+use_collision = true
+radius = 1
+height = 3
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="RowColumn156" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 156, -8.5, -22)
+use_collision = true
+radius = 1
+height = 3
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="RowColumn164" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 164, -8.5, -22)
+use_collision = true
+radius = 1
+height = 3
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="RowColumn172" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 172, -8.5, -22)
+use_collision = true
+radius = 1
+height = 3
+sides = 24
+material = ExtResource("8_stone")
+
+[node name="Stair1" type="CSGBox3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 125, -9, 18)
+use_collision = true
+size = Vector3(6, 2, 8)
+material = ExtResource("8_stone")
+
+[node name="Stair2" type="CSGBox3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 132, -7.75, 18)
+use_collision = true
+size = Vector3(6, 4.5, 8)
+material = ExtResource("8_stone")
+
+[node name="Stair3" type="CSGBox3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 141, -6.5, 18)
+use_collision = true
+size = Vector3(6, 7, 8)
+material = ExtResource("8_stone")
+
+[node name="Agora" type="CSGCylinder3D" parent="Greece"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150, -9.8, 28)
+use_collision = true
+radius = 7
+height = 0.4
+sides = 24
+material = ExtResource("4_platform")
+
+[node name="BridgeHubSide" type="CSGBox3D" parent="Bridge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, -0.3, -10)
+use_collision = true
+size = Vector3(12, 0.6, 4)
+material = ExtResource("4_platform")
+
+[node name="BridgePillar" type="CSGBox3D" parent="Bridge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, -17, -10)
+use_collision = true
+size = Vector3(4, 46, 4)
+material = ExtResource("5_wall")
+
+[node name="BridgeGreekSide" type="CSGBox3D" parent="Bridge"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 109, -6.3, -10)
+use_collision = true
+size = Vector3(10, 0.6, 4)
+material = ExtResource("4_platform")
+
+[node name="SkyGarden" type="CSGCylinder3D" parent="Islands"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 53.5, -75)
+use_collision = true
+radius = 14
+height = 3
+sides = 24
+material = ExtResource("9_checkpoint")
+
+[node name="LabelOldTown" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 18)
+billboard = 1
+pixel_size = 0.02
+text = "OLD TOWN"
+font_size = 64
+outline_size = 16
+
+[node name="LabelClockTower" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 44, -32)
+billboard = 1
+pixel_size = 0.02
+text = "CLOCK TOWER"
+font_size = 64
+outline_size = 16
+
+[node name="LabelGlider" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 18.5, 18)
+billboard = 1
+pixel_size = 0.02
+text = "GLIDER ROOF\n(glider coming soon)"
+font_size = 64
+outline_size = 16
+
+[node name="LabelAlley" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44.5, 11.5, -25)
+billboard = 1
+pixel_size = 0.02
+text = "WALL-RUN ALLEY"
+font_size = 64
+outline_size = 16
+
+[node name="LabelBridge" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 4, -10)
+billboard = 1
+pixel_size = 0.02
+text = "BROKEN BRIDGE\ntoss a friend up the pillar"
+font_size = 64
+outline_size = 16
+
+[node name="LabelGreece" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 155, 12, 26)
+billboard = 1
+pixel_size = 0.02
+text = "ANCIENT GREECE"
+font_size = 64
+outline_size = 16
+
+[node name="LabelTemple" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, 11, -6)
+billboard = 1
+pixel_size = 0.02
+text = "TEMPLE (needs a friend or a glider)"
+font_size = 64
+outline_size = 16
+
+[node name="LabelSkyGarden" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 58, -75)
+billboard = 1
+pixel_size = 0.02
+text = "SKY GARDEN\n(bonus: needs 3+ players - mechanic TBD)"
+font_size = 64
+outline_size = 16
+
+[node name="CheckpointGliderRoof" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 15, 5)
+
+[node name="CheckpointOffices" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 25, -45)
+
+[node name="CheckpointClockTower" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 40, -40)
+
+[node name="CheckpointBridgePillar" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 6, -10)
+
+[node name="CheckpointGreece" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 118, -10, -10)
+
+[node name="CheckpointTemple" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 158, 8, -6)

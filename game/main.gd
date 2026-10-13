@@ -6,18 +6,32 @@ extends Node3D
 ## copies them to everyone who's connected (including people who join later).
 ## Each character is named after its player's network id, e.g. "1" for the host.
 ##
+## The world (Old Town, the test course, ...) is loaded into the World node
+## when a game starts. The host's choice is copied to joining players by the
+## WorldSpawner node, the same way characters are.
+##
 ## Shortcut for testing: launch with "-- --solo", "-- --host" or
-## "-- --join=127.0.0.1" to skip the menu.
+## "-- --join=127.0.0.1" to skip the menu (add "--world=test_course" to pick
+## the world).
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
+## The worlds you can play in: id -> scene. (New ones also need adding to the
+## WorldSpawner's spawnable scenes in main.tscn.)
+const WORLDS := {
+	"old_town": "res://levels/old_town.tscn",
+	"test_course": "res://levels/test_course.tscn",
+}
+const DEFAULT_WORLD := "old_town"
 
 ## The character this computer controls (null while in the main menu).
 var local_player: Player
 ## The solo practice buddy, once called (see call_buddy()).
 var buddy: Player
 var is_paused := false
+## The world being played (null while in the main menu).
+var level: Level
 
-@onready var level: Level = $TestCourse
+@onready var world: Node3D = $World
 @onready var players: Node3D = $Players
 @onready var hud: CanvasLayer = $HUD
 @onready var menu: CanvasLayer = $MainMenu
@@ -29,12 +43,11 @@ func _ready() -> void:
 	Settings.load_from_disk()
 	hud.network = network
 	players.child_entered_tree.connect(_on_player_added)
-	for checkpoint: Checkpoint in get_tree().get_nodes_in_group(&"checkpoints"):
-		if level.is_ancestor_of(checkpoint):
-			checkpoint.reached.connect(_on_checkpoint_reached)
+	world.child_entered_tree.connect(_on_world_added)
 
-	menu.solo_pressed.connect(start_solo)
-	menu.host_pressed.connect(start_host)
+	menu.set_worlds(WORLDS.keys(), DEFAULT_WORLD)
+	menu.solo_pressed.connect(func() -> void: start_solo())
+	menu.host_pressed.connect(func() -> void: start_host())
 	menu.join_pressed.connect(start_join)
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
@@ -63,19 +76,34 @@ func _unhandled_input(event: InputEvent) -> void:
 		buddy_toss_me()
 
 
-func start_solo() -> void:
+## Starts a solo game in `world_id` (or the world picked in the menu).
+func start_solo(world_id: String = "") -> void:
 	network.leave()
 	menu.hide()
+	load_world(world_id if world_id else menu.selected_world())
 	spawn_player(1)
 
 
-func start_host(port: int = Network.DEFAULT_PORT) -> void:
+## Hosts a game in `world_id` (or the world picked in the menu).
+func start_host(port: int = Network.DEFAULT_PORT, world_id: String = "") -> void:
 	var error := network.host(port)
 	if error != OK:
 		menu.open("Couldn't host: %s. Is another copy already hosting?" % error_string(error))
 		return
 	menu.hide()
+	load_world(world_id if world_id else menu.selected_world())
 	spawn_player(1)
+
+
+## Loads a world (replacing any current one). Solo or host only; joining
+## players receive the host's world automatically.
+func load_world(world_id: String) -> void:
+	if not WORLDS.has(world_id):
+		push_warning("Unknown world '%s', loading %s instead" % [world_id, DEFAULT_WORLD])
+		world_id = DEFAULT_WORLD
+	_clear_world()
+	var new_level := (load(WORLDS[world_id]) as PackedScene).instantiate()
+	world.add_child(new_level, true)
 
 
 func start_join(address: String, port: int = Network.DEFAULT_PORT) -> void:
@@ -142,6 +170,7 @@ func spawn_player(peer_id: int) -> void:
 	var player := PLAYER_SCENE.instantiate() as Player
 	player.name = str(peer_id) # The name is how every computer knows whose it is.
 	player.color_index = _free_color_index()
+	player.spawn_position = level.get_spawn_position(players.get_child_count())
 	players.add_child(player, true)
 
 
@@ -161,7 +190,14 @@ func _return_to_menu(message: String) -> void:
 	network.leave()
 	for player in players.get_children():
 		player.queue_free()
+	_clear_world()
 	menu.open(message)
+
+
+func _clear_world() -> void:
+	for child in world.get_children():
+		child.queue_free()
+	level = null
 
 
 # --- Network events ----------------------------------------------------------
@@ -193,11 +229,27 @@ func _on_server_disconnected() -> void:
 
 # --- Players -----------------------------------------------------------------
 
+## Runs on every computer whenever a world appears (loaded here or copied from
+## the host).
+func _on_world_added(node: Node) -> void:
+	node.ready.connect(_on_world_ready.bind(node), CONNECT_ONE_SHOT)
+
+
+func _on_world_ready(new_level: Level) -> void:
+	level = new_level
+	for player: Player in players.get_children():
+		player.kill_height = level.kill_height
+	for checkpoint: Checkpoint in get_tree().get_nodes_in_group(&"checkpoints"):
+		if level.is_ancestor_of(checkpoint):
+			checkpoint.reached.connect(_on_checkpoint_reached)
+
+
 ## Runs on every computer whenever a character appears (spawned here or copied
 ## from the host), before the character's own _ready().
 func _on_player_added(node: Node) -> void:
 	var player := node as Player
-	player.position = level.get_spawn_position(player.get_index())
+	if level:
+		player.kill_height = level.kill_height
 	player.ready.connect(_on_player_ready.bind(player), CONNECT_ONE_SHOT)
 
 
@@ -214,10 +266,14 @@ func _on_checkpoint_reached(player: Player) -> void:
 
 
 func _handle_command_line() -> void:
+	var world_id := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--world="):
+			world_id = arg.get_slice("=", 1)
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--solo":
-			start_solo()
+			start_solo(world_id)
 		elif arg == "--host":
-			start_host()
+			start_host(Network.DEFAULT_PORT, world_id)
 		elif arg.begins_with("--join"):
 			start_join(arg.get_slice("=", 1))

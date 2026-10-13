@@ -1,7 +1,6 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://game/main.gd" id="1_main"]
-[ext_resource type="PackedScene" path="res://levels/test_course.tscn" id="2_course"]
 [ext_resource type="PackedScene" path="res://ui/hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://ui/main_menu.tscn" id="4_menu"]
 [ext_resource type="Script" path="res://game/network.gd" id="5_network"]
@@ -13,7 +12,11 @@ script = ExtResource("1_main")
 [node name="Network" type="Node" parent="."]
 script = ExtResource("5_network")
 
-[node name="TestCourse" parent="." instance=ExtResource("2_course")]
+[node name="World" type="Node3D" parent="."]
+
+[node name="WorldSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://levels/test_course.tscn", "res://levels/old_town.tscn")
+spawn_path = NodePath("../World")
 
 [node name="Players" type="Node3D" parent="."]
 

@@ -24,7 +24,7 @@ var failures: Array[String] = []
 func before_each() -> void:
 	main = MAIN_SCENE.instantiate()
 	add_child(main)
-	main.start_solo()
+	main.start_solo("test_course") # The tests' positions are all on the test course.
 	await ticks(5)
 	player = main.get_node_or_null("Players/1")
 	expect(player != null, "the game should have created a player")

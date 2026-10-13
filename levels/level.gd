@@ -1,7 +1,10 @@
 class_name Level
 extends Node3D
-## Base script for a playable level. Every level needs a SpawnPoint marker.
-## In multiplayer, extra markers (SpawnPoint2, ...) can spread players out.
+## Base script for a playable world (the test course, Old Town, ...).
+## Every world needs a SpawnPoint marker.
+
+## Falling below this height respawns you at your last checkpoint.
+@export var kill_height := -15.0
 
 @onready var spawn_point: Marker3D = $SpawnPoint
 

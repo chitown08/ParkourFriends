@@ -8,7 +8,8 @@ signal join_pressed(address: String)
 
 @onready var _address: LineEdit = %Address
 @onready var _status: Label = %Status
-@onready var _buttons: Array[Button] = [%Solo, %Host, %Join]
+@onready var _world: OptionButton = %World
+@onready var _buttons: Array[Control] = [%Solo, %Host, %Join, %World]
 
 
 func _ready() -> void:
@@ -30,7 +31,22 @@ func open(message: String = "") -> void:
 ## Shows a message and greys out the buttons while something is happening.
 func set_busy(busy: bool, message: String = "") -> void:
 	for button in _buttons:
-		button.disabled = busy
+		button.set(&"disabled", busy)
 	_address.editable = not busy
 	if message:
 		_status.text = message
+
+
+## Fills in the world picker. `ids` are world ids like "old_town".
+func set_worlds(ids: Array, default_id: String) -> void:
+	_world.clear()
+	for id: String in ids:
+		_world.add_item(id.capitalize())
+		_world.set_item_metadata(_world.item_count - 1, id)
+		if id == default_id:
+			_world.select(_world.item_count - 1)
+
+
+## The world id picked in the menu (used when playing solo or hosting).
+func selected_world() -> String:
+	return _world.get_item_metadata(_world.selected) if _world.item_count > 0 else ""

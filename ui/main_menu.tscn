@@ -38,6 +38,16 @@ theme_override_font_sizes/font_size = 36
 text = "Parkour Friends"
 horizontal_alignment = 1
 
+[node name="WorldRow" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Items/WorldRow"]
+text = "World"
+
+[node name="World" type="OptionButton" parent="Center/Panel/Margin/Items/WorldRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+size_flags_horizontal = 3
+
 [node name="Solo" type="Button" parent="Center/Panel/Margin/Items"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
@@ -66,7 +76,8 @@ text = "Join"
 
 [node name="Hint" type="Label" parent="Center/Panel/Margin/Items"]
 modulate = Color(1, 1, 1, 0.6)
-text = "127.0.0.1 = a game hosted on this computer"
+text = "127.0.0.1 = a game hosted on this computer.
+Joining uses the host's world."
 horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Center/Panel/Margin/Items"]
