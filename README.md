@@ -4,9 +4,9 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 ## Running it
 
-1. Double-click `Godot_v4.7.2-stable_win64.exe` (it's in this folder, but it is not committed to Git).
-2. In the Project Manager, click **Import**, pick this folder's `project.godot`, then **Import** / **Edit**.
-3. Press **F5** (or the ▶ "Run Project" button at the top right) to play, then click **Play Solo**.
+1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
+   game instead, because it notices the project in its folder. The exe is not committed to Git.)
+2. Press **F5** (or the ▶ "Run Project" button at the top right) to play, then click **Play Solo**.
 
 ## Controls
 
