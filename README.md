@@ -14,11 +14,11 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Action | Keyboard / mouse | Gamepad |
 |---|---|---|
 | Move | WASD | Left stick |
-| Sprint | Shift | Click left stick |
+| Flow (momentum) | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it | |
 | Crouch / slide (crouch while running) | C or Ctrl (hold) | B / Circle |
 | Slide-jump (keeps your speed) | Space during a slide | A |
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
-| Wall run | Sprint, jump alongside a tall wall, hold forward | |
+| Wall run | Run fast, jump alongside a tall wall, hold forward | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Jump (hold for higher) | Space | A / Cross |
@@ -37,7 +37,8 @@ Folders are organized by *feature*: each scene (`.tscn`) sits next to its script
 game/       main.tscn + main.gd   – menu → solo/host/join, loads the level, spawns players
             network.gd            – hosting, joining and leaving online games
 player/     player.tscn           – the character
-            player.gd             – settings + shared movement helpers + ledge detection
+            player.gd             – shared movement helpers, flow, ledge detection, tossing
+            movement_profile.gd   – all the movement numbers; profiles/ has superhuman + human
             player_input.gd       – turns keyboard/gamepad into plain variables
             camera_rig.gd         – third-person orbit camera
             ledge.gd              – data about a grabbable ledge

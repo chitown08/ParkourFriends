@@ -98,6 +98,11 @@ func test_buddy_gets_your_profile_and_agility() -> void:
 	await ticks(5)
 	expect(main.buddy.profile == player.profile, "the buddy should use your movement profile")
 	expect(main.buddy.agility_level == 2, "the buddy should share the team's agility level")
+	# And keeps up when the team levels up while it's out.
+	for relic_name in ["RelicEastStreet", "RelicAgora", "RelicBlock12Roof"]:
+		main.collect_relic(relic_name)
+	await ticks(2)
+	expect(main.buddy.agility_level == 3, "the buddy should level up with the team, at %d" % main.buddy.agility_level)
 
 
 func test_switching_to_the_human_profile() -> void:

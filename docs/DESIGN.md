@@ -62,16 +62,27 @@ When a decision is unclear, these break the tie.
 
 | Move | How | Notes |
 |---|---|---|
-| Run / sprint | WASD, Shift | 6 m/s / 9.5 m/s |
-| Jump | Space (hold = higher) | ~1.8 m full jump, coyote time + jump buffering |
-| Ledge grab, hang, shimmy, climb | Jump at a wall while pushing toward it | Grabs up to ~2.2 m above your feet; low ledges are vaulted |
+**The game is deliberately over the top**: you start superhuman (Crackdown-style) and get more
+so as the team finds relics.
+
+| Move | How | Notes (superhuman profile) |
+|---|---|---|
+| Run + flow | WASD | 10 m/s, building to 15 m/s over 3 s of uninterrupted movement ("flow"); stopping, letting go or crashing drains it |
+| Jump | Space (hold = higher) | ~3 m full jump, coyote time + jump buffering |
+| Ledge grab, hang, shimmy, climb | Jump at a wall while pushing toward it | Grabs up to ~2.6 m above your feet; low ledges are vaulted |
 | Crouch / slide | C (hold) | Slides speed up downhill; slide-jumps keep their speed |
 | Wall jump | Space in the air next to a wall | Not the same wall twice before landing |
-| Wall run | Sprint, jump alongside a tall wall | Up to 1.3 s, slowly sinking |
-| Toss a friend | E | See section 5 |
+| Wall run | Run fast, jump alongside a tall wall | Up to 1.6 s, slowly sinking |
+| Toss a friend | E | ~8 m up. See section 5 |
 
-All the feel numbers are in the Player's Inspector (Running, Jumping, Ledges, Crouching &
-Sliding, Walls, Tossing).
+All the feel numbers live in **movement profiles**: `player/profiles/superhuman.tres` (the
+default) and `human.tres` (realistic numbers, for comparison and for the move tests). Switch
+between them in the pause menu.
+
+### Agility levels (built)
+The team's relic count sets everyone's **agility level**: level 2 at 2 relics, 3 at 5, 4 at 8,
+5 at 11. Each level adds +12% jump height and +5% running speed (numbers in the profiles).
+Later worlds can be designed around higher agility levels.
 
 ## 5. Co-op
 
