@@ -11,7 +11,7 @@ func enter(_data: Dictionary) -> void:
 	# A small burst of speed, but not one you can stack by sliding repeatedly.
 	var horizontal := Vector3(player.velocity.x, 0.0, player.velocity.z)
 	var speed := horizontal.length()
-	var boosted_cap := player.sprint_speed + player.slide_boost
+	var boosted_cap := player.flow_speed + player.slide_boost
 	if speed < boosted_cap and speed > 0.01:
 		var boosted := minf(speed + player.slide_boost, boosted_cap)
 		player.velocity.x = horizontal.x / speed * boosted

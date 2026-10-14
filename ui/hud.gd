@@ -31,10 +31,12 @@ func _process(_delta: float) -> void:
 	_help.visible = _show_help and player != null
 	if player == null:
 		return
-	_stats.text = "State: %s\nSpeed: %.1f m/s\nHeight: %.1f m\n%s - %d player(s)\nFPS: %d" % [
+	_stats.text = "State: %s\nSpeed: %.1f m/s  (flow %d%%)\nHeight: %.1f m\nAgility level %d\n%s - %d player(s)\nFPS: %d" % [
 		player.state.name,
 		player.get_horizontal_speed(),
+		roundi(player.flow * 100.0),
 		player.global_position.y,
+		player.agility_level,
 		network.describe(),
 		_count_people(),
 		Engine.get_frames_per_second(),

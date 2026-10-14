@@ -116,7 +116,7 @@ func test_chimney_climb() -> void:
 ## keeps holding forward. Returns the set of states visited.
 func _wall_run_attempt(start_x: float) -> Dictionary:
 	await place(Vector3(start_x, 0.05, 18), FACE_SOUTH)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var visited := {}
 	var jumped := false
@@ -138,7 +138,7 @@ func _wall_run_attempt(start_x: float) -> Dictionary:
 ## Gets the player into a wall run over the gap and returns while still on the wall.
 func _start_wall_run() -> void:
 	await place(Vector3(3.3, 0.05, 18), FACE_SOUTH)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var jumped := false
 	for i in 200:

@@ -2,8 +2,8 @@ extends MultiplayerTest
 ## Relics are shared by the team: whoever finds one, it counts for everyone,
 ## and players who join later are told what's already been found.
 
-const PLAZA_RELIC := Vector3(11, 0.35, 20) ## Standing spot for RelicPlaza.
-const STREET_RELIC := Vector3(-36, 0.05, 70) ## Standing spot for RelicWestStreet.
+const PLAZA_RELIC := Vector3(16.5, 0.35, 30) ## Standing spot for RelicPlaza.
+const STREET_RELIC := Vector3(-54, 0.05, 105) ## Standing spot for RelicWestStreet.
 
 
 func _init() -> void:
@@ -22,6 +22,14 @@ func test_client_finds_a_relic_for_everyone() -> void:
 		var who := "host" if side_main == host_main else "client"
 		expect(side_main.collected_relics.has("RelicPlaza"), "%s should know the relic was found" % who)
 		expect(not side_main.level.get_node("Relics/RelicPlaza").visible, "%s should no longer see the relic" % who)
+
+
+func test_agility_goes_up_for_everyone() -> void:
+	host_main.collect_relic("RelicPlaza")
+	host_main.collect_relic("RelicWestStreet")
+	await ticks(10)
+	expect(host_main.local_player.agility_level == 2, "host should reach agility level 2")
+	expect(client_main.local_player.agility_level == 2, "client should reach agility level 2 too")
 
 
 func test_host_finds_a_relic_for_everyone() -> void:

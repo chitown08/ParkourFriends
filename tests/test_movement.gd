@@ -8,16 +8,20 @@ func test_spawns_on_the_ground() -> void:
 	expect_near(player.global_position.y, 0.0, 0.05, "spawn height")
 
 
-func test_run_and_sprint_speeds() -> void:
+func test_running_builds_flow_up_to_top_speed() -> void:
 	Input.action_press(&"move_forward")
-	await ticks(60)
-	expect_near(player.get_horizontal_speed(), player.run_speed, 0.05, "run speed")
-	Input.action_press(&"sprint")
-	await ticks(30)
-	expect_near(player.get_horizontal_speed(), player.sprint_speed, 0.05, "sprint speed")
+	await ticks(10)
+	expect_near(player.get_horizontal_speed(), player.run_speed, 0.6, "starting run speed")
+	# A long clear stretch west along the back of the start pad, then onto the Ledge Yard.
+	await place(Vector3(8, 0.05, 8.5), FACE_WEST)
+	Input.action_press(&"move_forward")
+	await ticks(roundi(player.flow_build_time * 60) + 15)
+	expect_near(player.flow, 1.0, 0.01, "flow after running for flow_build_time")
+	expect_near(player.get_horizontal_speed(), player.flow_speed, 0.1, "top speed")
 	release_all()
-	await ticks(30)
+	await ticks(roundi(player.flow_decay_time * 60) + 10)
 	expect_near(player.get_horizontal_speed(), 0.0, 0.05, "speed after letting go")
+	expect_near(player.flow, 0.0, 0.01, "flow after stopping")
 
 
 func test_full_jump_height() -> void:
@@ -51,7 +55,7 @@ func test_can_jump_onto_1_5m_block() -> void:
 
 func test_sprint_clears_5m_gap() -> void:
 	await place(Vector3(0, 1.55, -42.3), FACE_NORTH)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	await run_and_jump(44.7)
 	Input.action_press(&"move_forward")
 	await ticks(20)

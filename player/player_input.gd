@@ -12,7 +12,6 @@ extends Node
 var move_direction := Vector3.ZERO
 var jump_just_pressed := false
 var jump_held := false
-var sprint_held := false
 var crouch_just_pressed := false
 var crouch_held := false
 var toss_just_pressed := false
@@ -31,7 +30,6 @@ func gather(camera_yaw: float) -> void:
 	move_direction = Vector3(stick.x, 0.0, stick.y).rotated(Vector3.UP, camera_yaw)
 	jump_just_pressed = Input.is_action_just_pressed("jump")
 	jump_held = Input.is_action_pressed("jump")
-	sprint_held = Input.is_action_pressed("sprint")
 	crouch_just_pressed = Input.is_action_just_pressed("crouch")
 	crouch_held = Input.is_action_pressed("crouch")
 	toss_just_pressed = Input.is_action_just_pressed("toss")
@@ -43,7 +41,6 @@ func clear() -> void:
 	move_direction = Vector3.ZERO
 	jump_just_pressed = false
 	jump_held = false
-	sprint_held = false
 	crouch_just_pressed = false
 	crouch_held = false
 	toss_just_pressed = false

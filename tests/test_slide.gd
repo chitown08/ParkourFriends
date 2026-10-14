@@ -22,14 +22,14 @@ func test_crouch_walks_slowly_and_shrinks() -> void:
 func test_slide_boosts_then_slows_into_crouch() -> void:
 	# A long clear strip along the back of the start pad (z = 8.5), heading west.
 	await place(Vector3(8, 0.05, 8.5), FACE_WEST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	await ticks(40)
 	Input.action_press(&"crouch")
 	await ticks(2)
 	expect_state(&"Slide")
 	var start_speed := player.get_horizontal_speed()
-	expect(start_speed > player.sprint_speed + 0.5, "slide should start faster than a sprint, got %.2f" % start_speed)
+	expect(start_speed > player.flow_speed + 0.5, "slide should start faster than a sprint, got %.2f" % start_speed)
 	await ticks(30)
 	expect(player.get_horizontal_speed() < start_speed - 1.0, "slide should slow down on flat ground")
 	for i in 200:
@@ -52,7 +52,7 @@ func test_walking_speed_crouches_instead_of_sliding() -> void:
 
 func test_slide_under_low_bars() -> void:
 	await place(Vector3(12, 0.05, 4), FACE_EAST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var visited := {}
 	for i in 150:
@@ -68,7 +68,7 @@ func test_slide_under_low_bars() -> void:
 
 func test_standing_run_is_blocked_by_low_bar() -> void:
 	await place(Vector3(12, 0.05, 4), FACE_EAST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	await hold(&"move_forward", 90)
 	expect(player.global_position.x < 17.8 - player.body_radius + 0.1,
 			"should be stopped by the first bar, got to x = %.2f" % player.global_position.x)
@@ -99,7 +99,7 @@ func test_cannot_stand_up_under_a_bar() -> void:
 
 func test_slope_slide_and_jump_clears_8m_gap() -> void:
 	await place(Vector3(19, 3.05, -5), FACE_EAST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var top_speed := 0.0
 	var jumped := false
@@ -115,14 +115,14 @@ func test_slope_slide_and_jump_clears_8m_gap() -> void:
 			break
 	release_all()
 	await ticks(10)
-	expect(top_speed > player.sprint_speed + 2.0, "slope should speed the slide up, top speed %.2f" % top_speed)
+	expect(top_speed > player.flow_speed + 2.0, "slope should speed the slide up, top speed %.2f" % top_speed)
 	expect(player.global_position.x > 48.0 and player.global_position.y > -0.1,
 			"should land on the far side, ended at %s" % player.global_position)
 
 
 func test_sprint_jump_cannot_clear_8m_gap() -> void:
 	await place(Vector3(33, 0.05, -5), FACE_EAST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var jumped := false
 	for i in 120:
@@ -136,7 +136,7 @@ func test_sprint_jump_cannot_clear_8m_gap() -> void:
 
 func test_slide_jump_keeps_speed_in_the_air() -> void:
 	await place(Vector3(8, 0.05, 8.5), FACE_WEST)
-	Input.action_press(&"sprint")
+	player.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	await ticks(40)
 	Input.action_press(&"crouch")
@@ -145,5 +145,5 @@ func test_slide_jump_keeps_speed_in_the_air() -> void:
 	await ticks(10)
 	expect_state(&"Air")
 	expect(not player.is_crouched, "should stand up to jump")
-	expect(player.get_horizontal_speed() > player.sprint_speed + 0.5,
+	expect(player.get_horizontal_speed() > player.flow_speed + 0.5,
 			"should keep slide speed in the air, got %.2f" % player.get_horizontal_speed())

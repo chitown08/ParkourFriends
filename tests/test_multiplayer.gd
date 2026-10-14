@@ -67,7 +67,7 @@ func test_wall_run_lean_shows_up_on_the_other_screen() -> void:
 	client_self.reset_physics_interpolation()
 	client_self.camera_rig.yaw = PI
 	await ticks(20)
-	Input.action_press(&"sprint")
+	client_self.debug_full_flow = true # Top speed straight away.
 	Input.action_press(&"move_forward")
 	var puppet_visual: Node3D = _find(host_main, client_self.name.to_int()).get_node("Visual")
 	var biggest_lean := 0.0

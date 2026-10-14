@@ -34,6 +34,9 @@ func before_each() -> void:
 	expect(_player_count(host_main) == 2, "host should see 2 players, sees %d" % _player_count(host_main))
 	expect(_player_count(client_main) == 2, "client should see 2 players, sees %d" % _player_count(client_main))
 	await ticks(10)
+	for side_main: Node in [host_main, client_main]:
+		if side_main.local_player:
+			side_main.local_player.set_profile(HUMAN)
 
 
 func after_each() -> void:

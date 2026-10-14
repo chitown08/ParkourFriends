@@ -67,6 +67,15 @@ horizontal_alignment = 2
 unique_name_in_owner = true
 text = "Invert camera up/down"
 
+[node name="MovementRow" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Items/MovementRow"]
+text = "Movement"
+
+[node name="Movement" type="OptionButton" parent="Center/Panel/Margin/Items/MovementRow"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+
 [node name="Separator" type="HSeparator" parent="Center/Panel/Margin/Items"]
 
 [node name="Leave" type="Button" parent="Center/Panel/Margin/Items"]

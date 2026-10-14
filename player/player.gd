@@ -23,72 +23,16 @@ signal state_changed(new_state: StringName)
 signal tossed_someone(target: Player)
 signal got_tossed
 
-@export_group("Running")
-@export var run_speed := 6.0
-@export var sprint_speed := 9.5
-@export var ground_acceleration := 60.0
-@export var ground_friction := 50.0 ## How fast you stop when you let go.
-@export var air_acceleration := 20.0 ## How much you can steer mid-air.
-@export var air_friction := 2.0 ## Keeps your momentum when you let go mid-air.
-@export var turn_speed := 12.0 ## How fast the body turns to face where you run.
+## The movement numbers to use (how fast, how high, ...). Edit the profile
+## files in player/profiles/ to change the feel; the pause menu can switch
+## between them.
+@export var profile: MovementProfile = preload("res://player/profiles/superhuman.tres")
+## For testing and level design: act as if you're always at full flow (top speed).
+@export var debug_full_flow := false
 
-@export_group("Jumping")
-@export var jump_height := 1.7 ## Meters, if you hold the jump button.
-@export var jump_time_to_peak := 0.36 ## Seconds to reach the top of a jump.
-@export var jump_time_to_fall := 0.30 ## Seconds to fall back down (snappier than going up).
-@export_range(0.0, 1.0) var jump_cut := 0.5 ## Releasing jump early keeps this much upward speed.
-@export var coyote_time := 0.12 ## You can still jump this long after running off a ledge.
-@export var jump_buffer_time := 0.12 ## Pressing jump this early before landing still counts.
-@export var max_fall_speed := 40.0
-
-@export_group("Ledges")
-@export var ledge_max_height := 2.2 ## Highest ledge (above your feet) you can grab.
-@export var hang_min_height := 1.2 ## Ledges lower than this are vaulted over instead of hung from.
-@export var mantle_min_height := 0.15 ## Ledges lower than this are just stepped onto.
-@export var ledge_detect_distance := 0.35 ## How far in front of your body to look for walls.
-@export var ledge_grab_max_rise_speed := 1.0 ## Can't grab while still rising faster than this.
-@export var hang_height := 1.7 ## How far your feet hang below the ledge.
-@export var hang_snap_speed := 8.0 ## How fast you slide into the hanging spot.
-@export var shimmy_speed := 2.0
-@export var climb_up_time := 0.45 ## Seconds to pull up from hanging.
-@export var mantle_time := 0.25 ## Seconds to vault over a low ledge.
-@export var ledge_regrab_delay := 0.35 ## After letting go, can't re-grab for this long.
-
-@export_group("Crouching & Sliding")
+@export_group("Body")
 @export var stand_height := 1.8 ## Body height when standing (meters).
 @export var crouch_height := 1.0 ## Body height when crouched or sliding; you fit under gaps taller than this.
-@export var crouch_speed := 3.0
-@export var slide_min_start_speed := 5.0 ## Need to be moving at least this fast to slide (otherwise you just crouch).
-@export var slide_boost := 1.0 ## Extra speed when a slide starts (only up to sprint speed + this).
-@export var slide_friction := 4.0 ## How fast a slide slows down on flat ground (m/s per second).
-@export var slide_slope_gravity := 40.0 ## How strongly slopes speed you up (or slow you down) while sliding.
-@export var slide_steer_speed := 1.5 ## How fast you can turn while sliding (radians per second).
-@export var slide_max_speed := 14.0
-@export var slide_end_speed := 3.0 ## The slide ends (you're just crouching) below this speed.
-
-@export_group("Walls")
-@export var wall_detect_distance := 0.6 ## How far beyond your body a wall counts as "next to you".
-@export var wall_jump_push := 7.0 ## How hard a wall jump pushes you away from the wall.
-@export var wall_jump_height := 1.4 ## How high a wall jump goes (meters).
-@export var wall_jump_control_lock := 0.25 ## After a wall jump, steering is ignored this long so you clear the wall.
-@export var wall_run_min_speed := 5.0 ## Need to be moving along the wall at least this fast.
-@export var wall_run_speed := 8.0 ## Minimum speed while wall running.
-@export var wall_run_lift := 2.0 ## Upward speed when a wall run starts.
-@export var wall_run_gravity := 4.0 ## Much weaker than normal, so you stay up for a while.
-@export var wall_run_max_time := 1.3 ## Seconds before you peel off the wall.
-@export var wall_run_min_height := 0.8 ## Must be at least this high off the ground to start.
-@export var wall_run_lean_degrees := 20.0 ## How far the body leans away from the wall.
-
-@export_group("Tossing")
-@export var toss_range := 2.0 ## How close a friend must be to toss them (meters, not behind you).
-@export var toss_height := 4.5 ## How high a toss launches a friend.
-@export var toss_forward_speed := 6.0 ## How fast a toss sends them the way your camera faces.
-@export var toss_recoil_height := 1.0 ## Tossing someone while you're in the air gives you a hop this high.
-@export var toss_control_lock := 0.3 ## A tossed player can't steer for this long.
-@export var toss_cooldown := 0.4 ## Seconds between tosses.
-## On: once in the air you can be tossed only once, and toss only once, until
-## you land, grab a ledge, or touch a wall. Off: unlimited juggling.
-@export var limit_tosses_per_air := true
 
 @export_group("Respawn")
 @export var kill_height := -15.0 ## Falling below this height respawns you.
@@ -121,6 +65,71 @@ var sync_facing := 0.0
 var sync_state := &"Air"
 var sync_lean := 0.0
 var sync_can_be_tossed := true
+
+# The movement numbers actually in use: copied from `profile`, then boosted by
+# the team's agility level (see apply_profile()). Documented in
+# movement_profile.gd. Change them by editing a profile, not here.
+var run_speed: float
+var flow_speed: float
+var flow_build_time: float
+var flow_decay_time: float
+var ground_acceleration: float
+var ground_friction: float
+var air_acceleration: float
+var air_friction: float
+var turn_speed: float
+var jump_height: float
+var jump_time_to_peak: float
+var jump_time_to_fall: float
+var jump_cut: float
+var coyote_time: float
+var jump_buffer_time: float
+var max_fall_speed: float
+var ledge_max_height: float
+var hang_min_height: float
+var mantle_min_height: float
+var ledge_detect_distance: float
+var ledge_grab_max_rise_speed: float
+var hang_height: float
+var hang_snap_speed: float
+var shimmy_speed: float
+var climb_up_time: float
+var mantle_time: float
+var ledge_regrab_delay: float
+var crouch_speed: float
+var slide_min_start_speed: float
+var slide_boost: float
+var slide_friction: float
+var slide_slope_gravity: float
+var slide_steer_speed: float
+var slide_max_speed: float
+var slide_end_speed: float
+var wall_detect_distance: float
+var wall_jump_push: float
+var wall_jump_height: float
+var wall_jump_control_lock: float
+var wall_run_min_speed: float
+var wall_run_speed: float
+var wall_run_lift: float
+var wall_run_gravity: float
+var wall_run_max_time: float
+var wall_run_min_height: float
+var wall_run_lean_degrees: float
+var toss_range: float
+var toss_height: float
+var toss_forward_speed: float
+var toss_recoil_height: float
+var toss_control_lock: float
+var toss_cooldown: float
+var limit_tosses_per_air: bool
+var agility_jump_bonus: float
+var agility_speed_bonus: float
+
+## The team's agility level (1 = starting level), from relics found.
+var agility_level := 1
+## How much flow (momentum) you've built up: 0 = normal running speed,
+## 1 = top speed. See _update_flow().
+var flow := 0.0
 
 ## Where this player starts. Chosen by the host and sent along when the
 ## character is created (HostSync node), so joining players don't need the
@@ -197,12 +206,7 @@ func _ready() -> void:
 	add_to_group(&"players")
 	_apply_color()
 
-	# Work out jump physics from designer-friendly numbers (height + timing).
-	jump_velocity = 2.0 * jump_height / jump_time_to_peak
-	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
-	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
-	wall_jump_velocity = sqrt(2.0 * _rise_gravity * wall_jump_height)
-	_toss_recoil_velocity = sqrt(2.0 * _rise_gravity * toss_recoil_height)
+	apply_profile()
 
 	for child in _states.get_children():
 		var player_state := child as PlayerState
@@ -237,6 +241,7 @@ func _physics_process(delta: float) -> void:
 		try_toss()
 
 	state.physics_update(delta)
+	_update_flow(delta)
 
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
@@ -295,6 +300,63 @@ func respawn() -> void:
 
 func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
+
+
+# --- Movement profile, agility and flow ------------------------------------------
+
+## Switches to a different set of movement numbers.
+func set_profile(new_profile: MovementProfile) -> void:
+	profile = new_profile
+	apply_profile()
+
+
+## The team's agility level went up (or a new game reset it).
+func set_agility_level(level: int) -> void:
+	agility_level = maxi(level, 1)
+	apply_profile()
+
+
+## Copies the numbers from `profile`, boosts them for the agility level, and
+## works out the physics that follow from them.
+func apply_profile() -> void:
+	for property in profile.get_property_list():
+		if property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
+			set(property.name, profile.get(property.name))
+
+	var levels_gained := agility_level - 1
+	jump_height *= 1.0 + agility_jump_bonus * levels_gained
+	var speed_boost := 1.0 + agility_speed_bonus * levels_gained
+	run_speed *= speed_boost
+	flow_speed *= speed_boost
+	wall_run_speed *= speed_boost
+
+	# Jump physics from designer-friendly numbers (height + timing).
+	jump_velocity = 2.0 * jump_height / jump_time_to_peak
+	_rise_gravity = 2.0 * jump_height / (jump_time_to_peak * jump_time_to_peak)
+	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
+	wall_jump_velocity = sqrt(2.0 * _rise_gravity * wall_jump_height)
+	_toss_recoil_velocity = sqrt(2.0 * _rise_gravity * toss_recoil_height)
+
+
+## How fast you run right now: normal speed, rising to top speed with flow.
+func top_speed() -> float:
+	return lerpf(run_speed, flow_speed, flow)
+
+
+## Flow builds while you keep moving at speed, and drains when you stop,
+## let go of the controls, or crash into something.
+func _update_flow(delta: float) -> void:
+	if debug_full_flow:
+		flow = 1.0
+		return
+	if state.name == &"Climb":
+		return # A quick vault or pull-up doesn't break your flow.
+	var pushing := input.move_direction.length() > 0.3
+	var speed := get_horizontal_speed()
+	if pushing and speed >= run_speed * 0.9:
+		flow = minf(flow + delta / flow_build_time, 1.0)
+	elif not pushing or speed < run_speed * 0.5:
+		flow = maxf(flow - delta / flow_decay_time, 0.0)
 
 
 ## Turns the player's controls and camera on or off (e.g. while a menu is open).
@@ -424,7 +486,7 @@ func apply_gravity(delta: float) -> void:
 
 
 ## Speeds up toward the input direction (or slows down if there's no input).
-## `max_speed` overrides the usual run/sprint speed. With `keep_momentum`,
+## `max_speed` overrides the usual running speed (which grows with flow). With `keep_momentum`,
 ## going faster than that (e.g. jumping out of a slide) isn't slowed down while
 ## you keep pushing; you can still steer.
 func move_horizontally(delta: float, acceleration: float, friction: float,
@@ -433,7 +495,7 @@ func move_horizontally(delta: float, acceleration: float, friction: float,
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	var target_speed := max_speed
 	if target_speed < 0.0:
-		target_speed = sprint_speed if input.sprint_held else run_speed
+		target_speed = top_speed()
 	if keep_momentum and wish_dir != Vector3.ZERO:
 		target_speed = maxf(target_speed, horizontal.length())
 	var rate := acceleration if wish_dir != Vector3.ZERO else friction

@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="MovementProfile" format=3]
+
+[ext_resource type="Script" path="res://player/movement_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+run_speed = 6.0
+flow_speed = 9.5
+ground_acceleration = 60.0
+ground_friction = 50.0
+air_acceleration = 20.0
+turn_speed = 12.0
+jump_height = 1.7
+jump_time_to_peak = 0.36
+jump_time_to_fall = 0.3
+max_fall_speed = 40.0
+ledge_max_height = 2.2
+ledge_detect_distance = 0.35
+ledge_grab_max_rise_speed = 1.0
+hang_snap_speed = 8.0
+shimmy_speed = 2.0
+climb_up_time = 0.45
+mantle_time = 0.25
+crouch_speed = 3.0
+slide_min_start_speed = 5.0
+slide_boost = 1.0
+slide_slope_gravity = 40.0
+slide_max_speed = 14.0
+slide_end_speed = 3.0
+wall_jump_push = 7.0
+wall_jump_height = 1.4
+wall_run_min_speed = 5.0
+wall_run_speed = 8.0
+wall_run_lift = 2.0
+wall_run_gravity = 4.0
+wall_run_max_time = 1.3
+wall_run_min_height = 0.8
+toss_height = 4.5
+toss_forward_speed = 6.0
+toss_recoil_height = 1.0

@@ -22,6 +22,14 @@ const WORLDS := {
 	"test_course": "res://levels/test_course.tscn",
 }
 const DEFAULT_WORLD := "old_town"
+## Movement feels you can pick in the pause menu.
+const PROFILES := {
+	"superhuman": preload("res://player/profiles/superhuman.tres"),
+	"human": preload("res://player/profiles/human.tres"),
+}
+## How many relics the team needs for each agility level (Crackdown style):
+## level 1 to start, level 2 at 2 relics, ... level 5 at 11.
+const AGILITY_RELICS: Array[int] = [0, 2, 5, 8, 11]
 
 ## The character this computer controls (null while in the main menu).
 var local_player: Player
@@ -33,6 +41,8 @@ var level: Level
 ## Relics the team has found, by relic name. The host's copy is the official
 ## one; it tells everyone else (see collect_relic()).
 var collected_relics := {}
+## The team's agility level, from relics found. Makes everyone jump higher and run faster.
+var agility_level := 1
 
 @onready var world: Node3D = $World
 @onready var players: Node3D = $Players
@@ -55,6 +65,7 @@ func _ready() -> void:
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
 	pause_menu.quit_pressed.connect(get_tree().quit)
+	pause_menu.movement_changed.connect(set_movement_profile)
 
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -152,6 +163,8 @@ func call_buddy() -> void:
 	var forward := Vector3.FORWARD.rotated(Vector3.UP, local_player.camera_rig.yaw)
 	var spot := local_player.global_position + forward * 1.5 + Vector3.UP * 0.05
 	buddy.set_checkpoint(spot)
+	buddy.set_profile(local_player.profile) # The buddy moves the way you do.
+	buddy.set_agility_level(agility_level)
 	buddy.respawn()
 	buddy.face_direction(-forward, 1.0)
 
@@ -197,6 +210,7 @@ func _return_to_menu(message: String) -> void:
 	_clear_world()
 	collected_relics.clear()
 	hud.set_relic_count(0, 0)
+	agility_level = 1
 	menu.open(message)
 
 
@@ -296,8 +310,13 @@ func _request_relic(relic_name: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _relic_collected(relic_name: String) -> void:
 	collected_relics[relic_name] = true
+	var old_level := agility_level
 	_show_relics()
-	if local_player:
+	if local_player == null:
+		return
+	if agility_level > old_level:
+		hud.show_message("Relic found! AGILITY UP: level %d" % agility_level)
+	else:
 		hud.show_message("Relic found! (%d/%d)" % [collected_relics.size(), _relics().size()])
 
 
@@ -315,6 +334,20 @@ func _show_relics() -> void:
 	for relic in relics:
 		relic.set_collected(collected_relics.has(String(relic.name)))
 	hud.set_relic_count(collected_relics.size(), relics.size())
+	_update_agility()
+
+
+## Works out the team's agility level from the relics found and applies it
+## to your character (and the practice buddy).
+func _update_agility() -> void:
+	var level := 0
+	for needed in AGILITY_RELICS:
+		if collected_relics.size() >= needed:
+			level += 1
+	agility_level = level
+	for who: Player in [local_player, buddy]:
+		if is_instance_valid(who) and who.agility_level != level:
+			who.set_agility_level(level)
 
 
 ## Runs on every computer whenever a character appears (spawned here or copied
@@ -331,6 +364,19 @@ func _on_player_ready(player: Player) -> void:
 		local_player = player
 		hud.player = player
 		player.tree_exiting.connect(func() -> void: local_player = null)
+		player.set_profile(PROFILES.get(Settings.movement_profile, PROFILES["superhuman"]))
+		player.set_agility_level(agility_level)
+
+
+## Switches your movement feel ("superhuman" or "human") and remembers it.
+func set_movement_profile(profile_id: String) -> void:
+	if not PROFILES.has(profile_id):
+		return
+	Settings.movement_profile = profile_id
+	Settings.save_to_disk()
+	for who: Player in [local_player, buddy]:
+		if is_instance_valid(who):
+			who.set_profile(PROFILES[profile_id])
 
 
 func _on_checkpoint_reached(player: Player) -> void:

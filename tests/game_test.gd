@@ -7,9 +7,12 @@ extends Node
 ## then "presses" buttons in code and checks what happened with expect().
 
 const MAIN_SCENE := preload("res://game/main.tscn")
+## The move tests are built around realistic numbers on the test course.
+const HUMAN := preload("res://player/profiles/human.tres")
+const SUPERHUMAN := preload("res://player/profiles/superhuman.tres")
 const ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right",
-	&"jump", &"sprint", &"crouch", &"respawn",
+	&"jump", &"crouch", &"respawn",
 ]
 
 ## Camera angles: which way "forward" points.
@@ -28,6 +31,8 @@ func before_each() -> void:
 	await ticks(5)
 	player = main.get_node_or_null("Players/1")
 	expect(player != null, "the game should have created a player")
+	if player:
+		player.set_profile(HUMAN)
 
 
 func after_each() -> void:

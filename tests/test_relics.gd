@@ -1,7 +1,7 @@
 extends GameTest
 ## Relics in Old Town, solo. (Two-player relic tests: test_relics_network.gd.)
 
-const PLAZA_RELIC := Vector3(11, 1.3, 20) ## RelicPlaza, on the spawn plaza.
+const PLAZA_RELIC := Vector3(16.5, 2.08, 30) ## RelicPlaza, on the spawn plaza.
 
 
 func before_each() -> void:
@@ -11,6 +11,8 @@ func before_each() -> void:
 	await ticks(5)
 	player = main.get_node_or_null("Players/1")
 	expect(player != null, "the game should have created a player")
+	if player:
+		player.set_profile(SUPERHUMAN)
 
 
 func test_counter_shows_all_relics() -> void:
