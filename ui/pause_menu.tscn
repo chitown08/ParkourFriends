@@ -76,6 +76,10 @@ text = "Movement"
 unique_name_in_owner = true
 size_flags_horizontal = 3
 
+[node name="FreeRun" type="CheckBox" parent="Center/Panel/Margin/Items"]
+unique_name_in_owner = true
+text = "Free-run (hold Shift / right trigger)"
+
 [node name="Separator" type="HSeparator" parent="Center/Panel/Margin/Items"]
 
 [node name="Leave" type="Button" parent="Center/Panel/Margin/Items"]

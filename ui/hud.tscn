@@ -25,6 +25,7 @@ grow_horizontal = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 text = "WASD / left stick - move
+Hold Shift / RT - free-run (auto-parkour)
 C, Ctrl / B - crouch (while running: slide)
   Jump during a slide - slide-jump
 Jump next to a wall - wall jump

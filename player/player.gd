@@ -162,6 +162,7 @@ var _jump_buffer_timer := 0.0
 @onready var _visual: Node3D = $Visual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _states: Node = $States
+@onready var _free_run: FreeRun = $FreeRun
 @onready var _collision: CollisionShape3D = $CollisionShape3D
 ## The standing body shape, used to check "would I fit here?". Never resized.
 @onready var _stand_shape: CapsuleShape3D = _collision.shape
@@ -212,6 +213,8 @@ func _ready() -> void:
 		var player_state := child as PlayerState
 		player_state.player = self
 		player_state.input = input
+	_free_run.player = self
+	_free_run.input = input
 
 	# Our own copy of the body shape, so crouching only shrinks *this* player.
 	_collision.shape = _stand_shape.duplicate()
@@ -231,6 +234,8 @@ func _physics_process(delta: float) -> void:
 		input.clear()
 	else:
 		input.gather(camera_rig.yaw)
+		if input.free_run_held:
+			_free_run.assist(delta)
 	if input.jump_just_pressed:
 		_jump_buffer_timer = jump_buffer_time
 	else:
@@ -560,11 +565,11 @@ func wall_jump(wall_normal: Vector3, along: Vector3) -> void:
 ## True if there's ground within `distance` below your feet.
 func is_near_ground(distance: float) -> bool:
 	var from := global_position + Vector3.UP * 0.05
-	return not _raycast(from, from + Vector3.DOWN * (distance + 0.05)).is_empty()
+	return not raycast(from, from + Vector3.DOWN * (distance + 0.05)).is_empty()
 
 
 func _wall_hit(from: Vector3, direction: Vector3, reach: float) -> Dictionary:
-	var hit := _raycast(from, from + direction * reach)
+	var hit := raycast(from, from + direction * reach)
 	if hit.is_empty() or absf(hit.normal.y) > 0.3:
 		return {}
 	hit.normal = Vector3(hit.normal.x, 0.0, hit.normal.z).normalized()
@@ -602,7 +607,7 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	var wall := {}
 	for height: float in [0.3, 0.9, 1.5]:
 		var from := feet + Vector3.UP * height
-		wall = _raycast(from, from + forward * reach)
+		wall = raycast(from, from + forward * reach)
 		if not wall.is_empty():
 			break
 	if wall.is_empty():
@@ -615,7 +620,7 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	# 2. Find the top of the wall by looking down from above, just behind its face.
 	var above: Vector3 = wall.position - wall_normal * 0.2
 	above.y = feet.y + ledge_max_height + 0.1
-	var top := _raycast(above, Vector3(above.x, feet.y + mantle_min_height, above.z))
+	var top := raycast(above, Vector3(above.x, feet.y + mantle_min_height, above.z))
 	if top.is_empty() or top.normal.y < 0.7:
 		return null # No flat top within reach.
 
@@ -626,7 +631,7 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 
 	# 3. Is there open space above the edge, room to pull up, and room to stand?
 	var over_edge := ledge.position + wall_normal * reach + Vector3.UP * 0.15
-	if not _raycast(over_edge, over_edge - wall_normal * (reach + 0.3)).is_empty():
+	if not raycast(over_edge, over_edge - wall_normal * (reach + 0.3)).is_empty():
 		return null # The wall keeps going up; that "top" was something else.
 	var hang_column := hang_position(ledge)
 	hang_column.y = ledge.position.y + 0.05
@@ -635,7 +640,8 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	return ledge
 
 
-func _raycast(from: Vector3, to: Vector3) -> Dictionary:
+## A ray from `from` to `to` against the world (ignoring this player).
+func raycast(from: Vector3, to: Vector3) -> Dictionary:
 	var query := PhysicsRayQueryParameters3D.create(from, to, collision_mask, [get_rid()])
 	return get_world_3d().direct_space_state.intersect_ray(query)
 

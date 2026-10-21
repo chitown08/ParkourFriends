@@ -12,6 +12,7 @@ signal movement_changed(profile_id: String)
 @onready var _sensitivity_value: Label = %SensitivityValue
 @onready var _invert_y: CheckBox = %InvertY
 @onready var _movement: OptionButton = %Movement
+@onready var _free_run: CheckBox = %FreeRun
 
 
 func _ready() -> void:
@@ -25,12 +26,14 @@ func _ready() -> void:
 		_movement.add_item(profile_id.capitalize())
 		_movement.set_item_metadata(_movement.item_count - 1, profile_id)
 	_movement.item_selected.connect(_on_movement_selected)
+	_free_run.toggled.connect(_on_free_run_toggled)
 
 
 func open() -> void:
 	_sensitivity.set_value_no_signal(Settings.mouse_sensitivity)
 	_sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
 	_invert_y.set_pressed_no_signal(Settings.invert_y)
+	_free_run.set_pressed_no_signal(Settings.free_run_enabled)
 	for i in _movement.item_count:
 		if _movement.get_item_metadata(i) == Settings.movement_profile:
 			_movement.select(i)
@@ -51,3 +54,8 @@ func _on_invert_y_toggled(pressed: bool) -> void:
 
 func _on_movement_selected(index: int) -> void:
 	movement_changed.emit(_movement.get_item_metadata(index))
+
+
+func _on_free_run_toggled(pressed: bool) -> void:
+	Settings.free_run_enabled = pressed
+	Settings.save_to_disk()
