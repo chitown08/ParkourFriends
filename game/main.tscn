@@ -15,7 +15,7 @@ script = ExtResource("5_network")
 [node name="World" type="Node3D" parent="."]
 
 [node name="WorldSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://levels/test_course.tscn", "res://levels/old_town.tscn")
+_spawnable_scenes = PackedStringArray("res://levels/free_run_line.tscn", "res://levels/test_course.tscn", "res://levels/old_town.tscn")
 spawn_path = NodePath("../World")
 
 [node name="Players" type="Node3D" parent="."]

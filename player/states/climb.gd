@@ -33,4 +33,8 @@ func physics_update(delta: float) -> void:
 
 	if _progress >= 1.0:
 		player.apply_floor_snap() # Settle onto the surface so we count as on the floor.
+		if input.move_direction.length() > 0.3:
+			# Still pushing on: come out of the vault at full flow, so climbing
+			# over things doesn't kill your momentum.
+			player.velocity = -_ledge.normal * player.top_speed()
 		player.change_state(&"Ground")

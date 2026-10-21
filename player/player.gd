@@ -360,7 +360,9 @@ func _update_flow(delta: float) -> void:
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * 0.9:
 		flow = minf(flow + delta / flow_build_time, 1.0)
-	elif not pushing or speed < run_speed * 0.5:
+	elif is_on_floor() and (not pushing or speed < run_speed * 0.5):
+		# Only drains on the ground: bumping into a ledge mid-jump on your way
+		# up onto it doesn't count as crashing.
 		flow = maxf(flow - delta / flow_decay_time, 0.0)
 
 

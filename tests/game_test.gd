@@ -109,6 +109,41 @@ func run_and_jump(jump_at: float, axis := Vector3.FORWARD, max_ticks := 120) -> 
 	release_all()
 
 
+# --- Climbing (a little robot that climbs the way a player would) ---
+
+## Jumps toward `direction`, grabs/vaults whatever is there and climbs up.
+## Returns true if the player ends up standing at about `expected_height`.
+func jump_and_climb(direction: Vector3, expected_height: float) -> bool:
+	release_all()
+	player.camera_rig.yaw = yaw_for(direction)
+	await ticks(2)
+	Input.action_press(&"move_forward")
+	Input.action_press(&"jump")
+	for i in 90:
+		await ticks(1)
+		if player.state.name in [&"Hang", &"Climb"]:
+			break
+		if i > 5 and player.state.name == &"Ground" and player.global_position.y >= expected_height - 0.1:
+			break # Jumped straight up onto it, no grab needed.
+	release_all()
+	if player.state.name == &"Hang":
+		await tap(&"jump")
+	return await wait_until_on_top(expected_height - 0.1, 60)
+
+
+func wait_until_on_top(min_height: float, max_ticks: int) -> bool:
+	for i in max_ticks:
+		await ticks(1)
+		if player.state.name == &"Ground" and player.global_position.y >= min_height:
+			await ticks(3)
+			return true
+	return false
+
+
+func yaw_for(direction: Vector3) -> float:
+	return atan2(-direction.x, -direction.z)
+
+
 # --- Checks ------------------------------------------------------------------
 
 func expect(condition: bool, message: String) -> void:

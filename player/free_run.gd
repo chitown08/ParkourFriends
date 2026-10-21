@@ -11,6 +11,7 @@ extends Node
 ##   Wall at an angle                   -> jump (you wall-run along it)
 ##   Bar at head height, room below     -> crouch (you slide under it)
 ##   Gap with a landing in jumping range -> jump it
+##   Gap with no landing, wall alongside -> jump toward the wall (you wall-run across)
 ##   Gap with nothing to land on        -> keep running (you drop off)
 ##   Hanging from a ledge               -> pull up
 
@@ -25,12 +26,20 @@ const HEAD_HEIGHT := 1.5
 const MAX_LANDING_DROP := 3.0
 ## Minimum time between automatic jumps.
 const JUMP_COOLDOWN := 0.3
+## How far to the side a wall can be for free-run to steer to it and wall-run a gap.
+const WALL_SEEK_DISTANCE := 4.5
+## How long to keep steering toward that wall after jumping (seconds).
+const WALL_SEEK_TIME := 0.6
+## How strongly to steer toward it (1 = as much sideways as forwards).
+const WALL_SEEK_STRENGTH := 0.7
 
 var player: Player
 var input: PlayerInput
 
 var _jump_hold_timer := 0.0
 var _cooldown_timer := 0.0
+var _seek_direction := Vector3.ZERO
+var _seek_timer := 0.0
 
 
 ## Called by the Player each tick while free-run is held, after the real
@@ -40,6 +49,14 @@ func assist(delta: float) -> void:
 	if _jump_hold_timer > 0.0:
 		_jump_hold_timer -= delta
 		input.jump_held = true # Hold the jump for full height.
+
+	# Steering toward a wall to wall-run a gap (see _wall_beside()).
+	if _seek_timer > 0.0:
+		_seek_timer -= delta
+		if player.state.name == &"Air":
+			input.move_direction = (input.move_direction + _seek_direction * WALL_SEEK_STRENGTH).normalized()
+		else:
+			_seek_timer = 0.0 # Wall run started (or landed): done steering.
 
 	match player.state.name:
 		&"Ground", &"Slide":
@@ -66,8 +83,16 @@ func _look_ahead() -> void:
 		input.crouch_held = true # Something at head height with room below: slide under.
 		return
 
-	if _edge_ahead(feet, direction, speed) and _landing_ahead(feet, direction, speed):
+	if not _edge_ahead(feet, direction, speed):
+		return
+	if _landing_ahead(feet, direction, speed):
 		_press_jump()
+		return
+	var wall_side := _wall_beside(feet, direction)
+	if wall_side != Vector3.ZERO:
+		_press_jump()
+		_seek_direction = wall_side
+		_seek_timer = WALL_SEEK_TIME
 
 
 func _press_jump() -> void:
@@ -106,16 +131,43 @@ func _edge_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
 	return player.raycast(probe + Vector3.UP * 0.5, probe + Vector3.DOWN * 0.6).is_empty()
 
 
-## True if there's somewhere to land within jumping distance: anything from
-## MAX_LANDING_DROP below us up to as high as a jump plus a ledge grab reaches.
+## True if there's somewhere to land on the far side of the gap, within
+## jumping distance: anything from MAX_LANDING_DROP below us up to as high as a
+## jump plus a ledge grab reaches. (Ground before the gap — the edge we're
+## standing on — doesn't count.)
 func _landing_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
 	var jump_distance := speed * (player.jump_time_to_peak + player.jump_time_to_fall)
 	var highest := player.jump_height + player.ledge_max_height
-	var distance := 1.0
+	var past_the_gap := false
+	var distance := 0.5
 	while distance <= jump_distance:
 		var spot := feet + direction * distance
 		var hit := player.raycast(spot + Vector3.UP * highest, spot + Vector3.DOWN * MAX_LANDING_DROP)
-		if not hit.is_empty() and hit.normal.y > 0.7:
+		var ground: bool = not hit.is_empty() and hit.normal.y > 0.7
+		if not ground:
+			past_the_gap = true
+		elif past_the_gap:
 			return true
 		distance += 0.5
 	return false
+
+
+## If there's a tall wall to our left or right that carries on along the gap
+## ahead, returns the direction toward it (otherwise zero).
+func _wall_beside(feet: Vector3, direction: Vector3) -> Vector3:
+	var right := direction.cross(Vector3.UP)
+	for side: Vector3 in [right, -right]:
+		var here := _side_wall(feet, side)
+		var further := _side_wall(feet + direction * 4.0, side)
+		if here and further:
+			return side
+	return Vector3.ZERO
+
+
+func _side_wall(feet: Vector3, side: Vector3) -> bool:
+	for height: float in [1.0, 2.0]:
+		var from := feet + Vector3.UP * height
+		var hit := player.raycast(from, from + side * WALL_SEEK_DISTANCE)
+		if hit.is_empty() or absf(hit.normal.y) > 0.3:
+			return false
+	return true

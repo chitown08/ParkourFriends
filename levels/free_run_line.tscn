@@ -1,0 +1,357 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://levels/checkpoint.tscn" id="2_checkpoint"]
+[ext_resource type="Material" path="res://materials/grid_ground.tres" id="3_ground"]
+[ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_platform"]
+[ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
+[ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
+[ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
+[ext_resource type="PackedScene" path="res://levels/race_gate.tscn" id="11_gate"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.32, 0.5, 0.78, 1)
+sky_horizon_color = Color(0.7, 0.76, 0.84, 1)
+ground_bottom_color = Color(0.45, 0.55, 0.7, 1)
+ground_horizon_color = Color(0.7, 0.76, 0.84, 1)
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 3
+tonemap_mode = 2
+ssao_enabled = true
+fog_enabled = true
+fog_light_color = Color(0.7, 0.76, 0.84, 1)
+fog_density = 0.0008
+
+[node name="FreeRunLine" type="Node3D"]
+script = ExtResource("1_level")
+kill_height = -60.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.383, 0.3214, 0, 0.6428, 0.766, -0.5, -0.6634, 0.5567, 0, 60, -250)
+shadow_enabled = true
+directional_shadow_max_distance = 200.0
+
+[node name="SpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+
+[node name="Course" type="Node3D" parent="."]
+
+[node name="Labels" type="Node3D" parent="."]
+
+[node name="Checkpoints" type="Node3D" parent="."]
+
+[node name="Relics" type="Node3D" parent="."]
+
+[node name="Gates" type="Node3D" parent="."]
+
+[node name="Runway" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -20)
+use_collision = true
+size = Vector3(8, 2, 50)
+material = ExtResource("3_ground")
+
+[node name="StartGate" parent="Gates" instance=ExtResource("11_gate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
+kind = 0
+
+[node name="LabelStart" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
+billboard = 1
+pixel_size = 0.02
+text = "FREE-RUN LINE\nhold Shift and steer with the camera"
+font_size = 64
+outline_size = 16
+
+[node name="HurdleLane" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -72.5)
+use_collision = true
+size = Vector3(8, 2, 55)
+material = ExtResource("3_ground")
+
+[node name="Hurdle1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -58)
+use_collision = true
+size = Vector3(8, 1, 1)
+material = ExtResource("5_wall")
+
+[node name="Hurdle2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -72)
+use_collision = true
+size = Vector3(8, 1.5, 1)
+material = ExtResource("5_wall")
+
+[node name="Hurdle3" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -86)
+use_collision = true
+size = Vector3(8, 2.5, 1)
+material = ExtResource("5_wall")
+
+[node name="LabelHurdles" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -50)
+billboard = 1
+pixel_size = 0.02
+text = "HURDLES"
+font_size = 64
+outline_size = 16
+
+[node name="RelicPillar" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, -17.5, -72)
+use_collision = true
+size = Vector3(3, 45, 3)
+material = ExtResource("4_platform")
+
+[node name="RelicPillarTop" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 6.6, -72)
+
+[node name="BarLane" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -120)
+use_collision = true
+size = Vector3(8, 2, 40)
+material = ExtResource("3_ground")
+
+[node name="Bar1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -110)
+use_collision = true
+size = Vector3(8, 0.4, 0.6)
+material = ExtResource("5_wall")
+
+[node name="Bar2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -118)
+use_collision = true
+size = Vector3(8, 0.4, 0.6)
+material = ExtResource("5_wall")
+
+[node name="Bar3" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -126)
+use_collision = true
+size = Vector3(8, 0.4, 0.6)
+material = ExtResource("5_wall")
+
+[node name="LabelBars" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -104)
+billboard = 1
+pixel_size = 0.02
+text = "SLIDE UNDER"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint1" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -136)
+
+[node name="GapPlatform1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -152)
+use_collision = true
+size = Vector3(8, 2, 16)
+material = ExtResource("3_ground")
+
+[node name="GapPlatform2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -175)
+use_collision = true
+size = Vector3(8, 2, 16)
+material = ExtResource("3_ground")
+
+[node name="GapPlatform3" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -211.5)
+use_collision = true
+size = Vector3(8, 2, 37)
+material = ExtResource("3_ground")
+
+[node name="LabelGaps" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -141)
+billboard = 1
+pixel_size = 0.02
+text = "GAPS: 4 m, 7 m, 10 m\n(the last one needs full flow)"
+font_size = 64
+outline_size = 16
+
+[node name="RelicOverGap" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -163.5)
+
+[node name="Checkpoint2" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -197)
+
+[node name="WallRunLanding" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -266)
+use_collision = true
+size = Vector3(8, 2, 28)
+material = ExtResource("3_ground")
+
+[node name="WallRunWall" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, -4, -240)
+use_collision = true
+size = Vector3(1, 32, 36)
+material = ExtResource("5_wall")
+
+[node name="LabelWallRun" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -224)
+billboard = 1
+pixel_size = 0.02
+text = "WALL-RUN GAP"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint3" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -260)
+
+[node name="Street" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -13, -303.5)
+use_collision = true
+size = Vector3(8, 2, 63)
+material = ExtResource("3_ground")
+
+[node name="LabelDrop" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -276)
+billboard = 1
+pixel_size = 0.02
+text = "DROP TO THE STREET"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint4" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, -292)
+
+[node name="StreetNook" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, -10.5, -303)
+use_collision = true
+size = Vector3(6, 3, 6)
+material = ExtResource("4_platform")
+
+[node name="RelicStreetNook" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, -7.4, -303)
+
+[node name="Step1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, -314)
+use_collision = true
+size = Vector3(8, 4, 8)
+material = ExtResource("4_platform")
+
+[node name="Step2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, -322)
+use_collision = true
+size = Vector3(8, 8, 8)
+material = ExtResource("4_platform")
+
+[node name="Step3" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6, -330)
+use_collision = true
+size = Vector3(8, 12, 8)
+material = ExtResource("4_platform")
+
+[node name="Roof2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -353)
+use_collision = true
+size = Vector3(8, 2, 38)
+material = ExtResource("3_ground")
+
+[node name="LabelSteps" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -5, -306)
+billboard = 1
+pixel_size = 0.02
+text = "STEP UP"
+font_size = 64
+outline_size = 16
+
+[node name="ClimbWall" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -350)
+use_collision = true
+size = Vector3(8, 5, 8)
+material = ExtResource("4_platform")
+
+[node name="RelicClimbWall" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.6, -350)
+
+[node name="LabelClimb" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9, -342)
+billboard = 1
+pixel_size = 0.02
+text = "CLIMB"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint5" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -364)
+
+[node name="SlideSlope" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 0.957826, 0.287348, 0, -0.287348, 0.957826, 0, -7.7874, -396.914)
+use_collision = true
+size = Vector3(8, 0.6, 52.2015)
+material = ExtResource("4_platform")
+
+[node name="SlopeRunOut" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16, -427)
+use_collision = true
+size = Vector3(8, 2, 10)
+material = ExtResource("3_ground")
+
+[node name="SlopeLanding" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16, -480.5)
+use_collision = true
+size = Vector3(8, 2, 69)
+material = ExtResource("3_ground")
+
+[node name="LabelSlope" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -375)
+billboard = 1
+pixel_size = 0.02
+text = "SLIDE DOWN (hold C)\nthen a 14 m gap"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint6" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15, -452)
+
+[node name="TallWall" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9, -480)
+use_collision = true
+size = Vector3(8, 12, 6)
+material = ExtResource("5_wall")
+
+[node name="TallWallLedge1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, -11.5, -476)
+use_collision = true
+size = Vector3(2, 3, 2)
+material = ExtResource("4_platform")
+
+[node name="TallWallLedge2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, -6.5, -476)
+use_collision = true
+size = Vector3(2, 3, 2)
+material = ExtResource("4_platform")
+
+[node name="RelicTallWall" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.4, -480)
+
+[node name="LabelTallWall" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -470)
+billboard = 1
+pixel_size = 0.02
+text = "TOO TALL FOR FREE-RUN:\nclimb it yourself"
+font_size = 64
+outline_size = 16
+
+[node name="FinishGate" parent="Gates" instance=ExtResource("11_gate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15, -505)
+kind = 1
+
+[node name="FinishLine" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.95, -507)
+use_collision = true
+size = Vector3(8, 0.1, 2)
+material = ExtResource("6_goal")
+
+[node name="LabelFinish" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, -505)
+billboard = 1
+pixel_size = 0.02
+text = "FINISH"
+font_size = 64
+outline_size = 16
