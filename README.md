@@ -51,7 +51,6 @@ player/states/                    – one script per movement "mode" (state mach
             wall_run.gd           – running along walls (wall jumps live in air.gd)
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
-            race_gate.tscn/.gd    – start/finish line for the run timer
 levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Greece island (see docs/)
             test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)

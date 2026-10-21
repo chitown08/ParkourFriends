@@ -112,16 +112,6 @@ func test_the_pillar_relic_can_be_reached_by_hand() -> void:
 	expect(main.collected_relics.has("RelicPillarTop"), "the relic on the pillar should be collected")
 
 
-func test_the_timer_runs_from_start_to_finish() -> void:
-	await _free_run_for(40) # Through the start gate at z = -6.
-	expect(main.run_start_msec >= 0, "the start gate should start the timer")
-	await place(Vector3(0, -14.95, -497), FACE_NORTH)
-	await _free_run_for(60) # Through the finish gate at z = -505.
-	expect(main.run_start_msec == -1, "the finish gate should stop the timer")
-	expect(main.best_run_time < INF, "a time should be recorded")
-	expect(main.hud.get_node("Timer").text.contains(":"), "the HUD should show the time")
-
-
 func _free_run_for(tick_count: int) -> void:
 	Input.action_press(&"free_run")
 	await ticks(tick_count)

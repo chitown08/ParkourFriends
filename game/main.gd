@@ -44,10 +44,6 @@ var level: Level
 var collected_relics := {}
 ## The team's agility level, from relics found. Makes everyone jump higher and run faster.
 var agility_level := 1
-## When the current timed run started (Time.get_ticks_msec()), or -1 if not running.
-var run_start_msec := -1
-## Your best time this session, in seconds (INF = none yet).
-var best_run_time := INF
 
 @onready var world: Node3D = $World
 @onready var players: Node3D = $Players
@@ -270,29 +266,7 @@ func _on_world_ready(new_level: Level) -> void:
 			checkpoint.reached.connect(_on_checkpoint_reached)
 	for relic in _relics():
 		relic.touched.connect(_on_relic_touched.bind(relic))
-	for gate: RaceGate in get_tree().get_nodes_in_group(&"race_gates"):
-		if level.is_ancestor_of(gate):
-			gate.passed.connect(_on_race_gate_passed.bind(gate))
-	run_start_msec = -1
-	hud.clear_run_timer()
 	_show_relics()
-
-
-## Start gate: (re)starts your timer. Finish gate: stops it and shows your time.
-## Each player times their own run.
-func _on_race_gate_passed(player: Player, gate: RaceGate) -> void:
-	if player != local_player:
-		return
-	if gate.kind == RaceGate.Kind.START:
-		run_start_msec = Time.get_ticks_msec()
-		hud.run_start_msec = run_start_msec
-	elif run_start_msec >= 0:
-		var time := (Time.get_ticks_msec() - run_start_msec) / 1000.0
-		var is_best := time < best_run_time
-		best_run_time = minf(best_run_time, time)
-		run_start_msec = -1
-		hud.run_start_msec = -1
-		hud.show_run_result(time, best_run_time, is_best)
 
 
 # --- Relics (shared by the team) --------------------------------------------------

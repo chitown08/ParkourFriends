@@ -22,7 +22,6 @@ block() {
 label() { printf '\n[node name="%s" type="Label3D" parent="Labels"]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nbillboard = 1\npixel_size = 0.02\ntext = "%s"\nfont_size = 64\noutline_size = 16\n' "$@"; }
 checkpoint() { printf '\n[node name="%s" parent="Checkpoints" instance=ExtResource("2_checkpoint")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
 relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("10_relic")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
-gate() { printf '\n[node name="%s" parent="Gates" instance=ExtResource("11_gate")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, %s, %s)\nkind = %s\n' "$@"; }
 
 cat <<'EOF'
 [gd_scene format=3]
@@ -34,7 +33,6 @@ cat <<'EOF'
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
-[ext_resource type="PackedScene" path="res://levels/race_gate.tscn" id="11_gate"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -77,13 +75,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 [node name="Checkpoints" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
-
-[node name="Gates" type="Node3D" parent="."]
 EOF
 
-# --- 0. Runway: build up your flow. The timer starts at the gate. ---
+# --- 0. Runway: build up your flow ---
 floor Runway 5 -45 0
-gate StartGate 0 -6 0
 label LabelStart 0 5 -10 "FREE-RUN LINE\\nhold Shift and steer with the camera"
 
 # --- 1. Hurdles (1, 1.5 and 2.5 m): free-run jumps them ---
@@ -155,7 +150,6 @@ block TallWallLedge2 -476 2 -8 -5 2 -0.5
 relic RelicTallWall 0 -1.4 -480
 label LabelTallWall 0 1 -470 "TOO TALL FOR FREE-RUN:\\nclimb it yourself"
 
-# --- 10. Finish ---
-gate FinishGate -15 -505 1
+# --- 10. End of the line ---
 block FinishLine -507 2 -15 -14.9 8 0 6_goal
-label LabelFinish 0 -8 -505 "FINISH"
+label LabelFinish 0 -8 -505 "END OF THE LINE"

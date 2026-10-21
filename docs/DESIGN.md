@@ -29,6 +29,9 @@ When a decision is unclear, these break the tie.
    Ledge grabs, wall runs and tosses must stay useful no matter what you're carrying.
 5. **Small first, then grow.** Build a small slice, play it with friends, learn, then
    expand. Grey boxes until the fun is proven.
+6. **Puzzles, not the clock.** It's an open world: the challenge is *working out how* to
+   reach somewhere, not how fast. Speed and flow are for feel, not for scoring. No
+   stopwatches or time trials.
 
 ## 3. The world
 
@@ -96,6 +99,9 @@ Later worlds can be designed around higher agility levels.
   relics and secrets off the line, needing manual moves.
 - **Open**: what should free-run do at a wall that's too tall and hit head-on? Right now it
   stops (your call). Alternatives: auto wall-jump, auto-turn along the wall.
+- **Playtest notes (Free-Run Line, Oct 2026)**: the line flows well. Free-run is *a little too
+  automatic*, but keep it as is for now. The manual moment at the tall wall is a bit clunky
+  (no better idea yet). The slope "slide it yourself" skill moment is good as is.
 
 ## 5. Co-op
 
@@ -185,5 +191,5 @@ the next friend up.
 
 Good ideas not scheduled yet: **a quick "free-climb" back up buildings** (so falling to street
 level doesn't kill too much momentum) · hold-to-aim toss · players colliding / standing on heads
-· regroup markers · emotes · photo mode · time-trial routes between landmarks ·
+· regroup markers · emotes · photo mode ·
 cosmetic unlocks from relics · Steam friends and invites.

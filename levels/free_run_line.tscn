@@ -7,7 +7,6 @@
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
-[ext_resource type="PackedScene" path="res://levels/race_gate.tscn" id="11_gate"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -51,17 +50,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 
 [node name="Relics" type="Node3D" parent="."]
 
-[node name="Gates" type="Node3D" parent="."]
-
 [node name="Runway" type="CSGBox3D" parent="Course"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -20)
 use_collision = true
 size = Vector3(8, 2, 50)
 material = ExtResource("3_ground")
-
-[node name="StartGate" parent="Gates" instance=ExtResource("11_gate")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
-kind = 0
 
 [node name="LabelStart" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
@@ -338,10 +331,6 @@ text = "TOO TALL FOR FREE-RUN:\nclimb it yourself"
 font_size = 64
 outline_size = 16
 
-[node name="FinishGate" parent="Gates" instance=ExtResource("11_gate")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15, -505)
-kind = 1
-
 [node name="FinishLine" type="CSGBox3D" parent="Course"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.95, -507)
 use_collision = true
@@ -352,6 +341,6 @@ material = ExtResource("6_goal")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, -505)
 billboard = 1
 pixel_size = 0.02
-text = "FINISH"
+text = "END OF THE LINE"
 font_size = 64
 outline_size = 16
