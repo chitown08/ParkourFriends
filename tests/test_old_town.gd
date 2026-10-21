@@ -97,6 +97,19 @@ func test_bridge_pillar_to_greece() -> void:
 			"should land on the Greek side of the bridge or the island, at %s" % player.global_position)
 
 
+func test_free_run_climbs_the_broken_stairway() -> void:
+	# Greece's broken stairway: three blocks rising 4 m each with gaps between
+	# (tops at about -12.8, -8.8 and -4.8). Free-run should take it all the way up.
+	await place(Vector3(180, -15.9, 27), _yaw_for(Vector3.RIGHT))
+	var highest := -99.0
+	Input.action_press(&"free_run")
+	for i in 300:
+		await ticks(1)
+		highest = maxf(highest, player.global_position.y)
+	release_all()
+	expect(highest > -5.0, "should reach the top step (about -4.8), highest %.2f" % highest)
+
+
 # --- The climbing robot ----------------------------------------------------------
 
 ## Climbs a zig-zag of ledge blocks up a building and onto its roof.

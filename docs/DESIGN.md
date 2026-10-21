@@ -84,6 +84,19 @@ The team's relic count sets everyone's **agility level**: level 2 at 2 relics, 3
 5 at 11. Each level adds +12% jump height and +5% running speed (numbers in the profiles).
 Later worlds can be designed around higher agility levels.
 
+
+### Free-run (exploring on the `explore/free-run` branch)
+- **Hold Shift / right trigger** to run where the camera points (A/D nudge you sideways)
+  while a co-pilot presses jump/crouch for you: it jumps low obstacles and reachable ledges,
+  jumps at walls hit at an angle (to wall-run), slides under head-height bars, jumps gaps that
+  have a landing in range, runs off edges that don't (down to the street), and pulls you up
+  from a hang. Your own jump/crouch/toss still work; **let go for full manual control**.
+- Switchable in the pause menu. Every automatic move is a normal move you could also do by hand.
+- **Level design idea**: main routes shaped for free-run (smooth vault/slide/wall-run lines);
+  relics and secrets off the line, needing manual moves.
+- **Open**: what should free-run do at a wall that's too tall and hit head-on? Right now it
+  stops (your call). Alternatives: auto wall-jump, auto-turn along the wall.
+
 ## 5. Co-op
 
 ### Tossing (built)
@@ -170,6 +183,7 @@ the next friend up.
 
 ## 10. Ideas parking lot
 
-Good ideas not scheduled yet: hold-to-aim toss · players colliding / standing on heads
+Good ideas not scheduled yet: **a quick "free-climb" back up buildings** (so falling to street
+level doesn't kill too much momentum) · hold-to-aim toss · players colliding / standing on heads
 · regroup markers · emotes · photo mode · time-trial routes between landmarks ·
 cosmetic unlocks from relics · Steam friends and invites.

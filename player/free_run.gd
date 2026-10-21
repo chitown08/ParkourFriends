@@ -106,14 +106,15 @@ func _edge_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
 	return player.raycast(probe + Vector3.UP * 0.5, probe + Vector3.DOWN * 0.6).is_empty()
 
 
-## True if there's somewhere to land within jumping distance, no more than
-## MAX_LANDING_DROP below us.
+## True if there's somewhere to land within jumping distance: anything from
+## MAX_LANDING_DROP below us up to as high as a jump plus a ledge grab reaches.
 func _landing_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
 	var jump_distance := speed * (player.jump_time_to_peak + player.jump_time_to_fall)
+	var highest := player.jump_height + player.ledge_max_height
 	var distance := 1.0
 	while distance <= jump_distance:
 		var spot := feet + direction * distance
-		var hit := player.raycast(spot + Vector3.UP * (player.jump_height + 0.5), spot + Vector3.DOWN * MAX_LANDING_DROP)
+		var hit := player.raycast(spot + Vector3.UP * highest, spot + Vector3.DOWN * MAX_LANDING_DROP)
 		if not hit.is_empty() and hit.normal.y > 0.7:
 			return true
 		distance += 0.5
