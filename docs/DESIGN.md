@@ -51,6 +51,17 @@ When a decision is unclear, these break the tie.
   plates held at once. Always bonus, never required (pillar 2). The practice buddy
   doesn't count.
 
+### Environment pieces (getting around the world)
+- **Ziplines** (built): fast, one-way routes downward. Good puzzle element: the top is a
+  goal in itself, and you can't ride one back up.
+- **Getting back up** after dropping to street level, without losing too much flow:
+  - **Wall scrambles and ledge leaps** (built): sills, signs and window ledges become
+    climbing routes.
+  - **Street-level launchers** (later): bounce pads and air vents that pop you back up to
+    rooftop height. Cartoonish, friendslop fun; air vents pair with the glider.
+  - **Climbable surfaces** (later): drainpipes, ivy, scaffolding, fire escapes you can climb
+    continuously at speed. Must look obviously climbable.
+
 ### Collectibles and objectives
 - **Relics** *(working name)*: collectibles scattered around the islands in three tiers:
   - **Easy**: street level or a short climb. Teaches you to look around.
@@ -76,6 +87,9 @@ so as the team finds relics.
 | Crouch / slide | C (hold) | Slides speed up downhill; slide-jumps keep their speed |
 | Wall jump | Space in the air next to a wall | Not the same wall twice before landing |
 | Wall run | Run fast, jump alongside a tall wall | Up to 1.6 s, slowly sinking |
+| Wall scramble | Jump into a wall too tall to grab and keep pushing | Runs ~3.5 m up it, grabs the top if in reach. Once per wall until you land |
+| Ledge leap | While hanging from a narrow sill, jump | Leaps up to the next ledge (up to ~4.5 m). Sills are "hang-only": too narrow to stand on |
+| Zipline | Touch the cable | Downhill only, speeds up on steeper cables. Jump off any time (keep speed), crouch to drop, flung off the end |
 | Toss a friend | E | ~8 m up. See section 5 |
 
 All the feel numbers live in **movement profiles**: `player/profiles/superhuman.tres` (the
@@ -122,6 +136,11 @@ Later worlds can be designed around higher agility levels.
 - **Finding each other**: markers above friends' heads, a "regroup" option, maybe a compass.
 
 ## 6. Items
+
+> **To revisit (Oct 2026):** the item list below was written before free-run, flow, wall
+> scrambles, ledge leaps and ziplines. With the faster, more automatic movement, re-check
+> each item: does it still have a clear job? Does free-run make it pointless (e.g. running
+> shoes vs. flow)? Should free-run use items by itself (e.g. auto-deploy the glider)?
 
 ### Carrying rules (inspired by The Big Walk)
 - You hold **one item in your hands**.
@@ -189,7 +208,8 @@ the next friend up.
 
 ## 10. Ideas parking lot
 
-Good ideas not scheduled yet: **a quick "free-climb" back up buildings** (so falling to street
-level doesn't kill too much momentum) · hold-to-aim toss · players colliding / standing on heads
+Good ideas not scheduled yet: street launchers and climbable surfaces (see "Environment
+pieces")
+· hold-to-aim toss · players colliding / standing on heads
 · regroup markers · emotes · photo mode ·
 cosmetic unlocks from relics · Steam friends and invites.

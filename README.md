@@ -20,6 +20,9 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Slide-jump (keeps your speed) | Space during a slide | A |
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
 | Wall run | Run fast, jump alongside a tall wall, hold forward | |
+| Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
+| Ledge leap | While hanging from a narrow sill, jump | A |
+| Zipline | Touch the cable; jump to leave, C to drop | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Jump (hold for higher) | Space | A / Cross |
@@ -49,6 +52,8 @@ player/states/                    – one script per movement "mode" (state mach
             hang.gd, climb.gd     – hanging/shimmying; pulling up / vaulting
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
+            wall_scramble.gd      – running up a too-tall wall
+            zipline.gd            – riding a zipline
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
 levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Greece island (see docs/)
@@ -56,6 +61,7 @@ levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Gr
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             relic.tscn/.gd        – collectible gem (team-shared; logic in game/main.gd)
+            zipline.tscn/.gd      – a zipline cable (set its end_point)
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
