@@ -22,6 +22,12 @@ block() {
 label() { printf '\n[node name="%s" type="Label3D" parent="Labels"]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nbillboard = 1\npixel_size = 0.02\ntext = "%s"\nfont_size = 64\noutline_size = 16\n' "$@"; }
 checkpoint() { printf '\n[node name="%s" parent="Checkpoints" instance=ExtResource("2_checkpoint")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
 relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("10_relic")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
+# A zipline cable: name x y z (start) end_x end_y end_z (end, relative to the start)
+zipline() { printf '
+[node name="%s" parent="Ziplines" instance=ExtResource("12_zipline")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)
+end_point = Vector3(%s, %s, %s)
+' "$@"; }
 
 cat <<'EOF'
 [gd_scene format=3]
@@ -33,6 +39,7 @@ cat <<'EOF'
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
+[ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -73,6 +80,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 [node name="Labels" type="Node3D" parent="."]
 
 [node name="Checkpoints" type="Node3D" parent="."]
+
+[node name="Ziplines" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
 EOF
@@ -138,7 +147,7 @@ checkpoint Checkpoint5 0 0 -364
 # A 52 m ramp from z = -372 (top 0) down to z = -422 (top -15), about 17 degrees.
 printf '\n[node name="SlideSlope" type="CSGBox3D" parent="Course"]\ntransform = Transform3D(1, 0, 0, 0, 0.957826, 0.287348, 0, -0.287348, 0.957826, 0, -7.7874, -396.914)\nuse_collision = true\nsize = Vector3(8, 0.6, 52.2015)\nmaterial = ExtResource("4_platform")\n'
 floor SlopeRunOut -422 -432 -15
-floor SlopeLanding -446 -515 -15
+floor SlopeLanding -446 -560 -15
 label LabelSlope 0 5 -375 "SLIDE DOWN (hold C)\\nthen a 14 m gap"
 checkpoint Checkpoint6 0 -15 -452
 
@@ -150,6 +159,32 @@ block TallWallLedge2 -476 2 -8 -5 2 -0.5
 relic RelicTallWall 0 -1.4 -480
 label LabelTallWall 0 1 -470 "TOO TALL FOR FREE-RUN:\\nclimb it yourself"
 
-# --- 10. End of the line ---
-block FinishLine -507 2 -15 -14.9 8 0 6_goal
-label LabelFinish 0 -8 -505 "END OF THE LINE"
+checkpoint Checkpoint7 0 -15 -495
+
+# --- 10. An 8.5 m wall head-on: too tall to grab from a jump, but a wall
+#         scramble (run up it ~3.5 m) gets you to the top ---
+block ScrambleWall -510 6 -15 -6.5 8 0 5_wall
+label LabelScramble 0 -3 -500 "SCRAMBLE UP\n(jump into it and keep pushing)"
+
+# --- 11. A 16 m tower with narrow sills: hang from one, jump to leap to the next ---
+block LeapTower -545 10 -15 1 8 0 5_wall
+# Sills on its south face (face at z = -540): 0.5 m deep, too narrow to stand on.
+block Sill1 -539.75 0.5 -11.2 -10 4 0 4_platform
+block Sill2 -539.75 0.5 -7.2 -6 4 0 4_platform
+block Sill3 -539.75 0.5 -3.2 -2 4 0 4_platform
+label LabelLeaps 0 6 -532 "LEDGE LEAPS\n(hang, then jump to the sill above)"
+checkpoint Checkpoint8 0 1 -545
+
+# --- 12. Zipline from the tower top down to the final landing ---
+# Starts just past the tower's north edge (z = -550) at shoulder height, so
+# running off the roof catches it. Ends above the landing (top -22).
+zipline ZiplineDown 0 2.6 -551 0 -21.1 -94
+relic RelicZipline 0 -9.4 -600
+label LabelZipline 0 6 -552 "ZIPLINE\n(run off the edge to grab it)"
+floor ZipLanding -638 -680 -22
+checkpoint Checkpoint9 0 -22 -650
+
+# --- End of the line ---
+block EndLine -675 2 -22 -21.9 8 0 6_goal
+label LabelEnd 0 -15 -675 "END OF THE LINE"
+block EndWall -681 2 -22 0 8 0 5_wall

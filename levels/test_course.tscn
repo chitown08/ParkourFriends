@@ -635,15 +635,15 @@ font_size = 56
 outline_size = 14
 
 [node name="TossTowerHigh" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 3.75, 28)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 4.25, 28)
 use_collision = true
-size = Vector3(4, 7.5, 4)
+size = Vector3(4, 8.5, 4)
 material = ExtResource("6_goal")
 
 [node name="LabelTossHigh" type="Label3D" parent="Labels"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 9, 28)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 10, 28)
 billboard = 1
 pixel_size = 0.01
-text = "7.5m: both do a full jump,\nthen toss in mid-air"
+text = "8.5m: both do a full jump,\nthen toss in mid-air"
 font_size = 56
 outline_size = 14

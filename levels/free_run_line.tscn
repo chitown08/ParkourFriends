@@ -7,6 +7,7 @@
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
+[ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -47,6 +48,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 [node name="Labels" type="Node3D" parent="."]
 
 [node name="Checkpoints" type="Node3D" parent="."]
+
+[node name="Ziplines" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
 
@@ -286,9 +289,9 @@ size = Vector3(8, 2, 10)
 material = ExtResource("3_ground")
 
 [node name="SlopeLanding" type="CSGBox3D" parent="Course"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16, -480.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16, -503)
 use_collision = true
-size = Vector3(8, 2, 69)
+size = Vector3(8, 2, 114)
 material = ExtResource("3_ground")
 
 [node name="LabelSlope" type="Label3D" parent="Labels"]
@@ -331,16 +334,98 @@ text = "TOO TALL FOR FREE-RUN:\nclimb it yourself"
 font_size = 64
 outline_size = 16
 
-[node name="FinishLine" type="CSGBox3D" parent="Course"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -14.95, -507)
+[node name="Checkpoint7" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15, -495)
+
+[node name="ScrambleWall" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10.75, -510)
+use_collision = true
+size = Vector3(8, 8.5, 6)
+material = ExtResource("5_wall")
+
+[node name="LabelScramble" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, -500)
+billboard = 1
+pixel_size = 0.02
+text = "SCRAMBLE UP\n(jump into it and keep pushing)"
+font_size = 64
+outline_size = 16
+
+[node name="LeapTower" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -7, -545)
+use_collision = true
+size = Vector3(8, 16, 10)
+material = ExtResource("5_wall")
+
+[node name="Sill1" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10.6, -539.75)
+use_collision = true
+size = Vector3(4, 1.2, 0.5)
+material = ExtResource("4_platform")
+
+[node name="Sill2" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -6.6, -539.75)
+use_collision = true
+size = Vector3(4, 1.2, 0.5)
+material = ExtResource("4_platform")
+
+[node name="Sill3" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.6, -539.75)
+use_collision = true
+size = Vector3(4, 1.2, 0.5)
+material = ExtResource("4_platform")
+
+[node name="LabelLeaps" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -532)
+billboard = 1
+pixel_size = 0.02
+text = "LEDGE LEAPS\n(hang, then jump to the sill above)"
+font_size = 64
+outline_size = 16
+
+[node name="Checkpoint8" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -545)
+
+[node name="ZiplineDown" parent="Ziplines" instance=ExtResource("12_zipline")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, -551)
+end_point = Vector3(0, -21.1, -94)
+
+[node name="RelicZipline" parent="Relics" instance=ExtResource("10_relic")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.4, -600)
+
+[node name="LabelZipline" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -552)
+billboard = 1
+pixel_size = 0.02
+text = "ZIPLINE\n(run off the edge to grab it)"
+font_size = 64
+outline_size = 16
+
+[node name="ZipLanding" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -23, -659)
+use_collision = true
+size = Vector3(8, 2, 42)
+material = ExtResource("3_ground")
+
+[node name="Checkpoint9" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -22, -650)
+
+[node name="EndLine" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -21.95, -675)
 use_collision = true
 size = Vector3(8, 0.1, 2)
 material = ExtResource("6_goal")
 
-[node name="LabelFinish" type="Label3D" parent="Labels"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, -505)
+[node name="LabelEnd" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -15, -675)
 billboard = 1
 pixel_size = 0.02
 text = "END OF THE LINE"
 font_size = 64
 outline_size = 16
+
+[node name="EndWall" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11, -681)
+use_collision = true
+size = Vector3(8, 22, 2)
+material = ExtResource("5_wall")

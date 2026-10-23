@@ -7,13 +7,14 @@ extends Node
 ## and, if needed, presses jump or crouch on the PlayerInput. So every
 ## automatic move is a normal move you could also do yourself, and your own
 ## presses (a manual jump, a slide) still work at any time.
-##   Low obstacle you can get over      -> jump (you vault or climb it)
+##   Wall you can get on top of         -> jump (you vault, climb or scramble up it)
+##   Wall with a ledge in reach          -> jump (you grab it; jump again to leap up)
 ##   Wall at an angle                   -> jump (you wall-run along it)
 ##   Bar at head height, room below     -> crouch (you slide under it)
 ##   Gap with a landing in jumping range -> jump it
 ##   Gap with no landing, wall alongside -> jump toward the wall (you wall-run across)
 ##   Gap with nothing to land on        -> keep running (you drop off)
-##   Hanging from a ledge               -> pull up
+##   Hanging from a ledge               -> pull up (or leap to the next ledge up)
 
 ## How far ahead to look for obstacles, in seconds of travel at your speed.
 const LOOK_AHEAD_TIME := 0.25
@@ -75,7 +76,8 @@ func _look_ahead() -> void:
 
 	var low := _wall_ahead(feet + Vector3.UP * KNEE_HEIGHT, direction, reach)
 	if not low.is_empty():
-		if _can_get_on_top(low, direction, feet) or _is_glancing(low, direction):
+		if _can_get_on_top(low, direction, feet) or _ledge_in_reach(low, direction, feet) \
+				or _is_glancing(low, direction):
 			_press_jump()
 		return # A wall too tall and too head-on: free-run won't help (your call).
 
@@ -111,9 +113,11 @@ func _wall_ahead(from: Vector3, direction: Vector3, reach: float) -> Dictionary:
 	return hit
 
 
-## True if the obstacle's top is within jump-and-grab reach.
+## True if we can get on top of the obstacle: within jump-and-grab reach, or
+## with a wall scramble's extra height on top of that.
 func _can_get_on_top(wall: Dictionary, direction: Vector3, feet: Vector3) -> bool:
-	var max_height := player.jump_height + player.ledge_max_height
+	var scramble_height := player.wall_scramble_speed * player.wall_scramble_time
+	var max_height := player.jump_height + scramble_height + player.ledge_max_height
 	var above: Vector3 = wall.position + direction * 0.3
 	above.y = feet.y + max_height + 0.1
 	var top := player.raycast(above, Vector3(above.x, feet.y + 0.1, above.z))
@@ -171,3 +175,12 @@ func _side_wall(feet: Vector3, side: Vector3) -> bool:
 		if hit.is_empty() or absf(hit.normal.y) > 0.3:
 			return false
 	return true
+
+
+## True if there's a ledge on this wall we could grab from the top of a jump
+## (e.g. the first sill of a ledge-leap tower).
+func _ledge_in_reach(wall: Dictionary, direction: Vector3, feet: Vector3) -> bool:
+	# Imagine standing a little out from the wall (clear of anything sticking out of it).
+	var at_the_wall: Vector3 = wall.position + (wall.normal as Vector3) * (player.body_radius + 0.6)
+	var jump_top := Vector3(at_the_wall.x, feet.y + player.jump_height * 0.9, at_the_wall.z)
+	return player.find_ledge(jump_top, direction) != null

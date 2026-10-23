@@ -4,6 +4,8 @@ extends GameTest
 ## It runs north (toward -Z) from the spawn at z = 0.
 
 var respawns := 0
+## Every state the player has entered since the test began, in order.
+var states_entered: Array[StringName] = []
 
 
 func before_each() -> void:
@@ -17,6 +19,8 @@ func before_each() -> void:
 		player.set_profile(SUPERHUMAN)
 		respawns = 0
 		player.respawned.connect(func() -> void: respawns += 1)
+		states_entered.clear()
+		player.state_changed.connect(func(new_state: StringName) -> void: states_entered.append(new_state))
 
 
 func test_free_run_takes_the_whole_line_to_the_tall_wall() -> void:
@@ -110,6 +114,124 @@ func test_the_pillar_relic_can_be_reached_by_hand() -> void:
 	await hold(&"move_forward", 6)
 	await ticks(10)
 	expect(main.collected_relics.has("RelicPillarTop"), "the relic on the pillar should be collected")
+
+
+# --- Wall scramble (8.5 m wall at z = -507..-513), ledge leaps (tower at
+#     z = -540..-550 with sills at x = -2..2, tops -10, -6, -2; roof +1) and the
+#     zipline (from z = -551, just past the roof, down to the landing at -22) ---
+
+func test_scramble_up_a_wall_too_tall_to_grab() -> void:
+	await place(Vector3(0, -14.95, -505), FACE_NORTH)
+	states_entered.clear()
+	expect(await jump_and_climb(Vector3.FORWARD, -6.5), "should get on top of the 8.5 m wall, at %s" % player.global_position)
+	expect(&"WallScramble" in states_entered, "should scramble up it, went through %s" % [states_entered])
+
+
+func test_only_one_scramble_per_wall() -> void:
+	# A plain part of the tower (no sills at x = 3): far too tall even with a scramble.
+	await place(Vector3(3, -14.95, -538), FACE_NORTH)
+	states_entered.clear()
+	Input.action_press(&"move_forward")
+	Input.action_press(&"jump")
+	await ticks(90)
+	release_all()
+	expect(states_entered.count(&"WallScramble") == 1, "should scramble exactly once, went through %s" % [states_entered])
+	expect(player.global_position.y < -14.0, "and fall back down, at %s" % player.global_position)
+
+
+func test_ledge_leaps_up_the_sills() -> void:
+	await place(Vector3(0, -14.95, -538), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	Input.action_press(&"jump")
+	await _wait_for(&"Hang", 90)
+	release_all()
+	await ticks(20)
+	expect_near(player.global_position.y, -10.0 - player.hang_height, 0.1, "hanging from the first sill")
+	# Jumping on a sill (too narrow to stand on) leaps to the next one up...
+	for sill_top in [-6.0, -2.0, 1.0]:
+		await tap(&"jump")
+		await ticks(30)
+		expect_state(&"Hang")
+		expect_near(player.global_position.y, sill_top - player.hang_height, 0.1, "after leaping up to the ledge at %.0f" % sill_top)
+	# ...and from the roof edge (room to stand) it pulls you up.
+	await tap(&"jump")
+	expect(await wait_until_on_top(0.9, 60), "should climb onto the tower roof, at %s" % player.global_position)
+
+
+func test_running_off_the_roof_grabs_the_zipline() -> void:
+	await place(Vector3(0, 1.05, -545), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	expect(await _wait_for(&"Zipline", 90), "should catch the zipline, at %s state %s" % [player.global_position, player.state.name])
+
+
+func test_zipline_speeds_up_and_flings_you_off_the_end() -> void:
+	await place(Vector3(0, 1.05, -545), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	await _wait_for(&"Zipline", 90)
+	release_all()
+	await ticks(10)
+	var early_speed := player.get_horizontal_speed()
+	await ticks(60)
+	expect(player.get_horizontal_speed() > early_speed + 5.0, "should speed up going down (%.1f -> %.1f)" % [early_speed, player.get_horizontal_speed()])
+	expect(await _wait_for(&"Ground", 300), "should come off the end and land")
+	expect(player.global_position.z < -638.0 and player.global_position.y > -22.5,
+			"should land on the final platform, at %s" % player.global_position)
+	expect(main.collected_relics.has("RelicZipline"), "should pick up the relic along the zipline")
+
+
+func test_jump_off_the_zipline_at_any_time() -> void:
+	await place(Vector3(0, 1.05, -545), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	await _wait_for(&"Zipline", 90)
+	release_all()
+	await ticks(30)
+	await tap(&"jump")
+	expect_state(&"Air")
+	expect(player.velocity.y > 0.0, "jumping off should go up a little")
+	expect(player.get_horizontal_speed() > 8.0, "and keep the ride's speed, %.1f" % player.get_horizontal_speed())
+
+
+func test_crouch_lets_go_of_the_zipline() -> void:
+	await place(Vector3(0, 1.05, -545), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	await _wait_for(&"Zipline", 90)
+	release_all()
+	await ticks(20)
+	await tap(&"crouch")
+	expect_state(&"Air")
+
+
+func test_ziplines_only_go_downhill() -> void:
+	# Grab the middle of the cable while moving uphill (toward +Z): you still slide down.
+	var zipline: Zipline = main.level.get_node("Ziplines/ZiplineDown")
+	var middle := zipline.point_at(0.5)
+	player.global_position = middle + Vector3.DOWN * player.zipline_hang_height
+	player.velocity = Vector3(0, 0, 10)
+	player.change_state(&"Air")
+	player.reset_physics_interpolation()
+	await ticks(2)
+	expect_state(&"Zipline")
+	await ticks(30)
+	expect(player.global_position.z < middle.z - 1.0, "should be sliding toward the low end, at z = %.1f (grabbed at %.1f)" % [player.global_position.z, middle.z])
+
+
+func test_free_run_takes_the_new_sections_to_the_end() -> void:
+	await place(Vector3(0, -14.95, -490), FACE_NORTH)
+	player.set_checkpoint(Vector3(0, -15, -490))
+	states_entered.clear()
+	await _free_run_for(60 * 20)
+	expect(respawns == 0, "should never fall off, fell %d time(s)" % respawns)
+	expect(player.global_position.z < -670.0, "should reach the end of the line, got to z = %.1f" % player.global_position.z)
+	for state in [&"WallScramble", &"Hang", &"Zipline"]:
+		expect(state in states_entered, "should %s on the way" % state)
+
+
+func _wait_for(state_name: StringName, max_ticks: int) -> bool:
+	for i in max_ticks:
+		await ticks(1)
+		if player.state.name == state_name:
+			return true
+	return false
 
 
 func _free_run_for(tick_count: int) -> void:

@@ -96,6 +96,8 @@ var shimmy_speed: float
 var climb_up_time: float
 var mantle_time: float
 var ledge_regrab_delay: float
+var ledge_leap_height: float
+var ledge_leap_speed: float
 var crouch_speed: float
 var slide_min_start_speed: float
 var slide_boost: float
@@ -115,6 +117,14 @@ var wall_run_gravity: float
 var wall_run_max_time: float
 var wall_run_min_height: float
 var wall_run_lean_degrees: float
+var wall_scramble_speed: float
+var wall_scramble_time: float
+var zipline_gravity: float
+var zipline_min_speed: float
+var zipline_max_speed: float
+var zipline_grab_radius: float
+var zipline_hang_height: float
+var zipline_regrab_delay: float
 var toss_range: float
 var toss_height: float
 var toss_forward_speed: float
@@ -130,6 +140,8 @@ var agility_level := 1
 ## How much flow (momentum) you've built up: 0 = normal running speed,
 ## 1 = top speed. See _update_flow().
 var flow := 0.0
+## Time left before you can grab a zipline again (after leaving one).
+var zipline_cooldown := 0.0
 
 ## Where this player starts. Chosen by the host and sent along when the
 ## character is created (HostSync node), so joining players don't need the
@@ -242,6 +254,7 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_timer -= delta
 
 	_toss_cooldown_timer -= delta
+	zipline_cooldown -= delta
 	if input.toss_just_pressed:
 		try_toss()
 
@@ -354,8 +367,8 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name == &"Climb":
-		return # A quick vault or pull-up doesn't break your flow.
+	if state.name in [&"Climb", &"Zipline"]:
+		return # A quick vault, a pull-up or a zipline ride doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * 0.9:
@@ -637,9 +650,40 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 		return null # The wall keeps going up; that "top" was something else.
 	var hang_column := hang_position(ledge)
 	hang_column.y = ledge.position.y + 0.05
-	if not _body_fits(hang_column) or not _body_fits(stand_position(ledge)):
+	if not _body_fits(hang_column):
 		return null
+	# No room to stand on top (e.g. a narrow sill): still fine to hang from.
+	ledge.can_stand = _room_on_top(ledge) and _body_fits(stand_position(ledge))
 	return ledge
+
+
+## True if the top of the ledge is deep enough to stand on: nothing (like the
+## wall a sill sticks out of) within a body's width behind the edge. (A plain
+## line check, because a body-shape check can't tell when the body would be
+## mostly inside a wall.)
+func _room_on_top(ledge: Ledge) -> bool:
+	var depth_needed := body_radius * 2.0 + 0.2
+	for height: float in [0.3, 1.2]:
+		var from := ledge.position + Vector3.UP * height + ledge.normal * 0.05
+		if not raycast(from, from - ledge.normal * depth_needed).is_empty():
+			return false
+	return true
+
+
+## While hanging from `ledge`, looks for another ledge above it that you can
+## leap up to (within ledge_leap_height). Returns null if there isn't one.
+func find_ledge_above(ledge: Ledge) -> Ledge:
+	var hanging := hang_position(ledge)
+	# Search as if standing high enough that the ledge we want is within reach:
+	# first where we hang (finds sills sticking out like this one), then a bit
+	# closer in (finds a plain wall top set back behind the sill).
+	for step_in: float in [0.0, 0.6]:
+		var search_feet := Vector3(hanging.x, ledge.position.y + ledge_leap_height - ledge_max_height, hanging.z) \
+				- ledge.normal * step_in
+		var above := find_ledge(search_feet, -ledge.normal)
+		if above != null and above.position.y >= ledge.position.y + 1.0:
+			return above
+	return null
 
 
 ## A ray from `from` to `to` against the world (ignoring this player).

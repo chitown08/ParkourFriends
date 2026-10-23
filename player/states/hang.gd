@@ -1,32 +1,47 @@
 extends PlayerState
 ## Hanging from a ledge by your hands.
-##   Jump              -> pull yourself up
+##   Jump              -> pull yourself up, or if there's no room to stand
+##                        (a narrow sill), leap up to the next ledge above
 ##   Left / right      -> shimmy along the ledge
 ##   Crouch, or back   -> let go
 
 var _ledge: Ledge
+var _snap_speed := 0.0
 
 
 func enter(data: Dictionary) -> void:
 	_ledge = data["ledge"]
+	# A ledge leap carries you up quickly; a normal grab just settles in.
+	_snap_speed = player.ledge_leap_speed if data.get("leap", false) else player.hang_snap_speed
 	player.velocity = Vector3.ZERO
 	player.refresh_air_moves()
 
 
 func physics_update(delta: float) -> void:
-	# Slide smoothly into the hanging spot (it's usually a little off at first).
+	# Move smoothly into the hanging spot (it's usually a little off at first).
 	var target := player.hang_position(_ledge)
-	player.global_position = player.global_position.move_toward(target, player.hang_snap_speed * delta)
+	player.global_position = player.global_position.move_toward(target, _snap_speed * delta)
 	player.face_direction(-_ledge.normal, delta)
 
 	var toward_wall := input.move_direction.dot(-_ledge.normal)
 
 	if player.consume_jump():
-		player.change_state(&"Climb", {"ledge": _ledge, "duration": player.climb_up_time})
+		_jump_up()
 	elif input.crouch_just_pressed or toward_wall < -0.5:
 		player.change_state(&"Air", {"regrab_delay": player.ledge_regrab_delay})
 	else:
 		_shimmy(delta)
+
+
+## Pull up onto the ledge if there's room to stand, otherwise leap to the
+## next ledge above (if there is one).
+func _jump_up() -> void:
+	if _ledge.can_stand:
+		player.change_state(&"Climb", {"ledge": _ledge, "duration": player.climb_up_time})
+		return
+	var above := player.find_ledge_above(_ledge)
+	if above:
+		player.change_state(&"Hang", {"ledge": above, "leap": true})
 
 
 func _shimmy(delta: float) -> void:

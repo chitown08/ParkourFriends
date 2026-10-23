@@ -3,6 +3,8 @@ extends PlayerState
 ## - grab a ledge (push toward a wall near its top),
 ## - wall jump (press jump next to a wall),
 ## - start a wall run (move fast alongside a tall wall).
+## - scramble up a wall too tall to grab (push straight into it),
+## - grab a zipline (touch the cable).
 
 var _coyote_timer := 0.0
 var _regrab_timer := 0.0
@@ -44,8 +46,9 @@ func physics_update(delta: float) -> void:
 		player.change_state(&"Ground")
 		return
 
-	if not _try_grab_ledge():
-		_try_wall_run()
+	if _try_grab_zipline() or _try_grab_ledge() or _try_wall_scramble():
+		return
+	_try_wall_run()
 
 
 func _try_wall_jump() -> bool:
@@ -76,9 +79,11 @@ func _try_grab_ledge() -> bool:
 
 	if ledge.height >= player.hang_min_height:
 		player.change_state(&"Hang", {"ledge": ledge})
-	else:
+	elif ledge.can_stand:
 		# Low enough to vault straight over without hanging ("mantle").
 		player.change_state(&"Climb", {"ledge": ledge, "duration": player.mantle_time})
+	else:
+		return false # A sill too low to hang from and too narrow to stand on.
 	return true
 
 
@@ -95,3 +100,30 @@ func _try_wall_run() -> void:
 	if along.length() < player.wall_run_min_speed or wish_dir.normalized().dot(along.normalized()) < 0.5:
 		return
 	player.change_state(&"WallRun", {"wall_normal": wall.normal})
+
+
+func _try_grab_zipline() -> bool:
+	if player.zipline_cooldown > 0.0:
+		return false
+	var hands := player.global_position + Vector3.UP * player.zipline_hang_height
+	for zipline: Zipline in player.get_tree().get_nodes_in_group(&"ziplines"):
+		var t := zipline.closest_t(hands)
+		if t < 0.98 and zipline.point_at(t).distance_to(hands) <= player.zipline_grab_radius:
+			player.change_state(&"Zipline", {"zipline": zipline})
+			return true
+	return false
+
+
+func _try_wall_scramble() -> bool:
+	# Pushing straight into a tall wall near the top of a jump (or just after).
+	# Never while rising faster than a scramble would carry you (e.g. a toss).
+	var wish_dir := input.move_direction
+	if wish_dir.length() < 0.3 or player.velocity.y < -2.0 or player.velocity.y > player.wall_scramble_speed:
+		return false
+	var wall := player.find_wall(true)
+	if wall.is_empty() or not player.can_use_wall(wall.normal):
+		return false
+	if wish_dir.normalized().dot(-(wall.normal as Vector3)) < 0.7:
+		return false
+	player.change_state(&"WallScramble", {"wall_normal": wall.normal})
+	return true

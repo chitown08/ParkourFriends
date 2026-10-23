@@ -39,6 +39,8 @@ extends Resource
 @export var climb_up_time := 0.35 ## Seconds to pull up from hanging.
 @export var mantle_time := 0.2 ## Seconds to vault over a low ledge.
 @export var ledge_regrab_delay := 0.35 ## After letting go, can't re-grab for this long.
+@export var ledge_leap_height := 4.5 ## While hanging, jump to leap to a ledge up to this far above.
+@export var ledge_leap_speed := 14.0 ## How fast a ledge leap carries you up (m/s).
 
 @export_group("Crouching & Sliding")
 @export var crouch_speed := 4.0
@@ -62,6 +64,16 @@ extends Resource
 @export var wall_run_max_time := 1.6 ## Seconds before you peel off the wall.
 @export var wall_run_min_height := 1.0 ## Must be at least this high off the ground to start.
 @export var wall_run_lean_degrees := 20.0 ## How far the body leans away from the wall.
+@export var wall_scramble_speed := 7.0 ## Running straight up a too-tall wall: how fast (m/s)...
+@export var wall_scramble_time := 0.5 ## ...and for how long (seconds). 7 x 0.5 = 3.5 m.
+
+@export_group("Ziplines")
+@export var zipline_gravity := 25.0 ## How quickly you speed up going down (scaled by how steep the cable is).
+@export var zipline_min_speed := 4.0 ## Slowest you ride (e.g. after grabbing it from a standstill).
+@export var zipline_max_speed := 26.0
+@export var zipline_grab_radius := 0.9 ## How close your hands must get to a cable to grab it.
+@export var zipline_hang_height := 2.0 ## How far your feet hang below the cable.
+@export var zipline_regrab_delay := 0.4 ## After leaving a zipline, can't grab one again for this long.
 
 @export_group("Tossing")
 @export var toss_range := 2.0 ## How close a friend must be to toss them (meters, not behind you).

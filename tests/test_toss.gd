@@ -2,7 +2,7 @@ extends GameTest
 ## The receiving end of a toss, tried with one player by calling apply_toss()
 ## directly (as if a friend had tossed you). The real two-player version is in
 ## test_toss_network.gd. Toss Yard towers: 5.5 m (x = -22..-18, z = 12..16)
-## and 7.5 m (x = -27..-23, z = 26..30).
+## and 8.5 m (x = -27..-23, z = 26..30).
 
 const FACE_SOUTH := PI
 
@@ -31,7 +31,7 @@ func test_ground_toss_cannot_reach_the_high_tower() -> void:
 	Input.action_press(&"move_forward")
 	player.apply_toss(player.toss_velocity(FACE_SOUTH))
 	await ticks(120)
-	expect(player.global_position.y < 1.0, "a ground toss shouldn't reach the 7.5 m tower, at %s" % player.global_position)
+	expect(player.global_position.y < 1.0, "a ground toss shouldn't reach the 8.5 m tower, at %s" % player.global_position)
 
 
 func test_midair_toss_reaches_the_high_tower() -> void:
@@ -40,8 +40,9 @@ func test_midair_toss_reaches_the_high_tower() -> void:
 	Input.action_press(&"jump") # A full, held jump: a short hop isn't high enough.
 	await ticks(20) # Near the top of the jump.
 	player.apply_toss(player.toss_velocity(FACE_SOUTH))
-	expect(await _wait_for_state([&"Hang", &"Climb"], 90), "should grab the top of the 7.5 m tower")
-	expect(player.global_position.y > 7.5 - player.hang_height - 0.1, "should be up at the top, at %s" % player.global_position)
+	expect(await _wait_for_state([&"Hang", &"Climb"], 90), "should grab the top of the 8.5 m tower")
+	await ticks(10) # Let the hand-hold settle into place.
+	expect(player.global_position.y > 8.5 - player.hang_height - 0.1, "should be up at the top, at %s" % player.global_position)
 
 
 func test_can_only_be_tossed_once_per_air_time() -> void:

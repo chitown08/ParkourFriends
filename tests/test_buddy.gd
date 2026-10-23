@@ -55,7 +55,7 @@ func test_buddy_cannot_toss_you_from_far_away() -> void:
 
 
 func test_buddy_midair_toss_reaches_the_high_tower() -> void:
-	# The buddy stands between you and the 7.5 m tower (face at z = 26).
+	# The buddy stands between you and the 8.5 m tower (face at z = 26).
 	await place(Vector3(-25, 0.05, 23), FACE_SOUTH)
 	await press_event(&"call_buddy")
 	await ticks(20)
@@ -69,7 +69,7 @@ func test_buddy_midair_toss_reaches_the_high_tower() -> void:
 		if player.state.name in [&"Hang", &"Climb"]:
 			grabbed = true
 			break
-	expect(grabbed, "should grab the top of the 7.5 m tower, ended at %s" % player.global_position)
+	expect(grabbed, "should grab the top of the 8.5 m tower, ended at %s" % player.global_position)
 
 
 func test_buddy_respawns_where_it_was_called() -> void:

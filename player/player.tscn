@@ -11,6 +11,8 @@
 [ext_resource type="Script" path="res://player/states/slide.gd" id="9_slide"]
 [ext_resource type="Script" path="res://player/states/wall_run.gd" id="10_wall_run"]
 [ext_resource type="Script" path="res://player/free_run.gd" id="11_free_run"]
+[ext_resource type="Script" path="res://player/states/wall_scramble.gd" id="12_wall_scramble"]
+[ext_resource type="Script" path="res://player/states/zipline.gd" id="13_zipline"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -104,6 +106,12 @@ script = ExtResource("9_slide")
 
 [node name="WallRun" type="Node" parent="States"]
 script = ExtResource("10_wall_run")
+
+[node name="WallScramble" type="Node" parent="States"]
+script = ExtResource("12_wall_scramble")
+
+[node name="Zipline" type="Node" parent="States"]
+script = ExtResource("13_zipline")
 
 [node name="FreeRun" type="Node" parent="."]
 script = ExtResource("11_free_run")
