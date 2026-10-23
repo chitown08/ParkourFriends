@@ -45,16 +45,30 @@ func test_midair_toss_reaches_the_high_tower() -> void:
 	expect(player.global_position.y > 8.5 - player.hang_height - 0.1, "should be up at the top, at %s" % player.global_position)
 
 
-func test_can_only_be_tossed_once_per_air_time() -> void:
-	player.apply_toss(player.toss_velocity(FACE_NORTH))
+func test_the_same_person_can_only_toss_you_once_per_air_time() -> void:
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Alex")
 	await ticks(10)
 	var vy := player.velocity.y
-	player.apply_toss(player.toss_velocity(FACE_NORTH))
-	expect(player.velocity.y <= vy, "a second toss in the same air time should do nothing")
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Alex")
+	expect(player.velocity.y <= vy, "a second toss by the same person in one air time should do nothing")
 	await ticks(90) # Land.
 	expect_state(&"Ground")
-	player.apply_toss(player.toss_velocity(FACE_NORTH))
-	expect(player.velocity.y > 10.0, "after landing you can be tossed again")
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Alex")
+	expect(player.velocity.y > 10.0, "after landing they can toss you again")
+
+
+func test_throw_chains_need_a_different_person_each_time() -> void:
+	var full_launch := player.toss_velocity(FACE_NORTH).y
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Alex")
+	await ticks(20)
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Sam")
+	expect_near(player.velocity.y, full_launch, 0.01, "a different friend can toss you again mid-air (a chain)")
+	await ticks(20)
+	var vy := player.velocity.y
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Alex")
+	expect(player.velocity.y <= vy, "but not someone who already tossed you this air time")
+	player.apply_toss(player.toss_velocity(FACE_NORTH), "Jo")
+	expect_near(player.velocity.y, full_launch, 0.01, "every extra friend adds another link")
 
 
 func test_unlimited_juggling_when_limit_is_off() -> void:

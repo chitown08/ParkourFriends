@@ -82,6 +82,7 @@ extends Resource
 @export var toss_recoil_height := 1.8 ## Tossing someone while you're in the air gives you a hop this high.
 @export var toss_control_lock := 0.3 ## A tossed player can't steer for this long.
 @export var toss_cooldown := 0.4 ## Seconds between tosses.
-## On: once in the air you can be tossed only once, and toss only once, until
-## you land, grab a ledge, or touch a wall. Off: unlimited juggling.
+## On: once in the air you can toss only once, and each person can toss you only
+## once, until you land, grab a ledge, or touch a wall (so bigger groups make
+## longer throw chains). Off: unlimited juggling.
 @export var limit_tosses_per_air := true

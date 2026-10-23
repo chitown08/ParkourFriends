@@ -1,5 +1,9 @@
 # Parkour Friends
 
+**Design:** the master design document is the Claude doc
+["Parkour Friendslop – Game Design Doc"](https://claude.ai/artifact/FaCnq4frncwnN9L2MgsfSU);
+[docs/DESIGN.md](docs/DESIGN.md) has the technical notes.
+
 Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 ## Running it
@@ -56,7 +60,7 @@ player/states/                    – one script per movement "mode" (state mach
             zipline.gd            – riding a zipline
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
-levels/     old_town.tscn         – the first slice: Old Town hub + Ancient Greece island (see docs/)
+levels/     old_town.tscn         – obsolete floating-islands prototype (the game is now one big city)
             test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint

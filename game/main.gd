@@ -173,7 +173,7 @@ func buddy_toss_me() -> void:
 	if flat_distance > buddy.toss_range or absf(offset.y) > buddy.toss_range:
 		hud.show_message("Get closer to your buddy")
 		return
-	local_player.apply_toss(buddy.toss_velocity(local_player.camera_rig.yaw))
+	local_player.apply_toss(buddy.toss_velocity(local_player.camera_rig.yaw), str(buddy.name))
 
 
 ## Creates a character for the player with this network id. Host only.

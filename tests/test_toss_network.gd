@@ -89,6 +89,26 @@ func test_thrower_can_only_toss_once_per_air_time() -> void:
 	expect(fastest_rise < 5.0, "second toss in the same air time should do nothing, host rose at %.2f m/s" % fastest_rise)
 
 
+func test_two_player_chain_toss_and_toss_back() -> void:
+	# The client tosses the host; the airborne host tosses the client back (a
+	# two-link chain); then the client can't toss the host a second time.
+	await _line_up(1.2, 0.0)
+	await tap(&"toss")
+	var launched := await _host_launched()
+	expect(launched, "test setup: the client's toss should launch the host")
+	await ticks(5)
+	# Bring the client up beside the flying host, then the host tosses them.
+	client_player.global_position = host_player.global_position + Vector3(0, 0, -1.2)
+	client_player.velocity = Vector3.ZERO
+	client_player.reset_physics_interpolation()
+	await ticks(10)
+	host_player.camera_rig.yaw = 0.0
+	expect(host_player.try_toss(), "the airborne host should be able to toss the client back")
+	await ticks(5)
+	expect(client_player.velocity.y > 5.0, "the client should be launched, vy = %.2f" % client_player.velocity.y)
+	expect(host_player.sync_tossed_by.has(client_player.name), "the host remembers being tossed by the client")
+
+
 func test_cannot_toss_someone_already_tossed_this_air_time() -> void:
 	await _line_up(1.2, 0.0)
 	await tap(&"toss")

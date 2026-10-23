@@ -64,7 +64,8 @@ var sync_position := Vector3.ZERO
 var sync_facing := 0.0
 var sync_state := &"Air"
 var sync_lean := 0.0
-var sync_can_be_tossed := true
+## Who has tossed us this air time (see tossed_by).
+var sync_tossed_by := PackedStringArray()
 
 # The movement numbers actually in use, copied from `profile` (see
 # apply_profile()). Documented in movement_profile.gd. Change them by editing a
@@ -190,10 +191,13 @@ var wall_jump_velocity: float
 
 ## States you can toss a friend from.
 const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide"]
-## Used up by tossing someone / being tossed while in the air (see
-## limit_tosses_per_air). Refilled by refresh_air_moves().
+## Toss limits while in the air (see limit_tosses_per_air), refilled by
+## refresh_air_moves(): you can toss once, and each person can toss you
+## once. So two players can't juggle forever, but every extra friend adds
+## another link to a throw chain.
 var can_toss_in_air := true
-var can_be_tossed := true
+## Names of the players (or "Buddy") who have tossed us this air time.
+var tossed_by := PackedStringArray()
 var _toss_cooldown_timer := 0.0
 var _toss_recoil_velocity: float
 
@@ -265,7 +269,7 @@ func _physics_process(delta: float) -> void:
 	sync_facing = _visual.rotation.y
 	sync_state = state.name
 	sync_lean = lean
-	sync_can_be_tossed = can_be_tossed or not limit_tosses_per_air
+	sync_tossed_by = tossed_by
 
 
 ## Moves this puppet toward where its owner says it is.
@@ -395,7 +399,7 @@ func try_toss() -> bool:
 
 	_toss_cooldown_timer = toss_cooldown
 	if target.is_multiplayer_authority():
-		target.apply_toss(toss_velocity(camera_rig.yaw)) # Run by this computer (the practice buddy).
+		target.apply_toss(toss_velocity(camera_rig.yaw), str(name)) # Run by this computer (the practice buddy).
 	else:
 		target.receive_toss.rpc_id(target.get_multiplayer_authority(), toss_velocity(camera_rig.yaw))
 	if airborne:
@@ -414,8 +418,10 @@ func find_toss_target() -> Player:
 	var best_distance := INF
 	for other in get_parent().get_children():
 		var friend := other as Player
-		if friend == null or friend == self or friend.is_queued_for_deletion() or not friend.sync_can_be_tossed:
+		if friend == null or friend == self or friend.is_queued_for_deletion():
 			continue
+		if limit_tosses_per_air and str(name) in friend.sync_tossed_by:
+			continue # We've already tossed them this air time.
 		var offset := friend.global_position - global_position
 		var flat := Vector3(offset.x, 0.0, offset.z)
 		if absf(offset.y) > toss_range or flat.length() > toss_range:
@@ -444,19 +450,19 @@ func receive_toss(launch: Vector3) -> void:
 	var thrower := get_parent().get_node_or_null(str(multiplayer.get_remote_sender_id())) as Player
 	if thrower == null or thrower.global_position.distance_to(global_position) > toss_range * 3.0:
 		return
-	apply_toss(launch)
+	apply_toss(launch, str(thrower.name))
 
 
-## Launches this player (the receiving end of a toss).
-func apply_toss(launch: Vector3) -> void:
-	if limit_tosses_per_air and not can_be_tossed:
+## Launches this player (the receiving end of a toss from `thrower_name`).
+func apply_toss(launch: Vector3, thrower_name: String = "") -> void:
+	if limit_tosses_per_air and thrower_name in tossed_by:
 		return
 	if is_crouched:
 		if not can_stand():
 			return
 		set_crouched(false)
 	velocity = launch
-	can_be_tossed = false
+	tossed_by.append(thrower_name)
 	change_state(&"Air", {"control_lock": toss_control_lock})
 	got_tossed.emit()
 
@@ -465,7 +471,7 @@ func apply_toss(launch: Vector3) -> void:
 ## or touch a wall.
 func refresh_air_moves() -> void:
 	can_toss_in_air = true
-	can_be_tossed = true
+	tossed_by.clear()
 
 
 # --- Helpers shared by the states --------------------------------------------
