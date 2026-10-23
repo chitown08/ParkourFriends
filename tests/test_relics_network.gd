@@ -24,14 +24,6 @@ func test_client_finds_a_relic_for_everyone() -> void:
 		expect(not side_main.level.get_node("Relics/RelicPlaza").visible, "%s should no longer see the relic" % who)
 
 
-func test_agility_goes_up_for_everyone() -> void:
-	host_main.collect_relic("RelicPlaza")
-	host_main.collect_relic("RelicWestStreet")
-	await ticks(10)
-	expect(host_main.local_player.agility_level == 2, "host should reach agility level 2")
-	expect(client_main.local_player.agility_level == 2, "client should reach agility level 2 too")
-
-
 func test_host_finds_a_relic_for_everyone() -> void:
 	await _move(host_main.local_player, PLAZA_RELIC)
 	await ticks(10)

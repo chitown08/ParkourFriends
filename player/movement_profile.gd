@@ -85,10 +85,3 @@ extends Resource
 ## On: once in the air you can be tossed only once, and toss only once, until
 ## you land, grab a ledge, or touch a wall. Off: unlimited juggling.
 @export var limit_tosses_per_air := true
-
-@export_group("Agility")
-## Each agility level (earned by the team finding relics) adds this much to your
-## jump height: 0.12 = +12% per level.
-@export var agility_jump_bonus := 0.12
-## Each agility level adds this much to your running and top speed (0.05 = +5%).
-@export var agility_speed_bonus := 0.05

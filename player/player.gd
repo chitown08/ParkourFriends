@@ -66,9 +66,9 @@ var sync_state := &"Air"
 var sync_lean := 0.0
 var sync_can_be_tossed := true
 
-# The movement numbers actually in use: copied from `profile`, then boosted by
-# the team's agility level (see apply_profile()). Documented in
-# movement_profile.gd. Change them by editing a profile, not here.
+# The movement numbers actually in use, copied from `profile` (see
+# apply_profile()). Documented in movement_profile.gd. Change them by editing a
+# profile, not here.
 var run_speed: float
 var flow_speed: float
 var flow_build_time: float
@@ -132,11 +132,7 @@ var toss_recoil_height: float
 var toss_control_lock: float
 var toss_cooldown: float
 var limit_tosses_per_air: bool
-var agility_jump_bonus: float
-var agility_speed_bonus: float
 
-## The team's agility level (1 = starting level), from relics found.
-var agility_level := 1
 ## How much flow (momentum) you've built up: 0 = normal running speed,
 ## 1 = top speed. See _update_flow().
 var flow := 0.0
@@ -320,7 +316,7 @@ func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
 
 
-# --- Movement profile, agility and flow ------------------------------------------
+# --- Movement profile and flow ---------------------------------------------------
 
 ## Switches to a different set of movement numbers.
 func set_profile(new_profile: MovementProfile) -> void:
@@ -328,25 +324,12 @@ func set_profile(new_profile: MovementProfile) -> void:
 	apply_profile()
 
 
-## The team's agility level went up (or a new game reset it).
-func set_agility_level(level: int) -> void:
-	agility_level = maxi(level, 1)
-	apply_profile()
-
-
-## Copies the numbers from `profile`, boosts them for the agility level, and
-## works out the physics that follow from them.
+## Copies the numbers from `profile` and works out the physics that follow
+## from them.
 func apply_profile() -> void:
 	for property in profile.get_property_list():
 		if property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			set(property.name, profile.get(property.name))
-
-	var levels_gained := agility_level - 1
-	jump_height *= 1.0 + agility_jump_bonus * levels_gained
-	var speed_boost := 1.0 + agility_speed_bonus * levels_gained
-	run_speed *= speed_boost
-	flow_speed *= speed_boost
-	wall_run_speed *= speed_boost
 
 	# Jump physics from designer-friendly numbers (height + timing).
 	jump_velocity = 2.0 * jump_height / jump_time_to_peak

@@ -28,10 +28,6 @@ const PROFILES := {
 	"superhuman": preload("res://player/profiles/superhuman.tres"),
 	"human": preload("res://player/profiles/human.tres"),
 }
-## How many relics the team needs for each agility level (Crackdown style):
-## level 1 to start, level 2 at 2 relics, ... level 5 at 11.
-const AGILITY_RELICS: Array[int] = [0, 2, 5, 8, 11]
-
 ## The character this computer controls (null while in the main menu).
 var local_player: Player
 ## The solo practice buddy, once called (see call_buddy()).
@@ -42,8 +38,6 @@ var level: Level
 ## Relics the team has found, by relic name. The host's copy is the official
 ## one; it tells everyone else (see collect_relic()).
 var collected_relics := {}
-## The team's agility level, from relics found. Makes everyone jump higher and run faster.
-var agility_level := 1
 
 @onready var world: Node3D = $World
 @onready var players: Node3D = $Players
@@ -165,7 +159,6 @@ func call_buddy() -> void:
 	var spot := local_player.global_position + forward * 1.5 + Vector3.UP * 0.05
 	buddy.set_checkpoint(spot)
 	buddy.set_profile(local_player.profile) # The buddy moves the way you do.
-	buddy.set_agility_level(agility_level)
 	buddy.respawn()
 	buddy.face_direction(-forward, 1.0)
 
@@ -211,7 +204,6 @@ func _return_to_menu(message: String) -> void:
 	_clear_world()
 	collected_relics.clear()
 	hud.set_relic_count(0, 0)
-	agility_level = 1
 	menu.open(message)
 
 
@@ -311,14 +303,10 @@ func _request_relic(relic_name: String) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _relic_collected(relic_name: String) -> void:
 	collected_relics[relic_name] = true
-	var old_level := agility_level
 	_show_relics()
 	if local_player == null:
 		return
-	if agility_level > old_level:
-		hud.show_message("Relic found! AGILITY UP: level %d" % agility_level)
-	else:
-		hud.show_message("Relic found! (%d/%d)" % [collected_relics.size(), _relics().size()])
+	hud.show_message("Relic found! (%d/%d)" % [collected_relics.size(), _relics().size()])
 
 
 ## The host catching up a newly joined player on what's already been found.
@@ -335,20 +323,6 @@ func _show_relics() -> void:
 	for relic in relics:
 		relic.set_collected(collected_relics.has(String(relic.name)))
 	hud.set_relic_count(collected_relics.size(), relics.size())
-	_update_agility()
-
-
-## Works out the team's agility level from the relics found and applies it
-## to your character (and the practice buddy).
-func _update_agility() -> void:
-	var level := 0
-	for needed in AGILITY_RELICS:
-		if collected_relics.size() >= needed:
-			level += 1
-	agility_level = level
-	for who: Player in [local_player, buddy]:
-		if is_instance_valid(who) and who.agility_level != level:
-			who.set_agility_level(level)
 
 
 ## Runs on every computer whenever a character appears (spawned here or copied
@@ -366,7 +340,6 @@ func _on_player_ready(player: Player) -> void:
 		hud.player = player
 		player.tree_exiting.connect(func() -> void: local_player = null)
 		player.set_profile(PROFILES.get(Settings.movement_profile, PROFILES["superhuman"]))
-		player.set_agility_level(agility_level)
 
 
 ## Switches your movement feel ("superhuman" or "human") and remembers it.
