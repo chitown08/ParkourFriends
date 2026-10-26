@@ -1,6 +1,8 @@
 extends SceneTree
 ## Runs every tests/test_*.gd file and prints the results.
-## Start it with run_tests.cmd (or see README.md).
+## Start it with run_tests.cmd (or see README.md). To run only some files, add
+## words after "--", e.g. `run_tests.cmd items` runs only test files with
+## "items" in their name.
 ##
 ## A test fails if any expect() check fails, or if any script error or engine
 ## error happens while it runs (Godot normally just logs those and carries on).
@@ -45,9 +47,12 @@ func _run_all() -> void:
 	OS.add_logger(catcher)
 	var passed := 0
 	var failed := 0
+	var only := OS.get_cmdline_user_args()
 
 	for file in DirAccess.get_files_at(TEST_DIR):
 		if not (file.begins_with("test_") and file.ends_with(".gd")):
+			continue
+		if not only.is_empty() and not Array(only).any(func(word: String) -> bool: return word in file):
 			continue
 		print("\n%s" % file)
 		var script := load(TEST_DIR + file) as GDScript

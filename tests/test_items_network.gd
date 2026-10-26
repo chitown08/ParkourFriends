@@ -42,6 +42,11 @@ func test_only_one_player_gets_an_item_grabbed_at_the_same_time() -> void:
 	var holder := _crate(host_main).holder_name
 	expect(holder == "1" or holder == str(client_player.name), "exactly one of them should hold it, holder '%s'" % holder)
 	expect(_crate(client_main).holder_name == holder, "and both screens should agree")
+	# Grabbing again doesn't snatch it out of the holder's hands.
+	var other_side := client_main if holder == "1" else host_main
+	_crate(other_side).request_pick_up.rpc_id(1)
+	await ticks(10)
+	expect(_crate(host_main).holder_name == holder, "a held item can't be grabbed away, holder now '%s'" % _crate(host_main).holder_name)
 
 
 func test_throw_an_item_to_a_friend_who_catches_it() -> void:

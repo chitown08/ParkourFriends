@@ -29,6 +29,10 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Zipline | Touch the cable; jump to leave, C to drop | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
+| Item: pick up / drop (or hand to the friend you face) | F | X / Square |
+| Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
+| Item: swap hands and back | Tab | D-pad right |
+| Item: use the one in your hands | Right mouse | Left trigger |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
@@ -66,18 +70,41 @@ levels/     old_town.tscn         – obsolete floating-islands prototype (the g
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             relic.tscn/.gd        – collectible gem (team-shared; logic in game/main.gd)
             zipline.tscn/.gd      – a zipline cable (set its end_point)
+items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
+            item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
+            item_ability.gd       – base class for what an item does while in your hands
+            data/                 – one .tres per kind of item (crate, test_balloon, …)
+            abilities/            – ability scripts (slow_fall.gd, …)
+player/     item_carrier.gd       – your two item slots (hands + back) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
 ```
 
-Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 = players, 3 = triggers.
+Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 = players, 3 = triggers, 4 = items.
 
 ## Adding a new move
 
 1. Create `player/states/<move>.gd` that `extends PlayerState` and fill in `enter`, `physics_update`, `exit`.
 2. In `player.tscn`, add a `Node` under **States** with that name and attach the script.
 3. From another state, switch to it with `player.change_state(&"<Name>")`.
+
+## Adding a new item
+
+Every item is the same physical object (`items/world_item.tscn`); what makes a crate a crate is
+its **ItemData** file.
+
+1. **Describe it:** in the FileSystem panel, right-click `items/data/` → **Create New → Resource…**,
+   pick **ItemData**, save it as e.g. `parachute.tres`. In the Inspector set its name, size,
+   colour, weight (mass) and throw speed. (Optional: drag a 3D model scene into **Model** to
+   replace the box.)
+2. **Give it an ability (optional):** make `items/abilities/<name>.gd` that `extends ItemAbility`
+   and fill in any of `equipped`, `unequipped`, `physics_update` (every tick while in your hands)
+   and `use` (right mouse / left trigger). `slow_fall.gd` is a 10-line example. Drag the script
+   into the ItemData's **Ability** slot.
+3. **Put it in a level:** drag `items/world_item.tscn` into the level under its **Items** node,
+   move it where you want, and drag your `.tres` into its **Item** slot. Where you place it is
+   its "home": it goes back there if it falls off the world or is left lying around.
 
 ## Multiplayer
 
@@ -116,6 +143,7 @@ speeds, jump height, ledge grabs, slides, wall moves, tossing, checkpoints, menu
 side by side in one program and must see each other move).
 
 - **Run them:** double-click `run_tests.cmd`, or run it from a terminal. It prints PASS/FAIL for each test.
+- **Run just some:** `run_tests.cmd items` runs only the test files with "items" in their name.
 - **Run them after every change** to make sure nothing that used to work has broken.
 - **Add a test:** add a `func test_something() -> void:` to a `tests/test_*.gd` file (or make a new one).
   The helpers in `tests/game_test.gd` (`place`, `hold`, `tap`, `run_and_jump`, `expect`, …) do most of the work.
