@@ -3,7 +3,7 @@ extends GameTest
 ## throw it into the drop-off beside the spawn for it to count.
 ## (Two-player relic tests: test_relics_network.gd.)
 
-const RELIC_COUNT := 6
+const RELIC_COUNT := 7
 const PILLAR_TOP := Vector3(10.5, 5.05, -72) ## Standing under RelicPillarTop.
 const BY_DROP_OFF := Vector3(0, 0.05, 0) ## The spawn; the drop-off is 7 m west.
 const DROP_OFF := Vector3(-7, 0.05, 0)

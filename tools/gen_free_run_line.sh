@@ -44,6 +44,7 @@ cat <<'EOF'
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
 [ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
 [ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
+[ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -191,6 +192,13 @@ block Sill2 -539.75 0.5 -7.2 -6 4 0 4_platform
 block Sill3 -539.75 0.5 -3.2 -2 4 0 4_platform
 label LabelLeaps 0 6 -532 "LEDGE LEAPS\n(hang, then jump to the sill above)"
 checkpoint Checkpoint8 0 1 -545
+
+# Off the line: a glider on the tower roof, and an island 28 m east and 7 m
+# down that only a glide reaches (a plain jump falls well short).
+world_item Glider -2.5 1.2 -543 18_glider
+floor GlideIsland -535 -555 -6 16 40
+relic RelicGlide 40 -4.4 -545
+label LabelGlide 3 4 -543 "GLIDER: hold right mouse / LT in the air\n(island to the east)"
 
 # --- 12. Zipline from the tower top down to the final landing ---
 # Starts just past the tower's north edge (z = -550) at shoulder height, so

@@ -195,6 +195,7 @@ var wall_jump_velocity: float
 const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"WallScramble", &"Zipline"]
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
 const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
+const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
 
 ## States you can toss a friend from.
 const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide"]
@@ -339,12 +340,18 @@ func hands_busy() -> bool:
 	return not is_bot and items.hands_busy()
 
 
-## Where an item you're holding sits: in front of your chest (hands), sticking
-## out of your backpack (back), or the backpack itself. Follows the way your body faces.
-func item_anchor(slot: int) -> Transform3D:
+## Where an item you're holding sits: in front of your chest (hands; bulky
+## items like the glider are held overhead), sticking out of your backpack
+## (back), or the backpack itself. Follows the way your body faces.
+func item_anchor(slot: int, overhead := false) -> Transform3D:
 	var body := Transform3D(_visual.global_basis.orthonormalized(), global_position)
-	var offset: Vector3 = ITEM_OFFSETS[slot]
+	var offset: Vector3 = OVERHEAD_OFFSET if overhead and slot == 0 else ITEM_OFFSETS[slot]
 	return body * Transform3D(Basis.IDENTITY, offset)
+
+
+## The flat direction your body is facing.
+func facing_direction() -> Vector3:
+	return -_visual.global_basis.z.slide(Vector3.UP).normalized()
 
 
 ## The direction the camera is looking (for throwing items).

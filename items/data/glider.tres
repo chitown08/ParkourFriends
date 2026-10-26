@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1_data"]
+[ext_resource type="Script" path="res://items/abilities/glide.gd" id="2_ability"]
+
+[resource]
+script = ExtResource("1_data")
+id = &"glider"
+display_name = "Glider"
+size = Vector3(2.6, 0.12, 1.0)
+color = Color(0.35, 0.7, 0.95, 1)
+mass = 3.0
+throw_speed = 10.0
+bulky = true
+ability = ExtResource("2_ability")

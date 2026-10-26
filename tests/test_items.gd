@@ -37,7 +37,7 @@ func test_pick_up_puts_it_in_your_hands() -> void:
 	await ticks(5)
 	expect(crate.state == WorldItem.State.HELD and crate.holder_name == "1", "you should be holding the crate")
 	expect(player.items.hands_item() == crate, "in your hands")
-	expect(crate.global_position.distance_to(player.item_anchor(WorldItem.HANDS).origin) < 0.1, "and it should sit in front of you")
+	expect(crate.global_position.distance_to(player.item_anchor(WorldItem.HANDS, true).origin) < 0.1, "and it should sit over your head (it's bulky)")
 
 
 func test_held_item_follows_you() -> void:
@@ -45,7 +45,7 @@ func test_held_item_follows_you() -> void:
 	await tap(&"interact")
 	await hold(&"move_forward", 30)
 	await ticks(5)
-	expect(crate.global_position.distance_to(player.item_anchor(WorldItem.HANDS).origin) < 0.1, "the crate should move with you")
+	expect(crate.global_position.distance_to(player.item_anchor(WorldItem.HANDS, true).origin) < 0.1, "the crate should move with you")
 
 
 func test_without_a_backpack_you_carry_one_thing() -> void:

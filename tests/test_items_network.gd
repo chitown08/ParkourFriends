@@ -29,7 +29,7 @@ func test_a_joining_player_picks_up_an_item_for_everyone_to_see() -> void:
 	var client_id := str(client_player.name)
 	expect(_crate(host_main).holder_name == client_id, "the host should see the client holding the crate")
 	expect(_crate(client_main).holder_name == client_id, "the client should see it too")
-	var anchor := host_main.players.get_node(client_id).item_anchor(WorldItem.HANDS) as Transform3D
+	var anchor := host_main.players.get_node(client_id).item_anchor(WorldItem.HANDS, true) as Transform3D
 	expect(_crate(host_main).global_position.distance_to(anchor.origin) < 0.5, "on the host's screen it sits in the client's hands")
 
 

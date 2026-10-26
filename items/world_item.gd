@@ -96,7 +96,7 @@ func _physics_process(delta: float) -> void:
 	if state == State.HELD:
 		var holder := find_player(holder_name)
 		if holder:
-			global_transform = holder.item_anchor(slot)
+			global_transform = holder.item_anchor(slot, is_bulky())
 
 
 # --- Requests from players' computers (always run on the host) -----------------

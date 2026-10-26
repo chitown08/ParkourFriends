@@ -67,6 +67,10 @@ built and the details the code relies on.
   can't be caught. F while facing a friend within 2 m hands the item over.
 - Items go home after falling below the kill height, after 90 s lying away from home, or
   when the player holding them leaves the game.
+- **Glider** (the first real tool): hold "use item" in the air to glide. Cruises at 16 m/s,
+  sinks 3 m/s (about 5 m forward per metre down), turns at 50°/s. Bulky, so it's held overhead
+  and blocks climbing. One sits on the leap tower roof, with an island east of it that only a
+  glide reaches (it has a relic). Numbers live in `items/abilities/glide.gd`.
 - Placeholders: **Crate** (bulky, no ability), **Test Balloon** (slows your fall while in your
   hands) and a **Backpack**, at the start of the Free-Run Line.
 - Item list (Oct 2026, see the master doc): glider, grappling hook, baseball bat (send a friend
