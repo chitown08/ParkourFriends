@@ -5,6 +5,7 @@ extends PlayerState
 ## - start a wall run (move fast alongside a tall wall).
 ## - scramble up a wall too tall to grab (push straight into it),
 ## - grab a zipline (touch the cable).
+## (Not the ones that need your hands while you hold a bulky item.)
 
 var _coyote_timer := 0.0
 var _regrab_timer := 0.0
@@ -46,7 +47,8 @@ func physics_update(delta: float) -> void:
 		player.change_state(&"Ground")
 		return
 
-	if _try_grab_zipline() or _try_grab_ledge() or _try_wall_scramble():
+	# Ledges, ziplines and scrambles need your hands free of bulky items.
+	if not player.hands_busy() and (_try_grab_zipline() or _try_grab_ledge() or _try_wall_scramble()):
 		return
 	_try_wall_run()
 

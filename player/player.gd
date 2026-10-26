@@ -191,6 +191,11 @@ var lean := 0.0
 var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
+## States that need your hands (not possible with a bulky item in them).
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"WallScramble", &"Zipline"]
+## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
+const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
+
 ## States you can toss a friend from.
 const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide"]
 ## Toss limits while in the air (see limit_tosses_per_air), refilled by
@@ -261,6 +266,10 @@ func _physics_process(delta: float) -> void:
 	if input.toss_just_pressed:
 		try_toss()
 
+	if hands_busy() and state.name in HANDS_MOVES:
+		# A bulky item just landed in your hands (a catch or a swap): let go.
+		zipline_cooldown = 0.5
+		change_state(&"Air", {"regrab_delay": 0.5})
 	state.physics_update(delta)
 	_update_flow(delta)
 	if not is_bot:
@@ -325,11 +334,16 @@ func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
 
 
-## Where an item you're holding sits: slot 0 (hands) in front of your chest,
-## slot 1 on your back. Follows the way your body faces.
+## True while a bulky item (e.g. a glider) is in your hands: no climbing.
+func hands_busy() -> bool:
+	return not is_bot and items.hands_busy()
+
+
+## Where an item you're holding sits: in front of your chest (hands), sticking
+## out of your backpack (back), or the backpack itself. Follows the way your body faces.
 func item_anchor(slot: int) -> Transform3D:
 	var body := Transform3D(_visual.global_basis.orthonormalized(), global_position)
-	var offset := Vector3(0.3, 1.0, -0.6) if slot == 0 else Vector3(0.0, 1.15, 0.45)
+	var offset: Vector3 = ITEM_OFFSETS[slot]
 	return body * Transform3D(Basis.IDENTITY, offset)
 
 

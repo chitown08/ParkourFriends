@@ -94,7 +94,11 @@ func set_relic_count(found: int, total: int) -> void:
 func _show_items() -> void:
 	var carrier := player.items
 	var in_hands := carrier.hands_item()
-	var on_back := carrier.back_item()
-	var slots := "Hands: %s    Back: %s" % [in_hands.display_name() if in_hands else "-", on_back.display_name() if on_back else "-"]
+	var slots := "Hands: %s" % (in_hands.display_name() if in_hands else "-")
+	if in_hands and in_hands.is_bulky():
+		slots += " (both hands: no climbing)"
+	if carrier.backpack():
+		var stowed := carrier.back_item()
+		slots += "    Backpack: %s" % (stowed.display_name() if stowed else "-")
 	var prompt := carrier.prompt_text()
 	_items.text = slots + ("\n" + prompt if prompt else "")

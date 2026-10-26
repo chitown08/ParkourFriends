@@ -10,10 +10,10 @@ built and the details the code relies on.
 
 | Decision | What it means in the code |
 |---|---|
-| One big city | The floating-islands prototype (`levels/old_town.tscn`) is obsolete; the Free-Run Line is the default world for now |
+| One big city | The floating-islands prototype (Old Town) was removed; the Free-Run Line is the default world for now |
 | Free-run stays | `player/free_run.gd`, switchable in the pause menu |
 | Throw chains are rewarded | You can toss once per air time, and each friend can toss you once per air time (`tossed_by` in `player.gd`) |
-| Base moves never change | No agility levels; relics are only collectibles (carry-back deliveries are in the master doc, not built yet) |
+| Base moves never change | No agility levels; relics are collectibles you carry back to a drop-off |
 | Puzzles, not the clock | No timers or time trials |
 
 ## How movement is built
@@ -43,7 +43,7 @@ built and the details the code relies on.
 
 - Host and join (ENet, port 7777, up to 4 players). Each player's computer runs their own
   character and shares position, facing, state, lean and who has tossed them.
-- The host owns world state (relics found) and picks the world; joiners receive it.
+- The host owns world state (relics delivered) and picks the world; joiners receive it.
 - The host owns every item: it runs their physics and decides who holds what, so two players
   grabbing at once can't both get it. Players' computers only ask (`request_pick_up`,
   `request_drop`, `request_throw`).
@@ -52,16 +52,26 @@ built and the details the code relies on.
 
 - Items are real physics objects (`WorldItem`, a RigidBody3D). Each kind is an `ItemData`
   resource plus an optional `ItemAbility` script, so new items need no changes to shared code.
-- Two slots: **hands** (active; its ability runs) and **back** (carried, does nothing). A new
-  item goes in your hands and pushes the current one to your back; with both full, F drops.
+- One slot for everyone: your **hands** (the item's ability runs there). A **backpack** is
+  worn, not held, and adds a second slot to stow an item in (Tab swaps). A new item goes in your
+  hands and pushes the current one into the backpack; with no room, F drops instead. F with
+  empty hands takes the backpack off (what was in it comes out into your hands).
+- **Bulky** items (the crate now, the glider later) need both hands: no ledge grabs, climbs,
+  vaults, scrambles or ziplines while one is in your hands, and you let go if one lands in your
+  hands mid-climb. Stow it in a backpack to climb. Wall runs and wall jumps still work.
+- **Relics** are items: they hover at home until touched (touching picks them up if your hands
+  are free), and only count once carried or thrown into a drop-off (`levels/drop_off.tscn`,
+  beside the Free-Run Line's spawn). A relic you drop or throw needs F to pick up again.
 - Throwing: items fly where the camera points. A thrown item passing within 1.3 m of a friend's
   chest is caught if they have a free slot (you can't catch your own for 0.4 s). Dropped items
   can't be caught. F while facing a friend within 2 m hands the item over.
 - Items go home after falling below the kill height, after 90 s lying away from home, or
   when the player holding them leaves the game.
-- Placeholders only: **Crate** (no ability) and **Test Balloon** (slows your fall while in your
-  hands), at the start of the Free-Run Line. The real item list comes from the master doc, which
-  also has a note to revisit items now that free-run changed how movement works.
+- Placeholders: **Crate** (bulky, no ability), **Test Balloon** (slows your fall while in your
+  hands) and a **Backpack**, at the start of the Free-Run Line.
+- Item list (Oct 2026, see the master doc): glider, grappling hook, baseball bat (send a friend
+  a long way), pogo stick (clumsy), backpack. Dropped: parachute, running shoes, roller skates,
+  suction-cup hands (for now). Tools are always used by hand: free-run never uses them.
 
 ## Worlds
 
@@ -69,7 +79,6 @@ built and the details the code relies on.
 |---|---|
 | `free_run_line.tscn` | Default. One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Human-scale lab the move tests rely on |
-| `old_town.tscn` | Obsolete floating-islands prototype (kept until the city exists) |
 
 ## Testing
 

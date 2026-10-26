@@ -1,22 +1,29 @@
 class_name ItemCarrier
 extends Node
-## The player's side of items: two slots (hands = the active item, back),
-## the item buttons, and running the ability of whatever's in your hands.
-##   F / X       -> pick up the nearest item (if you have a free slot);
+## The player's side of items. Everyone has one slot, their hands (the active
+## item); wearing a backpack adds a second slot to stow an item in.
+##   F / X       -> pick up the nearest item (if you have room);
 ##                  otherwise drop the item in your hands, or hand it to the
-##                  friend you're facing
+##                  friend you're facing; with empty hands, take off your backpack
 ##   T / Y       -> throw the item in your hands where the camera points
-##   Tab / D-pad -> swap hands and back
+##   Tab / D-pad -> swap your hands and your backpack
 ##   Right mouse / left trigger -> use the item in your hands
+## Some items (collectibles) are picked up just by touching them, while they
+## sit at their home spot.
 ## The host decides what actually happens (see WorldItem); this only asks.
 
 ## How close (metres) an item must be to pick it up, or a friend to hand it to.
 const PICKUP_RANGE := 2.0
+## How close (metres from your middle) a pick-up-on-touch item must be.
+const TOUCH_RANGE := 1.3
+## Don't ask the host about the same touched item more often than this (seconds).
+const TOUCH_RETRY := 0.2
 
 var player: Player
 
 var _ability: ItemAbility
 var _ability_item: WorldItem
+var _touch_cooldown := 0.0
 
 
 ## Called by the Player each tick (its own computer only), after it has moved.
@@ -30,6 +37,7 @@ func physics_update(delta: float) -> void:
 			in_hands.request_throw.rpc_id(1, player.aim_direction())
 	if input.switch_item_just_pressed:
 		request_swap.rpc_id(1)
+	_pick_up_touched(delta)
 
 	_update_ability()
 	if _ability:
@@ -42,24 +50,34 @@ func hands_item() -> WorldItem:
 	return _held_in(WorldItem.HANDS)
 
 
+## The item stowed in your backpack (or null).
 func back_item() -> WorldItem:
 	return _held_in(WorldItem.BACK)
 
 
-func has_free_slot() -> bool:
-	return hands_item() == null or back_item() == null
+## The backpack you're wearing (or null).
+func backpack() -> WorldItem:
+	return _held_in(WorldItem.WORN)
 
 
-## The closest item lying in the world within reach (or null).
+## True while the item in your hands needs both of them (no climbing).
+func hands_busy() -> bool:
+	var in_hands := hands_item()
+	return in_hands != null and in_hands.is_bulky()
+
+
+func can_take(item: WorldItem) -> bool:
+	return item.free_slot(player) != -1
+
+
+## The closest item lying in the world within reach that you have room for (or null).
 func nearest_item() -> WorldItem:
 	var best: WorldItem = null
 	var best_distance := PICKUP_RANGE
 	var chest := player.global_position + Vector3.UP * 0.9
-	for item: WorldItem in player.get_tree().get_nodes_in_group(&"items"):
-		if item.state != WorldItem.State.IN_WORLD or not _same_game(item):
-			continue
+	for item in _items_in_world():
 		var distance := chest.distance_to(item.global_position)
-		if distance < best_distance:
+		if distance < best_distance and can_take(item):
 			best_distance = distance
 			best = item
 	return best
@@ -81,34 +99,55 @@ func friend_in_front() -> Player:
 ## What the HUD should prompt, e.g. "F - pick up Crate" (or "" for nothing).
 func prompt_text() -> String:
 	var nearby := nearest_item()
-	if nearby and has_free_slot():
+	if nearby:
 		return "F - pick up %s" % nearby.display_name()
+	var friend := friend_in_front()
 	var in_hands := hands_item()
 	if in_hands:
-		var friend := friend_in_front()
 		var action := "give %s to your friend" % in_hands.display_name() if friend else "drop %s" % in_hands.display_name()
 		return "F - %s    T - throw it" % action
+	var worn := backpack()
+	if worn:
+		return "F - %s" % ("give your %s to your friend" if friend else "take off your %s") % worn.display_name()
 	return ""
 
 
-## Swap the items in your hands and on your back (runs on the host).
+## Swap the items in your hands and your backpack (runs on the host).
 @rpc("any_peer", "call_local", "reliable")
 func request_swap() -> void:
-	if not multiplayer.is_server():
+	if not multiplayer.is_server() or backpack() == null:
 		return
 	for item in _all_held():
-		item.slot = WorldItem.BACK if item.slot == WorldItem.HANDS else WorldItem.HANDS
+		if item.slot == WorldItem.HANDS:
+			item.slot = WorldItem.BACK
+		elif item.slot == WorldItem.BACK:
+			item.slot = WorldItem.HANDS
 
 
 func _interact() -> void:
 	var nearby := nearest_item()
-	if nearby and has_free_slot():
+	if nearby:
 		nearby.request_pick_up.rpc_id(1)
 		return
-	var in_hands := hands_item()
-	if in_hands:
+	var to_drop := hands_item()
+	if to_drop == null:
+		to_drop = backpack()
+	if to_drop:
 		var friend := friend_in_front()
-		in_hands.request_drop.rpc_id(1, str(friend.name) if friend else "")
+		to_drop.request_drop.rpc_id(1, str(friend.name) if friend else "")
+
+
+## Grabs pick-up-on-touch items (collectibles) you run into, if you have room.
+func _pick_up_touched(delta: float) -> void:
+	_touch_cooldown -= delta
+	if _touch_cooldown > 0.0:
+		return
+	var middle := player.global_position + Vector3.UP * 0.9
+	for item in _items_in_world():
+		if item.item and item.item.pick_up_on_touch and item.is_at_home() and middle.distance_to(item.global_position) <= TOUCH_RANGE and can_take(item):
+			item.request_touch_pick_up.rpc_id(1)
+			_touch_cooldown = TOUCH_RETRY
+			return
 
 
 ## Starts/stops the ability of whatever is in your hands when that changes.
@@ -137,6 +176,14 @@ func _all_held() -> Array[WorldItem]:
 	var found: Array[WorldItem] = []
 	for item: WorldItem in player.get_tree().get_nodes_in_group(&"items"):
 		if item.state == WorldItem.State.HELD and item.holder_name == str(player.name) and _same_game(item):
+			found.append(item)
+	return found
+
+
+func _items_in_world() -> Array[WorldItem]:
+	var found: Array[WorldItem] = []
+	for item: WorldItem in player.get_tree().get_nodes_in_group(&"items"):
+		if item.state == WorldItem.State.IN_WORLD and _same_game(item):
 			found.append(item)
 	return found
 

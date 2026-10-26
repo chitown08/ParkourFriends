@@ -24,6 +24,20 @@ extends Resource
 ## How hard it flies when thrown (m/s).
 @export var throw_speed := 14.0
 
+@export_group("Carrying")
+## Needs both hands (e.g. a glider held overhead): while it's in your hands you
+## can't grab ledges, climb, vault, scramble or ride ziplines. Stow it in a
+## backpack to climb.
+@export var bulky := false
+## A backpack: worn on your back instead of held, it gives you a second slot.
+@export var is_backpack := false
+## Picked up just by touching it (if your hands are free), like a collectible.
+@export var pick_up_on_touch := false
+## Floats in place at its home spot instead of falling (until someone takes it).
+@export var hovers_at_home := false
+## Counts for the team when carried or thrown into a drop-off (levels/drop_off.tscn).
+@export var deliverable := false
+
 @export_group("Returning home")
 ## Left lying away from its home spot this long (seconds), it goes back home.
 @export var abandon_time := 90.0

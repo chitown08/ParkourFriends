@@ -37,7 +37,7 @@ func set_busy(busy: bool, message: String = "") -> void:
 		_status.text = message
 
 
-## Fills in the world picker. `ids` are world ids like "old_town".
+## Fills in the world picker. `ids` are world ids like "free_run_line".
 func set_worlds(ids: Array, default_id: String) -> void:
 	_world.clear()
 	for id: String in ids:

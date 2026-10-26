@@ -1,6 +1,6 @@
 class_name Level
 extends Node3D
-## Base script for a playable world (the test course, Old Town, ...).
+## Base script for a playable world (the Free-Run Line, the test course, ...).
 ## Every world needs a SpawnPoint marker.
 
 ## Falling below this height respawns you at your last checkpoint.

@@ -8,7 +8,7 @@ extends RigidBody3D
 ## and the ItemSync node shares the result with everyone. To make a new kind of
 ## item, make an ItemData (see item_data.gd) and set it as `item`.
 
-enum State { IN_WORLD, HELD, RETURNING }
+enum State { IN_WORLD, HELD, RETURNING, DELIVERED }
 
 ## How close (metres from your chest) a thrown item must pass to be caught.
 const CATCH_DISTANCE := 1.3
@@ -16,9 +16,11 @@ const CATCH_DISTANCE := 1.3
 const OWN_CATCH_DELAY := 0.4
 ## How long an item disappears for before reappearing at home (seconds).
 const RETURN_DELAY := 2.0
-## Slots: 0 = hands (the active item), 1 = back.
+## Slots: hands (the active item), back (stowed in a backpack), and the
+## backpack itself, worn. Everyone has hands; only a backpack gives a back slot.
 const HANDS := 0
 const BACK := 1
+const WORN := 2
 
 @export var item: ItemData
 
@@ -35,6 +37,9 @@ var _return_timer := 0.0
 ## Who threw it ("" if it wasn't thrown). Only thrown items can be caught.
 var _thrown_by := ""
 var _own_catch_timer := 0.0
+## Still sitting untouched at home (items that hover stay put until taken).
+var _at_home := true
+var _applied_state := State.IN_WORLD
 
 @onready var _shape: CollisionShape3D = $CollisionShape3D
 @onready var _mesh: MeshInstance3D = $Mesh
@@ -58,13 +63,36 @@ func display_name() -> String:
 	return item.display_name if item else "Item"
 
 
+## True if this item needs both hands (you can't climb while holding it).
+func is_bulky() -> bool:
+	return item != null and item.bulky
+
+
+func is_backpack() -> bool:
+	return item != null and item.is_backpack
+
+
+func is_deliverable() -> bool:
+	return item != null and item.deliverable
+
+
+## Still sitting untouched at its home spot. (Only the host knows for sure;
+## other computers go by whether it's where it started.)
+func is_at_home() -> bool:
+	var in_place := global_position.distance_to(_home.origin) < 0.1
+	return in_place and (_at_home or not multiplayer.is_server())
+
+
 func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_host_update(delta)
 		if state == State.IN_WORLD:
 			sync_transform = global_transform
-	elif state == State.IN_WORLD:
-		global_transform = global_transform.interpolate_with(sync_transform, 0.5)
+	else:
+		if state != _applied_state:
+			_apply_state() # The host changed it.
+		if state == State.IN_WORLD:
+			global_transform = global_transform.interpolate_with(sync_transform, 0.5)
 	if state == State.HELD:
 		var holder := find_player(holder_name)
 		if holder:
@@ -84,15 +112,25 @@ func request_pick_up() -> void:
 	host_give_to(player)
 
 
+## A player ran into this pick-up-on-touch item (collectibles). Only works
+## while it's at home, so you don't instantly re-grab one you dropped or threw.
+@rpc("any_peer", "call_local", "reliable")
+func request_touch_pick_up() -> void:
+	if item and item.pick_up_on_touch and is_at_home():
+		request_pick_up()
+
+
 ## The holder asks to drop it, or hand it to the friend named `give_to`.
 @rpc("any_peer", "call_local", "reliable")
 func request_drop(give_to: String) -> void:
 	var player := _sender()
-	if player == null or holder_name != str(player.name):
+	if player == null or holder_name != str(player.name) or slot == BACK:
 		return
 	var friend := find_player(give_to)
-	if friend and _free_slot(friend) != -1 and friend.global_position.distance_to(player.global_position) < ItemCarrier.PICKUP_RANGE * 2.0:
+	if friend and free_slot(friend) != -1 and friend.global_position.distance_to(player.global_position) < ItemCarrier.PICKUP_RANGE * 2.0:
+		var was_in := slot
 		host_give_to(friend)
+		_unpack(player, was_in)
 		return
 	_release(player, player.velocity * 0.5)
 
@@ -101,7 +139,7 @@ func request_drop(give_to: String) -> void:
 @rpc("any_peer", "call_local", "reliable")
 func request_throw(aim: Vector3) -> void:
 	var player := _sender()
-	if player == null or holder_name != str(player.name):
+	if player == null or holder_name != str(player.name) or slot != HANDS:
 		return
 	var throw_speed := item.throw_speed if item else 14.0
 	_release(player, aim.normalized() * throw_speed + Vector3.UP * 3.0 + player.velocity * 0.5)
@@ -111,23 +149,34 @@ func request_throw(aim: Vector3) -> void:
 
 # --- Host-side changes ---------------------------------------------------------
 
-## Puts the item in `player`'s hands (their current hand item moves to their back).
-## Returns false if both their slots are full.
+## Gives the item to `player`: a backpack goes on their back; anything else
+## goes in their hands (what was in their hands moves into their backpack).
+## Returns false if they have no room for it.
 func host_give_to(player: Player) -> bool:
-	var free := _free_slot(player)
+	var free := free_slot(player)
 	if free == -1:
 		return false
 	if free == BACK:
-		# Hands are full: that item moves to the back, the new one goes in the hands.
+		# Hands are full: that item goes in the backpack, the new one in the hands.
 		for other in held_by(player):
-			other.slot = BACK
+			if other.slot == HANDS:
+				other.slot = BACK
 	state = State.HELD
 	holder_name = str(player.name)
-	slot = HANDS
+	slot = WORN if is_backpack() else HANDS
 	_idle_time = 0.0
 	_thrown_by = ""
+	_at_home = false
 	_apply_state()
 	return true
+
+
+## Host only: the item has been delivered to a drop-off and is gone for good.
+func host_deliver() -> void:
+	state = State.DELIVERED
+	holder_name = ""
+	_thrown_by = ""
+	_apply_state()
 
 
 ## Sends the item straight home (after a short disappearance).
@@ -140,14 +189,12 @@ func host_return_home() -> void:
 
 func _release(player: Player, launch: Vector3) -> void:
 	var hand := player.item_anchor(HANDS)
+	var was_in := slot
 	state = State.IN_WORLD
 	holder_name = ""
 	_idle_time = 0.0
 	_thrown_by = "" # Set again by request_throw() if this is a throw.
-	# Every other item they hold moves to their hands.
-	for other in held_by(player):
-		if other != self:
-			other.slot = HANDS
+	_unpack(player, was_in)
 	_apply_state()
 	global_transform = Transform3D(Basis.IDENTITY, hand.origin)
 	linear_velocity = launch
@@ -181,11 +228,22 @@ func _host_update(delta: float) -> void:
 			_return_timer -= delta
 			if _return_timer <= 0.0:
 				state = State.IN_WORLD
+				_at_home = true
 				_apply_state()
 				global_transform = _home
 				linear_velocity = Vector3.ZERO
 				angular_velocity = Vector3.ZERO
 				sync_transform = _home
+
+
+## After this item left `player`'s `was_in` slot: whatever was in their
+## backpack comes out into their (now free) hands. (A backpack can only be
+## taken off with empty hands, so this works for that too.)
+func _unpack(player: Player, was_in: int) -> void:
+	if was_in == HANDS or was_in == WORN:
+		for other in held_by(player):
+			if other.slot == BACK:
+				other.slot = HANDS
 
 
 ## A flying item lands in the hands of a player it passes close to (who has room).
@@ -202,21 +260,27 @@ func _try_catch() -> void:
 
 ## Shows/hides the item and turns its physics on or off to match `state`.
 func _apply_state() -> void:
-	visible = state != State.RETURNING
+	_applied_state = state
+	visible = state == State.IN_WORLD or state == State.HELD
 	var in_world := state == State.IN_WORLD
+	var hovering := _at_home and item != null and item.hovers_at_home
 	# Only the host simulates items; everyone else just shows where they are.
-	freeze = not (in_world and multiplayer.is_server())
+	freeze = not (in_world and multiplayer.is_server()) or hovering
 	_shape.set_deferred(&"disabled", not in_world)
 
 
-## The first free slot `player` has (hands first), or -1 if both are full.
-func _free_slot(player: Player) -> int:
+## The slot this item would go in for `player`, or -1 if they have no room:
+## a backpack needs a free back (you can only wear one); anything else goes in
+## free hands, or in the backpack (if they wear one with room) when hands are full.
+func free_slot(player: Player) -> int:
 	var used := {}
 	for other in held_by(player):
 		used[other.slot] = true
+	if is_backpack():
+		return -1 if used.has(WORN) else WORN
 	if not used.has(HANDS):
 		return HANDS
-	if not used.has(BACK):
+	if used.has(WORN) and not used.has(BACK):
 		return BACK
 	return -1
 

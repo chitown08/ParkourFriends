@@ -6,7 +6,7 @@ extends Node3D
 ## copies them to everyone who's connected (including people who join later).
 ## Each character is named after its player's network id, e.g. "1" for the host.
 ##
-## The world (Old Town, the test course, ...) is loaded into the World node
+## The world (the Free-Run Line, the test course, ...) is loaded into the World node
 ## when a game starts. The host's choice is copied to joining players by the
 ## WorldSpawner node, the same way characters are.
 ##
@@ -19,7 +19,6 @@ const PLAYER_SCENE := preload("res://player/player.tscn")
 ## WorldSpawner's spawnable scenes in main.tscn.)
 const WORLDS := {
 	"free_run_line": "res://levels/free_run_line.tscn",
-	"old_town": "res://levels/old_town.tscn",
 	"test_course": "res://levels/test_course.tscn",
 }
 const DEFAULT_WORLD := "free_run_line"
@@ -35,9 +34,9 @@ var buddy: Player
 var is_paused := false
 ## The world being played (null while in the main menu).
 var level: Level
-## Relics the team has found, by relic name. The host's copy is the official
-## one; it tells everyone else (see collect_relic()).
-var collected_relics := {}
+## Relics the team has delivered to a drop-off, by item name. The host's copy is the official
+## one; it tells everyone else (see _on_delivered()).
+var delivered_relics := {}
 
 @onready var world: Node3D = $World
 @onready var players: Node3D = $Players
@@ -111,7 +110,7 @@ func load_world(world_id: String) -> void:
 		push_warning("Unknown world '%s', loading %s instead" % [world_id, DEFAULT_WORLD])
 		world_id = DEFAULT_WORLD
 	_clear_world()
-	collected_relics.clear()
+	delivered_relics.clear()
 	var new_level := (load(WORLDS[world_id]) as PackedScene).instantiate()
 	world.add_child(new_level, true)
 
@@ -202,7 +201,7 @@ func _return_to_menu(message: String) -> void:
 	for player in players.get_children():
 		player.queue_free()
 	_clear_world()
-	collected_relics.clear()
+	delivered_relics.clear()
 	hud.set_relic_count(0, 0)
 	menu.open(message)
 
@@ -218,7 +217,7 @@ func _clear_world() -> void:
 func _on_peer_connected(peer_id: int) -> void:
 	if multiplayer.is_server():
 		spawn_player(peer_id)
-		_receive_relic_list.rpc_id(peer_id, collected_relics.keys())
+		_receive_relic_list.rpc_id(peer_id, delivered_relics.keys())
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
@@ -260,73 +259,55 @@ func _on_world_ready(new_level: Level) -> void:
 	for checkpoint: Checkpoint in get_tree().get_nodes_in_group(&"checkpoints"):
 		if level.is_ancestor_of(checkpoint):
 			checkpoint.reached.connect(_on_checkpoint_reached)
-	for relic in _relics():
-		relic.touched.connect(_on_relic_touched.bind(relic))
+	for drop_off: DropOff in get_tree().get_nodes_in_group(&"drop_offs"):
+		if level.is_ancestor_of(drop_off):
+			drop_off.delivered.connect(_on_delivered)
 	_show_relics()
 
 
 # --- Relics (shared by the team) --------------------------------------------------
+# Relics are items (items/data/relic.tres): you carry them, or throw them, to a
+# drop-off (levels/drop_off.tscn), and only then do they count for the team.
 
-func _relics() -> Array[Relic]:
-	var found: Array[Relic] = []
+func _relics() -> Array[WorldItem]:
+	var found: Array[WorldItem] = []
 	if level:
-		for relic: Relic in get_tree().get_nodes_in_group(&"relics"):
-			if level.is_ancestor_of(relic):
-				found.append(relic)
+		for item: WorldItem in get_tree().get_nodes_in_group(&"items"):
+			if item.is_deliverable() and level.is_ancestor_of(item):
+				found.append(item)
 	return found
 
 
-func _on_relic_touched(player: Player, relic: Relic) -> void:
-	# Only your own character picks things up on your computer; everyone else's
-	# computer handles theirs. (The practice buddy doesn't collect.)
-	var relic_name := String(relic.name)
-	if player != local_player or collected_relics.has(relic_name):
+## Host only: a drop-off received a relic. Tell everyone.
+func _on_delivered(item: WorldItem) -> void:
+	var relic_name := String(item.name)
+	if delivered_relics.has(relic_name):
 		return
-	if multiplayer.is_server():
-		collect_relic(relic_name)
-	else:
-		_request_relic.rpc_id(1, relic_name)
+	_relic_delivered(relic_name)
+	_relic_delivered.rpc(relic_name)
 
 
-## Host only: marks a relic as found and tells everyone.
-func collect_relic(relic_name: String) -> void:
-	if collected_relics.has(relic_name):
-		return # Someone else got there first.
-	_relic_collected(relic_name)
-	_relic_collected.rpc(relic_name)
-
-
-## A joining player asking the host to collect a relic for the team.
-@rpc("any_peer", "call_remote", "reliable")
-func _request_relic(relic_name: String) -> void:
-	if multiplayer.is_server():
-		collect_relic(relic_name)
-
-
-## The host announcing a found relic.
+## The host announcing a delivered relic.
 @rpc("authority", "call_remote", "reliable")
-func _relic_collected(relic_name: String) -> void:
-	collected_relics[relic_name] = true
+func _relic_delivered(relic_name: String) -> void:
+	delivered_relics[relic_name] = true
 	_show_relics()
 	if local_player == null:
 		return
-	hud.show_message("Relic found! (%d/%d)" % [collected_relics.size(), _relics().size()])
+	hud.show_message("Relic delivered! (%d/%d)" % [delivered_relics.size(), _relics().size()])
 
 
-## The host catching up a newly joined player on what's already been found.
+## The host catching up a newly joined player on what's already been delivered.
 @rpc("authority", "call_remote", "reliable")
 func _receive_relic_list(relic_names: Array) -> void:
 	for relic_name: String in relic_names:
-		collected_relics[relic_name] = true
+		delivered_relics[relic_name] = true
 	_show_relics()
 
 
-## Hides found relics and updates the counter.
+## Updates the counter.
 func _show_relics() -> void:
-	var relics := _relics()
-	for relic in relics:
-		relic.set_collected(collected_relics.has(String(relic.name)))
-	hud.set_relic_count(collected_relics.size(), relics.size())
+	hud.set_relic_count(delivered_relics.size(), _relics().size())
 
 
 ## Runs on every computer whenever a character appears (spawned here or copied

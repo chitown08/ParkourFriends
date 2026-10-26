@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+id = &"backpack"
+display_name = "Backpack"
+size = Vector3(0.55, 0.65, 0.3)
+color = Color(0.25, 0.55, 0.35, 1)
+mass = 1.5
+throw_speed = 12.0
+is_backpack = true

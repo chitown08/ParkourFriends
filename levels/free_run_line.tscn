@@ -6,11 +6,13 @@
 [ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_platform"]
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
-[ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
+[ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="10_dropoff"]
 [ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
 [ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
+[ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
+[ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -72,6 +74,15 @@ text = "FREE-RUN LINE\nhold Shift and steer with the camera"
 font_size = 64
 outline_size = 16
 
+[node name="DropOffPad" type="CSGBox3D" parent="Course"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, -1, 0)
+use_collision = true
+size = Vector3(6, 2, 10)
+material = ExtResource("3_ground")
+
+[node name="DropOff" parent="." instance=ExtResource("10_dropoff")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)
+
 [node name="Crate" parent="Items" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.4, -14)
 item = ExtResource("14_crate")
@@ -80,11 +91,15 @@ item = ExtResource("14_crate")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.4, -14)
 item = ExtResource("15_balloon")
 
+[node name="Backpack" parent="Items" instance=ExtResource("13_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, -18)
+item = ExtResource("17_backpack")
+
 [node name="LabelItems" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -14)
 billboard = 1
 pixel_size = 0.02
-text = "ITEMS: F pick up / drop, T throw, Tab swap"
+text = "ITEMS: F pick up / drop, T throw, Tab backpack"
 font_size = 64
 outline_size = 16
 
@@ -126,8 +141,9 @@ use_collision = true
 size = Vector3(3, 45, 3)
 material = ExtResource("4_platform")
 
-[node name="RelicPillarTop" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicPillarTop" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 6.6, -72)
+item = ExtResource("16_relic")
 
 [node name="BarLane" type="CSGBox3D" parent="Course"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, -120)
@@ -190,8 +206,9 @@ text = "GAPS: 4 m, 7 m, 10 m\n(the last one needs full flow)"
 font_size = 64
 outline_size = 16
 
-[node name="RelicOverGap" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicOverGap" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -163.5)
+item = ExtResource("16_relic")
 
 [node name="Checkpoint2" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -197)
@@ -242,8 +259,9 @@ use_collision = true
 size = Vector3(6, 3, 6)
 material = ExtResource("4_platform")
 
-[node name="RelicStreetNook" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicStreetNook" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, -7.4, -303)
+item = ExtResource("16_relic")
 
 [node name="Step1" type="CSGBox3D" parent="Course"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -10, -314)
@@ -283,8 +301,9 @@ use_collision = true
 size = Vector3(8, 5, 8)
 material = ExtResource("4_platform")
 
-[node name="RelicClimbWall" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicClimbWall" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.6, -350)
+item = ExtResource("16_relic")
 
 [node name="LabelClimb" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9, -342)
@@ -344,8 +363,9 @@ use_collision = true
 size = Vector3(2, 3, 2)
 material = ExtResource("4_platform")
 
-[node name="RelicTallWall" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicTallWall" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.4, -480)
+item = ExtResource("16_relic")
 
 [node name="LabelTallWall" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -470)
@@ -411,8 +431,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -545)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, -551)
 end_point = Vector3(0, -21.1, -94)
 
-[node name="RelicZipline" parent="Relics" instance=ExtResource("10_relic")]
+[node name="RelicZipline" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.4, -600)
+item = ExtResource("16_relic")
 
 [node name="LabelZipline" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -552)

@@ -10,7 +10,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
-2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (Old Town, or the
+2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Free-Run Line, or the
    Test Course playground), then **Play Solo** or **Host**. Joining players get the host's world.
 
 ## Controls
@@ -29,9 +29,9 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Zipline | Touch the cable; jump to leave, C to drop | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
-| Item: pick up / drop (or hand to the friend you face) | F | X / Square |
+| Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
 | Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
-| Item: swap hands and back | Tab | D-pad right |
+| Item: swap your hands and backpack (once you wear one) | Tab | D-pad right |
 | Item: use the one in your hands | Right mouse | Left trigger |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
@@ -64,18 +64,18 @@ player/states/                    – one script per movement "mode" (state mach
             zipline.gd            – riding a zipline
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
-levels/     old_town.tscn         – obsolete floating-islands prototype (the game is now one big city)
             test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
-            relic.tscn/.gd        – collectible gem (team-shared; logic in game/main.gd)
+            drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
             zipline.tscn/.gd      – a zipline cable (set its end_point)
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands
-            data/                 – one .tres per kind of item (crate, test_balloon, …)
+            data/                 – one .tres per kind of item (relic, backpack, crate, test_balloon, …)
+            models/               – item models (relic_gem.tscn)
             abilities/            – ability scripts (slow_fall.gd, …)
-player/     item_carrier.gd       – your two item slots (hands + back) and the item buttons
+player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
@@ -95,9 +95,11 @@ Every item is the same physical object (`items/world_item.tscn`); what makes a c
 its **ItemData** file.
 
 1. **Describe it:** in the FileSystem panel, right-click `items/data/` → **Create New → Resource…**,
-   pick **ItemData**, save it as e.g. `parachute.tres`. In the Inspector set its name, size,
+   pick **ItemData**, save it as e.g. `glider.tres`. In the Inspector set its name, size,
    colour, weight (mass) and throw speed. (Optional: drag a 3D model scene into **Model** to
-   replace the box.)
+   replace the box.) Under **Carrying**, tick what applies: **Bulky** (needs both hands, so no
+   climbing while holding it), **Is Backpack**, **Pick Up On Touch**, **Hovers At Home** and
+   **Deliverable** (counts at a drop-off, like relics).
 2. **Give it an ability (optional):** make `items/abilities/<name>.gd` that `extends ItemAbility`
    and fill in any of `equipped`, `unequipped`, `physics_update` (every tick while in your hands)
    and `use` (right mouse / left trigger). `slow_fall.gd` is a 10-line example. Drag the script

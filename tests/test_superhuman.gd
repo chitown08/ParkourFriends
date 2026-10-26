@@ -1,15 +1,15 @@
 extends GameTest
-## The superhuman movement profile and flow (momentum). Runs in Old Town, which
-## has long streets to build up speed in.
+## The superhuman movement profile and flow (momentum). Runs on the Free-Run
+## Line, whose 60 m runway is long enough to build up speed.
 
-## A long clear street: from the plaza west toward the Shops (wall at x = -60).
-const STREET_START := Vector3(0, 0.35, 57)
+## The south end of the runway (the first hurdle is at z = -58).
+const RUNWAY_START := Vector3(0, 0.05, 4)
 
 
 func before_each() -> void:
 	main = MAIN_SCENE.instantiate()
 	add_child(main)
-	main.start_solo("old_town")
+	main.start_solo("free_run_line")
 	await ticks(5)
 	player = main.get_node_or_null("Players/1")
 	expect(player != null, "the game should have created a player")
@@ -29,7 +29,7 @@ func test_superhuman_jump_is_about_3_m() -> void:
 
 
 func test_flow_builds_from_run_speed_to_top_speed() -> void:
-	await place(STREET_START, FACE_WEST)
+	await place(RUNWAY_START, FACE_NORTH)
 	Input.action_press(&"move_forward")
 	await ticks(15)
 	expect_near(player.get_horizontal_speed(), 10.0, 1.0, "starting run speed")
@@ -39,16 +39,16 @@ func test_flow_builds_from_run_speed_to_top_speed() -> void:
 
 
 func test_crashing_into_a_wall_drains_flow() -> void:
-	await place(Vector3(-40, 0.35, 57), FACE_WEST)
+	await place(Vector3(0, -21.95, -660), FACE_NORTH)
 	player.flow = 1.0
-	Input.action_press(&"move_forward") # Straight into the Shops wall (x = -60).
+	Input.action_press(&"move_forward") # Straight into the end wall (z = -680).
 	await ticks(120)
-	expect(player.global_position.x > -60.0, "test setup: should be stopped by the wall")
+	expect(player.global_position.z > -680.5, "test setup: should be stopped by the wall")
 	expect_near(player.flow, 0.0, 0.01, "flow after crashing into a wall")
 
 
 func test_jumping_keeps_flow() -> void:
-	await place(STREET_START, FACE_WEST)
+	await place(RUNWAY_START, FACE_NORTH)
 	player.flow = 1.0
 	Input.action_press(&"move_forward")
 	await ticks(10)

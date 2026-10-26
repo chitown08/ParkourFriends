@@ -21,7 +21,8 @@ block() {
 }
 label() { printf '\n[node name="%s" type="Label3D" parent="Labels"]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nbillboard = 1\npixel_size = 0.02\ntext = "%s"\nfont_size = 64\noutline_size = 16\n' "$@"; }
 checkpoint() { printf '\n[node name="%s" parent="Checkpoints" instance=ExtResource("2_checkpoint")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
-relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("10_relic")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
+# A relic (a collectible item that hovers until taken): name x y z
+relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("13_item")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nitem = ExtResource("16_relic")\n' "$@"; }
 # A zipline cable: name x y z (start) end_x end_y end_z (end, relative to the start)
 zipline() { printf '\n[node name="%s" parent="Ziplines" instance=ExtResource("12_zipline")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nend_point = Vector3(%s, %s, %s)\n' "$@"; }
 # An item lying in the world: name x y z item_resource_id
@@ -36,11 +37,13 @@ cat <<'EOF'
 [ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_platform"]
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
-[ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
+[ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="10_dropoff"]
 [ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
 [ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
+[ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
+[ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -93,10 +96,16 @@ EOF
 floor Runway 5 -45 0
 label LabelStart 0 5 -10 "FREE-RUN LINE\\nhold Shift and steer with the camera"
 
-# Placeholder items to try the item system (not real game items).
+# Where relics are brought: a pad beside the spawn, off the lane.
+floor DropOffPad 5 -5 0 6 -7
+printf '\n[node name="DropOff" parent="." instance=ExtResource("10_dropoff")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)\n'
+
+# Placeholder items to try the item system (not real game items). The crate is
+# bulky (no climbing while it's in your hands); the backpack adds a second slot.
 world_item Crate 2.5 0.4 -14 14_crate
 world_item TestBalloon -2.5 0.4 -14 15_balloon
-label LabelItems 0 3 -14 "ITEMS: F pick up / drop, T throw, Tab swap"
+world_item Backpack 0 0.4 -18 17_backpack
+label LabelItems 0 3 -14 "ITEMS: F pick up / drop, T throw, Tab backpack"
 
 # --- 1. Hurdles (1, 1.5 and 2.5 m): free-run jumps them ---
 floor HurdleLane -45 -100 0

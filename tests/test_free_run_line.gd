@@ -46,9 +46,9 @@ func test_free_run_takes_the_whole_line_to_the_tall_wall() -> void:
 	expect(player.global_position.z < -470.0, "should reach the tall wall, got to z = %.1f" % player.global_position.z)
 	for state in [&"Slide", &"WallRun", &"Climb"]:
 		expect(visited.has(state), "should %s somewhere along the line" % state)
-	expect(main.collected_relics.has("RelicOverGap"), "should collect the relic over the 7 m gap on the way")
+	expect(_holding("RelicOverGap"), "should grab the relic over the 7 m gap on the way")
 	for off_line in ["RelicPillarTop", "RelicStreetNook", "RelicTallWall"]:
-		expect(not main.collected_relics.has(off_line), "%s is off the line: free-run alone shouldn't get it" % off_line)
+		expect(not _holding(off_line), "%s is off the line: free-run alone shouldn't get it" % off_line)
 
 
 func test_the_10_m_gap_needs_flow() -> void:
@@ -102,7 +102,7 @@ func test_the_tall_wall_can_be_climbed_by_hand() -> void:
 	expect(await jump_and_climb(Vector3.RIGHT, -5.0), "should get onto the second ledge, at %s" % player.global_position)
 	expect(await jump_and_climb(Vector3.FORWARD, -3.0), "should get onto the wall top, at %s" % player.global_position)
 	await hold(&"move_forward", 20)
-	expect(main.collected_relics.has("RelicTallWall"), "the relic on top should be collected")
+	expect(_holding("RelicTallWall"), "the relic on top should be picked up")
 
 
 func test_the_pillar_relic_can_be_reached_by_hand() -> void:
@@ -113,7 +113,7 @@ func test_the_pillar_relic_can_be_reached_by_hand() -> void:
 	player.camera_rig.yaw = yaw_for(Vector3(10.5, 0, -72) - Vector3(player.global_position.x, 0, player.global_position.z))
 	await hold(&"move_forward", 6)
 	await ticks(10)
-	expect(main.collected_relics.has("RelicPillarTop"), "the relic on the pillar should be collected")
+	expect(_holding("RelicPillarTop"), "the relic on the pillar should be picked up")
 
 
 # --- Wall scramble (8.5 m wall at z = -507..-513), ledge leaps (tower at
@@ -176,7 +176,7 @@ func test_zipline_speeds_up_and_flings_you_off_the_end() -> void:
 	expect(await _wait_for(&"Ground", 300), "should come off the end and land")
 	expect(player.global_position.z < -638.0 and player.global_position.y > -22.5,
 			"should land on the final platform, at %s" % player.global_position)
-	expect(main.collected_relics.has("RelicZipline"), "should pick up the relic along the zipline")
+	expect(_holding("RelicZipline"), "should pick up the relic along the zipline")
 
 
 func test_jump_off_the_zipline_at_any_time() -> void:
@@ -238,3 +238,9 @@ func _free_run_for(tick_count: int) -> void:
 	Input.action_press(&"free_run")
 	await ticks(tick_count)
 	release_all()
+
+
+## True if you're holding the relic with this name.
+func _holding(relic_name: String) -> bool:
+	var relic: WorldItem = main.level.get_node("Relics/" + relic_name)
+	return relic.state == WorldItem.State.HELD and relic.holder_name == str(player.name)
