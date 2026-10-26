@@ -223,6 +223,10 @@ func _on_peer_connected(peer_id: int) -> void:
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	if multiplayer.is_server():
+		# Items they were holding go back where they came from.
+		for item: WorldItem in get_tree().get_nodes_in_group(&"items"):
+			if level and level.is_ancestor_of(item) and item.holder_name == str(peer_id):
+				item.host_return_home()
 		var player := players.get_node_or_null(str(peer_id))
 		if player:
 			player.queue_free()

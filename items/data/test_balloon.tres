@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemData" format=3]
+
+[ext_resource type="Script" path="res://items/item_data.gd" id="1_data"]
+[ext_resource type="Script" path="res://items/abilities/slow_fall.gd" id="2_ability"]
+
+[resource]
+script = ExtResource("1_data")
+id = &"test_balloon"
+display_name = "Test Balloon"
+size = Vector3(0.5, 0.7, 0.5)
+color = Color(0.95, 0.3, 0.45, 1)
+mass = 0.5
+throw_speed = 10.0
+ability = ExtResource("2_ability")

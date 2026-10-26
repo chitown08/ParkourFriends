@@ -8,6 +8,9 @@
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
 [ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
+[ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
+[ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
+[ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -49,6 +52,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 
 [node name="Checkpoints" type="Node3D" parent="."]
 
+[node name="Items" type="Node3D" parent="."]
+
 [node name="Ziplines" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
@@ -64,6 +69,22 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
 billboard = 1
 pixel_size = 0.02
 text = "FREE-RUN LINE\nhold Shift and steer with the camera"
+font_size = 64
+outline_size = 16
+
+[node name="Crate" parent="Items" instance=ExtResource("13_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.4, -14)
+item = ExtResource("14_crate")
+
+[node name="TestBalloon" parent="Items" instance=ExtResource("13_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.4, -14)
+item = ExtResource("15_balloon")
+
+[node name="LabelItems" type="Label3D" parent="Labels"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -14)
+billboard = 1
+pixel_size = 0.02
+text = "ITEMS: F pick up / drop, T throw, Tab swap"
 font_size = 64
 outline_size = 16
 

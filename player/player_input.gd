@@ -18,6 +18,10 @@ var jump_held := false
 var crouch_just_pressed := false
 var crouch_held := false
 var toss_just_pressed := false
+var interact_just_pressed := false
+var throw_item_just_pressed := false
+var switch_item_just_pressed := false
+var use_item_just_pressed := false
 var respawn_just_pressed := false
 ## Holding the free-run button (Shift / right trigger) with free-run switched on.
 var free_run_held := false
@@ -43,6 +47,10 @@ func gather(camera_yaw: float) -> void:
 	crouch_just_pressed = Input.is_action_just_pressed("crouch")
 	crouch_held = Input.is_action_pressed("crouch")
 	toss_just_pressed = Input.is_action_just_pressed("toss")
+	interact_just_pressed = Input.is_action_just_pressed("interact")
+	throw_item_just_pressed = Input.is_action_just_pressed("throw_item")
+	switch_item_just_pressed = Input.is_action_just_pressed("switch_item")
+	use_item_just_pressed = Input.is_action_just_pressed("use_item")
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")
 
 
@@ -54,5 +62,9 @@ func clear() -> void:
 	crouch_just_pressed = false
 	crouch_held = false
 	toss_just_pressed = false
+	interact_just_pressed = false
+	throw_item_just_pressed = false
+	switch_item_just_pressed = false
+	use_item_just_pressed = false
 	respawn_just_pressed = false
 	free_run_held = false

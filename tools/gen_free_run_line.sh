@@ -23,11 +23,9 @@ label() { printf '\n[node name="%s" type="Label3D" parent="Labels"]\ntransform =
 checkpoint() { printf '\n[node name="%s" parent="Checkpoints" instance=ExtResource("2_checkpoint")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
 relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("10_relic")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
 # A zipline cable: name x y z (start) end_x end_y end_z (end, relative to the start)
-zipline() { printf '
-[node name="%s" parent="Ziplines" instance=ExtResource("12_zipline")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)
-end_point = Vector3(%s, %s, %s)
-' "$@"; }
+zipline() { printf '\n[node name="%s" parent="Ziplines" instance=ExtResource("12_zipline")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nend_point = Vector3(%s, %s, %s)\n' "$@"; }
+# An item lying in the world: name x y z item_resource_id
+world_item() { printf '\n[node name="%s" parent="Items" instance=ExtResource("13_item")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nitem = ExtResource("%s")\n' "$@"; }
 
 cat <<'EOF'
 [gd_scene format=3]
@@ -40,6 +38,9 @@ cat <<'EOF'
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/relic.tscn" id="10_relic"]
 [ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
+[ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
+[ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
+[ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -81,6 +82,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 
 [node name="Checkpoints" type="Node3D" parent="."]
 
+[node name="Items" type="Node3D" parent="."]
+
 [node name="Ziplines" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
@@ -89,6 +92,11 @@ EOF
 # --- 0. Runway: build up your flow ---
 floor Runway 5 -45 0
 label LabelStart 0 5 -10 "FREE-RUN LINE\\nhold Shift and steer with the camera"
+
+# Placeholder items to try the item system (not real game items).
+world_item Crate 2.5 0.4 -14 14_crate
+world_item TestBalloon -2.5 0.4 -14 15_balloon
+label LabelItems 0 3 -14 "ITEMS: F pick up / drop, T throw, Tab swap"
 
 # --- 1. Hurdles (1, 1.5 and 2.5 m): free-run jumps them ---
 floor HurdleLane -45 -100 0

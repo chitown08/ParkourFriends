@@ -24,11 +24,13 @@ var _show_help := true
 @onready var _help: Label = $Help
 @onready var _message: Label = $Message
 @onready var _relics: Label = $Relics
+@onready var _items: Label = $Items
 
 
 func _process(_delta: float) -> void:
 	_stats.visible = player != null
 	_help.visible = _show_help and player != null
+	_items.visible = player != null
 	if player == null:
 		return
 	_stats.text = "State: %s\nSpeed: %.1f m/s  (flow %d%%)\nHeight: %.1f m\n%s - %d player(s)\nFPS: %d" % [
@@ -40,6 +42,7 @@ func _process(_delta: float) -> void:
 		_count_people(),
 		Engine.get_frames_per_second(),
 	]
+	_show_items()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -85,3 +88,13 @@ func _count_people() -> int:
 func set_relic_count(found: int, total: int) -> void:
 	_relics.visible = total > 0
 	_relics.text = "Relics %d / %d" % [found, total]
+
+
+## Shows what you're carrying and what F would do right now.
+func _show_items() -> void:
+	var carrier := player.items
+	var in_hands := carrier.hands_item()
+	var on_back := carrier.back_item()
+	var slots := "Hands: %s    Back: %s" % [in_hands.display_name() if in_hands else "-", on_back.display_name() if on_back else "-"]
+	var prompt := carrier.prompt_text()
+	_items.text = slots + ("\n" + prompt if prompt else "")

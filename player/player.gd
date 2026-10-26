@@ -172,6 +172,8 @@ var _jump_buffer_timer := 0.0
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _states: Node = $States
 @onready var _free_run: FreeRun = $FreeRun
+## Your two item slots (hands, back) and the item buttons.
+@onready var items: ItemCarrier = $Items
 @onready var _collision: CollisionShape3D = $CollisionShape3D
 ## The standing body shape, used to check "would I fit here?". Never resized.
 @onready var _stand_shape: CapsuleShape3D = _collision.shape
@@ -227,6 +229,7 @@ func _ready() -> void:
 		player_state.input = input
 	_free_run.player = self
 	_free_run.input = input
+	items.player = self
 
 	# Our own copy of the body shape, so crouching only shrinks *this* player.
 	_collision.shape = _stand_shape.duplicate()
@@ -260,6 +263,8 @@ func _physics_process(delta: float) -> void:
 
 	state.physics_update(delta)
 	_update_flow(delta)
+	if not is_bot:
+		items.physics_update(delta)
 
 	if input.respawn_just_pressed or global_position.y < kill_height:
 		respawn()
@@ -318,6 +323,19 @@ func respawn() -> void:
 
 func get_horizontal_speed() -> float:
 	return Vector2(velocity.x, velocity.z).length()
+
+
+## Where an item you're holding sits: slot 0 (hands) in front of your chest,
+## slot 1 on your back. Follows the way your body faces.
+func item_anchor(slot: int) -> Transform3D:
+	var body := Transform3D(_visual.global_basis.orthonormalized(), global_position)
+	var offset := Vector3(0.3, 1.0, -0.6) if slot == 0 else Vector3(0.0, 1.15, 0.45)
+	return body * Transform3D(Basis.IDENTITY, offset)
+
+
+## The direction the camera is looking (for throwing items).
+func aim_direction() -> Vector3:
+	return Vector3.FORWARD.rotated(Vector3.RIGHT, camera_rig.pitch).rotated(Vector3.UP, camera_rig.yaw)
 
 
 # --- Movement profile and flow ---------------------------------------------------

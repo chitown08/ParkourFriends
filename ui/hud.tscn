@@ -20,7 +20,7 @@ anchor_right = 1.0
 offset_left = -300.0
 offset_top = 12.0
 offset_right = -16.0
-offset_bottom = 470.0
+offset_bottom = 530.0
 grow_horizontal = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
@@ -33,6 +33,9 @@ Run fast + jump alongside a tall wall - wall run
 Jump + push into a too-tall wall - scramble up it
 Hanging from a narrow sill: jump - leap up
 Touch a zipline - ride it down (jump off, C drops)
+F / X - pick up, drop or give an item
+  T / Y - throw it    Tab - swap hands/back
+  Right mouse / LT - use it
 E / RB - toss a nearby friend (aim with camera)
 Solo practice: G / D-pad down - call buddy
   Q / LB - buddy tosses you
@@ -78,3 +81,20 @@ theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 26
 text = "Relics 0 / 0"
 horizontal_alignment = 1
+
+[node name="Items" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -80.0
+offset_right = 300.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+horizontal_alignment = 1
+vertical_alignment = 2

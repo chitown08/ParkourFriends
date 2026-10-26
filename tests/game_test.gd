@@ -13,6 +13,7 @@ const SUPERHUMAN := preload("res://player/profiles/superhuman.tres")
 const ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right",
 	&"jump", &"crouch", &"respawn", &"free_run",
+	&"interact", &"throw_item", &"switch_item", &"use_item",
 ]
 
 ## Camera angles: which way "forward" points.
