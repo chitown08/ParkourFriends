@@ -77,6 +77,20 @@ func test_hand_an_item_to_the_friend_you_face() -> void:
 	expect(_crate(client_main).holder_name == "1", "and the client should see that")
 
 
+func test_a_bat_hit_launches_a_friend_on_their_own_computer() -> void:
+	await _move(client_player, Vector3(2.5, 0.05, -16.5)) # By the bat.
+	_item(client_main, "Bat").request_pick_up.rpc_id(1)
+	await ticks(10)
+	expect(_item(host_main, "Bat").holder_name == str(client_player.name), "test setup: the client holds the bat")
+	await _move(host_player, SPOT + Vector3(0, 0, -1.5))
+	await _move(client_player, SPOT)
+	client_player.camera_rig.yaw = 0.0
+	await tap(&"use_item")
+	await ticks(30)
+	expect(host_player.global_position.z < SPOT.z - 10.0, "the host should be sent flying north, at %s" % host_player.global_position)
+	expect(str(client_player.name) in host_player.tossed_by, "and it counts as the client's throw-chain link")
+
+
 func test_items_held_by_someone_who_leaves_go_home() -> void:
 	var home := _crate(host_main).global_position
 	await _move(client_player, BY_CRATE)
@@ -100,3 +114,7 @@ func _move(who: Player, spot: Vector3) -> void:
 	who.velocity = Vector3.ZERO
 	who.reset_physics_interpolation()
 	await ticks(15)
+
+
+func _item(side_main: Node, item_name: String) -> WorldItem:
+	return side_main.level.get_node("Items/" + item_name)

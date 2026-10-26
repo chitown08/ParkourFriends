@@ -71,6 +71,11 @@ built and the details the code relies on.
   sinks 3 m/s (about 5 m forward per metre down), turns at 50°/s. Bulky, so it's held overhead
   and blocks climbing. One sits on the leap tower roof, with an island east of it that only a
   glide reaches (it has a relic). Numbers live in `items/abilities/glide.gd`.
+- **Baseball bat**: "use item" swings (0.6 s apart). Hits the friend in front of you (2.5 m
+  reach) at 40 m/s, 40° up, the way your camera faces: over 30 m on flat ground. It counts as
+  a throw-chain link (`launch_friend` in `player.gd`, shared with tosses). With no friend in
+  reach it hits the item in front instead (25 m/s, 30° up), which flies like a throw, so a
+  friend can catch it, and knocks hovering relics loose. Numbers: `items/abilities/bat_swing.gd`.
 - Placeholders: **Crate** (bulky, no ability), **Test Balloon** (slows your fall while in your
   hands) and a **Backpack**, at the start of the Free-Run Line.
 - Item list (Oct 2026, see the master doc): glider, grappling hook, baseball bat (send a friend

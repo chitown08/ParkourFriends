@@ -32,7 +32,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
 | Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
 | Item: swap your hands and backpack (once you wear one) | Tab | D-pad right |
-| Item: use the one in your hands (glider: hold in the air to glide) | Right mouse (hold) | Left trigger (hold) |
+| Item: use the one in your hands (glider: hold in the air to glide; bat: swing) | Right mouse | Left trigger |
 | Jump (hold for higher) | Space | A / Cross |
 | Grab a ledge | Jump at a wall while pushing toward it | |
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
@@ -73,9 +73,9 @@ levels/     free_run_line.tscn    – straight test course with every move in or
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands
-            data/                 – one .tres per kind of item (relic, backpack, glider, crate, test_balloon, …)
+            data/                 – one .tres per kind of item (relic, backpack, glider, bat, crate, test_balloon, …)
             models/               – item models (relic_gem.tscn)
-            abilities/            – ability scripts (glide.gd, slow_fall.gd, …)
+            abilities/            – ability scripts (glide.gd, bat_swing.gd, slow_fall.gd, …)
 player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu

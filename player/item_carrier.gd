@@ -75,7 +75,7 @@ func nearest_item() -> WorldItem:
 	var best: WorldItem = null
 	var best_distance := PICKUP_RANGE
 	var chest := player.global_position + Vector3.UP * 0.9
-	for item in _items_in_world():
+	for item in items_in_world():
 		var distance := chest.distance_to(item.global_position)
 		if distance < best_distance and can_take(item):
 			best_distance = distance
@@ -143,7 +143,7 @@ func _pick_up_touched(delta: float) -> void:
 	if _touch_cooldown > 0.0:
 		return
 	var middle := player.global_position + Vector3.UP * 0.9
-	for item in _items_in_world():
+	for item in items_in_world():
 		if item.item and item.item.pick_up_on_touch and item.is_at_home() and middle.distance_to(item.global_position) <= TOUCH_RANGE and can_take(item):
 			item.request_touch_pick_up.rpc_id(1)
 			_touch_cooldown = TOUCH_RETRY
@@ -180,7 +180,8 @@ func _all_held() -> Array[WorldItem]:
 	return found
 
 
-func _items_in_world() -> Array[WorldItem]:
+## Items lying in the world in this game (not held, returning or delivered).
+func items_in_world() -> Array[WorldItem]:
 	var found: Array[WorldItem] = []
 	for item: WorldItem in player.get_tree().get_nodes_in_group(&"items"):
 		if item.state == WorldItem.State.IN_WORLD and _same_game(item):

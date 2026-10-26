@@ -45,6 +45,7 @@ cat <<'EOF'
 [ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
 [ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
+[ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -106,6 +107,7 @@ printf '\n[node name="DropOff" parent="." instance=ExtResource("10_dropoff")]\nt
 world_item Crate 2.5 0.4 -14 14_crate
 world_item TestBalloon -2.5 0.4 -14 15_balloon
 world_item Backpack 0 0.4 -18 17_backpack
+world_item Bat 2.5 0.4 -18 19_bat
 label LabelItems 0 3 -14 "ITEMS: F pick up / drop, T throw, Tab backpack"
 
 # --- 1. Hurdles (1, 1.5 and 2.5 m): free-run jumps them ---

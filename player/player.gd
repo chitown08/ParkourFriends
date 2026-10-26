@@ -437,10 +437,7 @@ func try_toss() -> bool:
 		return false
 
 	_toss_cooldown_timer = toss_cooldown
-	if target.is_multiplayer_authority():
-		target.apply_toss(toss_velocity(camera_rig.yaw), str(name)) # Run by this computer (the practice buddy).
-	else:
-		target.receive_toss.rpc_id(target.get_multiplayer_authority(), toss_velocity(camera_rig.yaw))
+	launch_friend(target, toss_velocity(camera_rig.yaw))
 	if airborne:
 		# Pushing off your friend gives you a little hop: a co-op double jump.
 		can_toss_in_air = false
@@ -449,9 +446,20 @@ func try_toss() -> bool:
 	return true
 
 
-## The closest other player within toss_range who isn't behind you and can be
-## tossed right now, or null.
-func find_toss_target() -> Player:
+## Sends `target` flying with velocity `launch` (a toss, a bat hit, ...). It
+## counts as a link in a throw chain: you can launch each friend once per air time.
+func launch_friend(target: Player, launch: Vector3) -> void:
+	if target.is_multiplayer_authority():
+		target.apply_toss(launch, str(name)) # Run by this computer (the practice buddy).
+	else:
+		target.receive_toss.rpc_id(target.get_multiplayer_authority(), launch)
+
+
+## The closest other player within `reach` (default: toss_range) who isn't
+## behind you and can be launched right now, or null.
+func find_toss_target(reach := -1.0) -> Player:
+	if reach < 0.0:
+		reach = toss_range
 	var forward := Vector3.FORWARD.rotated(Vector3.UP, camera_rig.yaw)
 	var best: Player = null
 	var best_distance := INF
@@ -463,7 +471,7 @@ func find_toss_target() -> Player:
 			continue # We've already tossed them this air time.
 		var offset := friend.global_position - global_position
 		var flat := Vector3(offset.x, 0.0, offset.z)
-		if absf(offset.y) > toss_range or flat.length() > toss_range:
+		if absf(offset.y) > reach or flat.length() > reach:
 			continue
 		if flat.length() > 0.3 and flat.normalized().dot(forward) < -0.2:
 			continue # Behind you.

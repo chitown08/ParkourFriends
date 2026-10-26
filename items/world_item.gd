@@ -16,6 +16,10 @@ const CATCH_DISTANCE := 1.3
 const OWN_CATCH_DELAY := 0.4
 ## How long an item disappears for before reappearing at home (seconds).
 const RETURN_DELAY := 2.0
+## Sanity limits for hits (request_hit): how far from the item the hitter can
+## be (generous: the hitter's view is a moment old) and how hard it can fly.
+const MAX_HIT_DISTANCE := 6.0
+const MAX_HIT_SPEED := 40.0
 ## Slots: hands (the active item), back (stowed in a backpack), and the
 ## backpack itself, worn. Everyone has hands; only a backpack gives a back slot.
 const HANDS := 0
@@ -143,6 +147,24 @@ func request_throw(aim: Vector3) -> void:
 		return
 	var throw_speed := item.throw_speed if item else 14.0
 	_release(player, aim.normalized() * throw_speed + Vector3.UP * 3.0 + player.velocity * 0.5)
+	_thrown_by = str(player.name)
+	_own_catch_timer = OWN_CATCH_DELAY
+
+
+## Someone hit this item (e.g. with a bat), sending it off with `launch`.
+## It flies like a throw, so friends can catch it.
+@rpc("any_peer", "call_local", "reliable")
+func request_hit(launch: Vector3) -> void:
+	var player := _sender()
+	if player == null or state != State.IN_WORLD:
+		return
+	if player.global_position.distance_to(global_position) > MAX_HIT_DISTANCE:
+		return # Too far away to have hit it.
+	_at_home = false
+	_idle_time = 0.0
+	_apply_state() # Hovering items start falling once hit.
+	linear_velocity = launch.limit_length(MAX_HIT_SPEED)
+	angular_velocity = Vector3(randf() - 0.5, randf() - 0.5, randf() - 0.5) * 8.0
 	_thrown_by = str(player.name)
 	_own_catch_timer = OWN_CATCH_DELAY
 

@@ -14,6 +14,7 @@
 [ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
 [ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
+[ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -95,6 +96,10 @@ item = ExtResource("15_balloon")
 [node name="Backpack" parent="Items" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, -18)
 item = ExtResource("17_backpack")
+
+[node name="Bat" parent="Items" instance=ExtResource("13_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.4, -18)
+item = ExtResource("19_bat")
 
 [node name="LabelItems" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -14)
