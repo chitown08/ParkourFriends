@@ -10,7 +10,7 @@ func enter(_data: Dictionary) -> void:
 func physics_update(delta: float) -> void:
 	var jumped := player.consume_jump()
 	if jumped:
-		player.velocity.y = player.jump_velocity
+		player.start_jump()
 	elif input.crouch_held:
 		# Fast enough: slide. Otherwise: just crouch.
 		if player.get_horizontal_speed() >= player.slide_min_start_speed:

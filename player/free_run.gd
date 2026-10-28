@@ -15,6 +15,10 @@ extends Node
 ##   Gap with no landing, wall alongside -> jump toward the wall (you wall-run across)
 ##   Gap with nothing to land on        -> keep running (you drop off)
 ##   Hanging from a ledge               -> pull up (or leap to the next ledge up)
+##
+## Your own jump button becomes a leap: tap it for a normal jump, or hold it to
+## ready a leap (higher and longer) and let go to take off. Still holding it
+## when free-run would jump (an edge, a wall), you take off right there.
 
 ## How far ahead to look for obstacles, in seconds of travel at your speed.
 const LOOK_AHEAD_TIME := 0.25
@@ -33,10 +37,15 @@ const WALL_SEEK_DISTANCE := 4.5
 const WALL_SEEK_TIME := 0.6
 ## How strongly to steer toward it (1 = as much sideways as forwards).
 const WALL_SEEK_STRENGTH := 0.7
+## Holding jump shorter than this is a tap: a normal jump (seconds).
+const LEAP_TAP_TIME := 0.1
 
 var player: Player
 var input: PlayerInput
 
+## True while you hold jump on the ground, readying a leap.
+var readying_leap := false
+var _ready_time := 0.0
 var _jump_hold_timer := 0.0
 var _cooldown_timer := 0.0
 var _seek_direction := Vector3.ZERO
@@ -47,6 +56,7 @@ var _seek_timer := 0.0
 ## controls have been read and before the movement states run.
 func assist(delta: float) -> void:
 	_cooldown_timer -= delta
+	_update_leap(delta)
 	if _jump_hold_timer > 0.0:
 		_jump_hold_timer -= delta
 		input.jump_held = true # Hold the jump for full height.
@@ -87,6 +97,9 @@ func _look_ahead() -> void:
 
 	if not _edge_ahead(feet, direction, speed):
 		return
+	if readying_leap:
+		_take_off() # Leap off any edge, landing or not: your call.
+		return
 	if _landing_ahead(feet, direction, speed):
 		_press_jump()
 		return
@@ -97,7 +110,35 @@ func _look_ahead() -> void:
 		_seek_timer = WALL_SEEK_TIME
 
 
+## Your jump button: pressing it on the ground starts readying a leap (the
+## press is held back from the movement states); letting go takes off.
+func _update_leap(delta: float) -> void:
+	if readying_leap:
+		if player.state.name != &"Ground":
+			readying_leap = false # Dropped off, slid, got tossed...: never mind.
+		elif not input.jump_held:
+			_take_off()
+		else:
+			_ready_time += delta
+	elif input.jump_just_pressed and player.state.name == &"Ground":
+		input.jump_just_pressed = false
+		readying_leap = true
+		_ready_time = 0.0
+
+
+func _take_off() -> void:
+	readying_leap = false
+	var readied := (_ready_time - LEAP_TAP_TIME) / maxf(player.leap_charge_time - LEAP_TAP_TIME, 0.01)
+	player.pending_leap = clampf(readied, 0.0, 1.0)
+	_cooldown_timer = 0.0
+	_press_jump()
+	_jump_hold_timer = 1.0 # Keep "holding" jump for the whole leap (no short hop).
+
+
 func _press_jump() -> void:
+	if readying_leap:
+		_take_off() # Free-run wants to jump (a wall, a gap): leap now.
+		return
 	if _cooldown_timer > 0.0:
 		return
 	input.jump_just_pressed = true

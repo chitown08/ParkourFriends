@@ -101,6 +101,7 @@ func test_manual_jump_still_works() -> void:
 	Input.action_press(&"free_run")
 	await ticks(10)
 	await tap(&"jump")
+	await ticks(2) # (Free-run takes off when you let go of jump.)
 	expect_state(&"Air")
 
 

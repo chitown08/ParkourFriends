@@ -26,6 +26,10 @@ built and the details the code relies on.
   move tests on the test course use.
 - **Free-run** is a co-pilot that presses buttons on `PlayerInput` (jump, crouch); every
   automatic move is a normal move a player could do by hand.
+- **Free-run leap**: in free-run your jump button readies a leap while held (0.3 s for a full
+  one) and takes off when you let go, or at the next edge or obstacle free-run would jump. A full
+  leap is 4.5 m high (a jump is 3) and adds 3 m/s forward: enough to clear the 10 m gap without
+  full flow. A tap (under 0.1 s) is a normal jump. Numbers: the "Leap" group in the movement profile.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
 

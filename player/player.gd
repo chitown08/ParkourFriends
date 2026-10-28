@@ -85,6 +85,12 @@ var jump_time_to_fall: float
 var jump_cut: float
 var coyote_time: float
 var jump_buffer_time: float
+var leap_height: float
+var leap_boost: float
+var leap_charge_time: float
+## How readied the next jump's leap is (0 = a normal jump, 1 = a full leap).
+## Set by free-run just before it takes off; used up by start_jump().
+var pending_leap := 0.0
 var max_fall_speed: float
 var ledge_max_height: float
 var hang_min_height: float
@@ -257,6 +263,8 @@ func _physics_process(delta: float) -> void:
 		input.gather(camera_rig.yaw)
 		if input.free_run_held:
 			_free_run.assist(delta)
+		else:
+			_free_run.readying_leap = false
 	if input.jump_just_pressed:
 		_jump_buffer_timer = jump_buffer_time
 	else:
@@ -534,6 +542,19 @@ func consume_jump() -> bool:
 ## True if jump was pressed recently, without using it up.
 func has_jump_buffered() -> bool:
 	return _jump_buffer_timer > 0.0
+
+
+## Launches a jump from the ground: a normal one, or (if free-run readied one,
+## see pending_leap) a higher leap with a burst of forward speed.
+func start_jump() -> void:
+	var height := lerpf(jump_height, leap_height, pending_leap)
+	velocity.y = sqrt(2.0 * _rise_gravity * height)
+	if pending_leap > 0.0:
+		var forward := input.move_direction.slide(Vector3.UP).normalized()
+		if forward == Vector3.ZERO:
+			forward = facing_direction()
+		velocity += forward * leap_boost * pending_leap
+	pending_leap = 0.0
 
 
 func apply_gravity(delta: float) -> void:

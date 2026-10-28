@@ -20,6 +20,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Move | WASD | Left stick |
 | Flow (momentum) | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it | |
 | Free-run (auto-parkour; let go for manual control) | Hold Shift | Hold right trigger |
+| Free-run leap: tap jump = normal jump; hold jump to ready a leap, let go (or reach an edge) to take off | Space (hold) | A / Cross (hold) |
 | Crouch / slide (crouch while running) | C or Ctrl (hold) | B / Circle |
 | Slide-jump (keeps your speed) | Space during a slide | A |
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |

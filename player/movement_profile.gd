@@ -27,6 +27,12 @@ extends Resource
 @export var jump_buffer_time := 0.12 ## Pressing jump this early before landing still counts.
 @export var max_fall_speed := 55.0
 
+@export_group("Leap (free-run)")
+## In free-run, hold jump to ready a leap; let go (or reach an edge) to take off.
+@export var leap_height := 4.5 ## Metres, for a fully readied leap.
+@export var leap_boost := 3.0 ## Extra forward speed (m/s) a full leap adds.
+@export var leap_charge_time := 0.3 ## Seconds of holding jump to ready a full leap.
+
 @export_group("Ledges")
 @export var ledge_max_height := 2.6 ## Highest ledge (above your feet) you can grab.
 @export var hang_min_height := 1.2 ## Ledges lower than this are vaulted over instead of hung from.

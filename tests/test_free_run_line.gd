@@ -244,3 +244,78 @@ func _free_run_for(tick_count: int) -> void:
 func _holding(relic_name: String) -> bool:
 	var relic: WorldItem = main.level.get_node("Relics/" + relic_name)
 	return relic.state == WorldItem.State.HELD and relic.holder_name == str(player.name)
+
+
+# --- Leap: in free-run, hold jump to ready a leap, let go (or reach an edge) to take off ---
+
+func test_holding_jump_in_free_run_readies_a_leap_instead_of_jumping() -> void:
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	Input.action_press(&"free_run")
+	Input.action_press(&"jump")
+	await ticks(15)
+	expect_state(&"Ground")
+	release_all()
+
+
+func test_tapping_jump_in_free_run_is_a_normal_jump() -> void:
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	Input.action_press(&"free_run")
+	await ticks(5)
+	var ground_y := player.global_position.y
+	await tap(&"jump")
+	expect_near(await _highest_point() - ground_y, player.jump_height, 0.2, "tap jump height")
+	release_all()
+
+
+func test_a_full_leap_goes_higher_and_faster() -> void:
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	Input.action_press(&"free_run")
+	await ticks(30)
+	var run_speed := player.get_horizontal_speed()
+	var ground_y := player.global_position.y
+	await hold(&"jump", 30) # Longer than leap_charge_time.
+	await ticks(2)
+	expect(player.get_horizontal_speed() > run_speed + 2.0, "a leap should add a burst of speed (%.1f -> %.1f)" % [run_speed, player.get_horizontal_speed()])
+	expect_near(await _highest_point() - ground_y, player.leap_height, 0.25, "full leap height")
+	release_all()
+
+
+func test_holding_jump_into_a_gap_leaps_it_without_full_flow() -> void:
+	# Same slow start that falls into the 10 m gap (see test_the_10_m_gap_needs_flow).
+	await place(Vector3(0, 0.05, -170), FACE_NORTH)
+	Input.action_press(&"free_run")
+	await ticks(30)
+	Input.action_press(&"jump") # Ready a leap; free-run takes off at the edge.
+	for i in 150:
+		await ticks(1)
+		if player.global_position.z < -195.0 and player.state.name == &"Ground":
+			break
+	release_all()
+	expect(respawns == 0 and player.global_position.z < -193.0 and player.global_position.y > -0.5,
+			"a leap should clear the 10 m gap, at %s" % player.global_position)
+
+
+func test_letting_go_of_free_run_cancels_a_readied_leap() -> void:
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	Input.action_press(&"free_run")
+	Input.action_press(&"jump")
+	await ticks(15)
+	Input.action_release(&"free_run")
+	await ticks(2)
+	Input.action_release(&"jump")
+	await ticks(10)
+	Input.action_press(&"free_run") # Back to free-run: no leftover leap.
+	await ticks(10)
+	expect_state(&"Ground")
+	release_all()
+
+
+## Waits for the top of the current jump; returns the highest y reached.
+func _highest_point() -> float:
+	var highest := player.global_position.y
+	for i in 90:
+		await ticks(1)
+		highest = maxf(highest, player.global_position.y)
+		if player.velocity.y < 0.0:
+			break
+	return highest
