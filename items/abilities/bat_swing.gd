@@ -28,10 +28,14 @@ func use(player: Player) -> void:
 	var friend := player.find_toss_target(REACH)
 	if friend:
 		player.launch_friend(friend, _launch(forward, LAUNCH_SPEED, LAUNCH_ANGLE))
+		player.show_effect(&"show_swing", [str(friend.name), friend.global_position + Vector3.UP * 1.1])
 		return
 	var target := _item_in_front(player, forward)
 	if target:
 		target.request_hit.rpc_id(1, _launch(forward, ITEM_LAUNCH_SPEED, ITEM_LAUNCH_ANGLE))
+		player.show_effect(&"show_swing", ["item", target.global_position])
+	else:
+		player.show_effect(&"show_swing", ["", Vector3.ZERO])
 
 
 func _launch(forward: Vector3, speed: float, angle: float) -> Vector3:

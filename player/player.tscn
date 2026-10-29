@@ -53,6 +53,9 @@ properties/3/replication_mode = 1
 properties/4/path = NodePath(".:sync_tossed_by")
 properties/4/spawn = false
 properties/4/replication_mode = 2
+properties/5/path = NodePath(".:sync_leap_charge")
+properties/5/spawn = false
+properties/5/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")

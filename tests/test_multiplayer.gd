@@ -106,3 +106,18 @@ func test_host_leaving_sends_client_to_menu() -> void:
 			break
 	expect(client_main.menu.visible, "client should be back at the main menu")
 	expect(_player_count(client_main) == 0, "client's characters should be removed")
+
+
+func test_a_readied_leap_shows_up_on_the_other_screen() -> void:
+	host_main.local_player.set_controls_enabled(false)
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	var puppet_visual: Node3D = _find(host_main, client_id).get_node("Visual")
+	Input.action_press(&"free_run")
+	await ticks(5)
+	Input.action_press(&"jump")
+	var lowest := 1.0
+	for i in 25:
+		await ticks(1)
+		lowest = minf(lowest, puppet_visual.scale.y)
+	release_all()
+	expect(lowest < 0.85, "host should see the client squash down to leap, lowest scale %.2f" % lowest)

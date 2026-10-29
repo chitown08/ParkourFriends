@@ -294,6 +294,7 @@ func _relic_delivered(relic_name: String) -> void:
 	_show_relics()
 	if local_player == null:
 		return
+	Sfx.play_ui(self, &"delivered", -4.0)
 	hud.show_message("Relic delivered! (%d/%d)" % [delivered_relics.size(), _relics().size()])
 
 

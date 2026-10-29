@@ -126,10 +126,17 @@ func _update_leap(delta: float) -> void:
 		_ready_time = 0.0
 
 
-func _take_off() -> void:
-	readying_leap = false
+## How readied the leap is: 0 (none, or still just a tap) to 1 (a full leap).
+func leap_charge() -> float:
+	if not readying_leap:
+		return 0.0
 	var readied := (_ready_time - LEAP_TAP_TIME) / maxf(player.leap_charge_time - LEAP_TAP_TIME, 0.01)
-	player.pending_leap = clampf(readied, 0.0, 1.0)
+	return clampf(readied, 0.0, 1.0)
+
+
+func _take_off() -> void:
+	player.pending_leap = leap_charge()
+	readying_leap = false
 	_cooldown_timer = 0.0
 	_press_jump()
 	_jump_hold_timer = 1.0 # Keep "holding" jump for the whole leap (no short hop).

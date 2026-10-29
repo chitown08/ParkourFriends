@@ -32,6 +32,12 @@ built and the details the code relies on.
   full flow. A tap (under 0.1 s) is a normal jump. Numbers: the "Leap" group in the movement profile.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
+- **Looks and sounds are stand-ins** until there are real animations and recordings.
+  `Player._pose_visual()` squashes, stretches and tilts the body model: squashed while crouched
+  or readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
+  gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.
+  Sounds are made from code (`game/sfx.gd`) and bursts of bits (dust, the bat's "pop") by
+  `game/effects.gd`. One-off effects reach everyone through `Player.show_effect()`.
 
 | Rule the levels depend on (superhuman profile) | Value |
 |---|---|
@@ -46,7 +52,8 @@ built and the details the code relies on.
 ## Multiplayer
 
 - Host and join (ENet, port 7777, up to 4 players). Each player's computer runs their own
-  character and shares position, facing, state, lean and who has tossed them.
+  character and shares position, facing, state, lean, how readied a leap is, and who has tossed
+  them. Jumps and bat swings are announced as they happen, for the sounds and effects.
 - The host owns world state (relics delivered) and picks the world; joiners receive it.
 - The host owns every item: it runs their physics and decides who holds what, so two players
   grabbing at once can't both get it. Players' computers only ask (`request_pick_up`,

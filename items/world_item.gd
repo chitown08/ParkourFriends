@@ -280,8 +280,11 @@ func _try_catch() -> void:
 
 # --- Helpers -------------------------------------------------------------------
 
-## Shows/hides the item and turns its physics on or off to match `state`.
+## Shows/hides the item and turns its physics on or off to match `state`
+## (and plays a pick-up sound when someone takes it).
 func _apply_state() -> void:
+	if _applied_state == State.IN_WORLD and state == State.HELD:
+		Sfx.play(self, global_position, &"relic" if is_deliverable() else &"pickup", -6.0)
 	_applied_state = state
 	visible = state == State.IN_WORLD or state == State.HELD
 	var in_world := state == State.IN_WORLD
