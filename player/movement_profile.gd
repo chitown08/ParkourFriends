@@ -73,12 +73,12 @@ extends Resource
 @export var wall_scramble_speed := 7.0 ## Running straight up a too-tall wall: how fast (m/s)...
 @export var wall_scramble_time := 0.5 ## ...and for how long (seconds). 7 x 0.5 = 3.5 m.
 
-@export_group("Grind rails (ziplines)")
-@export var zipline_gravity := 25.0 ## How quickly you speed up going down (scaled by how steep the rail is).
-@export var zipline_min_speed := 4.0 ## Slowest you ride (e.g. after dropping onto it from a standstill).
-@export var zipline_max_speed := 26.0
-@export var zipline_grab_radius := 0.9 ## How close your feet must come to a rail to land on it.
-@export var zipline_regrab_delay := 0.4 ## After leaving a rail, can't land on one again for this long.
+@export_group("Grind rails")
+@export var grind_gravity := 25.0 ## How quickly you speed up going down (scaled by how steep the rail is).
+@export var grind_min_speed := 4.0 ## Slowest you ride (e.g. after dropping onto it from a standstill).
+@export var grind_max_speed := 26.0
+@export var grind_land_radius := 0.9 ## How close your feet must come to a rail to land on it.
+@export var grind_land_delay := 0.4 ## After leaving a rail, can't land on one again for this long.
 
 @export_group("Tossing")
 @export var toss_range := 2.0 ## How close a friend must be to toss them (meters, not behind you).

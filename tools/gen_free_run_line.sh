@@ -23,8 +23,8 @@ label() { printf '\n[node name="%s" type="Label3D" parent="Labels"]\ntransform =
 checkpoint() { printf '\n[node name="%s" parent="Checkpoints" instance=ExtResource("2_checkpoint")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\n' "$@"; }
 # A relic (a collectible item that hovers until taken): name x y z
 relic() { printf '\n[node name="%s" parent="Relics" instance=ExtResource("13_item")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nitem = ExtResource("16_relic")\n' "$@"; }
-# A zipline cable: name x y z (start) end_x end_y end_z (end, relative to the start)
-zipline() { printf '\n[node name="%s" parent="Ziplines" instance=ExtResource("12_zipline")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nend_point = Vector3(%s, %s, %s)\n' "$@"; }
+# A grind rail: name x y z (start) end_x end_y end_z (end, relative to the start)
+rail() { printf '\n[node name="%s" parent="GrindRails" instance=ExtResource("12_grind_rail")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nend_point = Vector3(%s, %s, %s)\n' "$@"; }
 # An item lying in the world: name x y z item_resource_id
 world_item() { printf '\n[node name="%s" parent="Items" instance=ExtResource("13_item")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)\nitem = ExtResource("%s")\n' "$@"; }
 
@@ -38,7 +38,7 @@ cat <<'EOF'
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="10_dropoff"]
-[ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
+[ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="12_grind_rail"]
 [ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
@@ -89,7 +89,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 
 [node name="Items" type="Node3D" parent="."]
 
-[node name="Ziplines" type="Node3D" parent="."]
+[node name="GrindRails" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
 EOF
@@ -205,9 +205,9 @@ label LabelGlide 3 4 -543 "GLIDER: hold right mouse / LT in the air\n(island to 
 # --- 12. Grind rail from the tower top down to the final landing ---
 # Starts just past the tower's north edge (z = -550), a little below the roof
 # (top 1), so running off the roof drops you onto it. Ends above the landing (top -22).
-zipline ZiplineDown 0 0.6 -551 0 -21.1 -94
-relic RelicZipline 0 -9.4 -600
-label LabelZipline 0 6 -552 "GRIND RAIL\n(run off the edge onto it)"
+rail RailDown 0 0.6 -551 0 -21.1 -94
+relic RelicRail 0 -9.4 -600
+label LabelRail 0 6 -552 "GRIND RAIL\n(run off the edge onto it)"
 floor ZipLanding -638 -680 -22
 checkpoint Checkpoint9 0 -22 -650
 

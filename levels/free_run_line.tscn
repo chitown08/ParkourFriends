@@ -7,7 +7,7 @@
 [ext_resource type="Material" path="res://materials/grid_wall.tres" id="5_wall"]
 [ext_resource type="Material" path="res://materials/grid_goal.tres" id="6_goal"]
 [ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="10_dropoff"]
-[ext_resource type="PackedScene" path="res://levels/zipline.tscn" id="12_zipline"]
+[ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="12_grind_rail"]
 [ext_resource type="PackedScene" path="res://items/world_item.tscn" id="13_item"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
@@ -58,7 +58,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 
 [node name="Items" type="Node3D" parent="."]
 
-[node name="Ziplines" type="Node3D" parent="."]
+[node name="GrindRails" type="Node3D" parent="."]
 
 [node name="Relics" type="Node3D" parent="."]
 
@@ -455,15 +455,15 @@ text = "GLIDER: hold right mouse / LT in the air\n(island to the east)"
 font_size = 64
 outline_size = 16
 
-[node name="ZiplineDown" parent="Ziplines" instance=ExtResource("12_zipline")]
+[node name="RailDown" parent="GrindRails" instance=ExtResource("12_grind_rail")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, -551)
 end_point = Vector3(0, -21.1, -94)
 
-[node name="RelicZipline" parent="Relics" instance=ExtResource("13_item")]
+[node name="RelicRail" parent="Relics" instance=ExtResource("13_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -9.4, -600)
 item = ExtResource("16_relic")
 
-[node name="LabelZipline" type="Label3D" parent="Labels"]
+[node name="LabelRail" type="Label3D" parent="Labels"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -552)
 billboard = 1
 pixel_size = 0.02

@@ -1,10 +1,9 @@
 @tool
-class_name Zipline
+class_name GrindRail
 extends Node3D
 ## A rail you can land on and grind down (downhill only), like a skateboarder.
-## (It started out as a zipline you hung from, hence the name.) The rail runs
-## from this node's position to end_point (relative to the node); whichever end
-## is higher is the top. The ride itself is the player's Zipline state.
+## The rail runs from this node's position to end_point (relative to the node);
+## whichever end is higher is the top. The ride itself is the player's Grind state.
 
 ## Where the rail ends, relative to this node.
 @export var end_point := Vector3(0, -6, -40):
@@ -19,7 +18,7 @@ var _rail: MeshInstance3D
 
 
 func _ready() -> void:
-	add_to_group(&"ziplines")
+	add_to_group(&"grind_rails")
 	_build_visual()
 
 

@@ -128,11 +128,11 @@ var wall_run_min_height: float
 var wall_run_lean_degrees: float
 var wall_scramble_speed: float
 var wall_scramble_time: float
-var zipline_gravity: float
-var zipline_min_speed: float
-var zipline_max_speed: float
-var zipline_grab_radius: float
-var zipline_regrab_delay: float
+var grind_gravity: float
+var grind_min_speed: float
+var grind_max_speed: float
+var grind_land_radius: float
+var grind_land_delay: float
 var toss_range: float
 var toss_height: float
 var toss_forward_speed: float
@@ -144,8 +144,8 @@ var limit_tosses_per_air: bool
 ## How much flow (momentum) you've built up: 0 = normal running speed,
 ## 1 = top speed. See _update_flow().
 var flow := 0.0
-## Time left before you can grab a zipline again (after leaving one).
-var zipline_cooldown := 0.0
+## Time left before you can land on a grind rail again (after leaving one).
+var grind_cooldown := 0.0
 
 ## Where this player starts. Chosen by the host and sent along when the
 ## character is created (HostSync node), so joining players don't need the
@@ -197,7 +197,7 @@ var lean := 0.0
 # --- Looks: squash and stretch, tilts, swings (stand-ins until there are animations).
 ## States you're in the air in, and landing states (for the landing thud).
 const AIRBORNE_STATES: Array[StringName] = [&"Air", &"Glide"]
-const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Zipline"]
+const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Grind"]
 ## How far the body squashes down for a fully readied leap (0.25 = a quarter).
 const LEAP_SQUASH := 0.28
 ## Landing faster than this (m/s) kicks up dust.
@@ -235,7 +235,7 @@ const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
 
 ## States you can toss a friend from.
-const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide", &"Zipline"]
+const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide", &"Grind"]
 ## Toss limits while in the air (see limit_tosses_per_air), refilled by
 ## refresh_air_moves(): you can toss once, and each person can toss you
 ## once. So two players can't juggle forever, but every extra friend adds
@@ -302,13 +302,13 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_timer -= delta
 
 	_toss_cooldown_timer -= delta
-	zipline_cooldown -= delta
+	grind_cooldown -= delta
 	if input.toss_just_pressed:
 		try_toss()
 
 	if hands_busy() and state.name in HANDS_MOVES:
 		# A bulky item just landed in your hands (a catch or a swap): let go.
-		zipline_cooldown = 0.5
+		grind_cooldown = 0.5
 		change_state(&"Air", {"regrab_delay": 0.5})
 	state.physics_update(delta)
 	_update_flow(delta)
@@ -347,7 +347,7 @@ func _pose_visual(shown_state: StringName, crouched: bool, lean_angle: float, le
 	_watch_for_landing(shown_state, delta)
 	_swing_timer -= delta
 	_spark_timer -= delta
-	if shown_state == &"Zipline" and _spark_timer <= 0.0:
+	if shown_state == &"Grind" and _spark_timer <= 0.0:
 		_spark_timer = SPARK_INTERVAL
 		Effects.burst(self, global_position, Effects.SPARK, 4, 4.0, true)
 	_flash = move_toward(_flash, 0.0, 4.0 * delta)
@@ -531,8 +531,8 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Zipline"]:
-		return # A quick vault, a pull-up or a zipline ride doesn't break your flow.
+	if state.name in [&"Climb", &"Grind"]:
+		return # A quick vault, a pull-up or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * 0.9:

@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Zipline (grinding a rail). Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Grind (riding a grind rail). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the

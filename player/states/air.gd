@@ -108,14 +108,14 @@ func _try_wall_run() -> void:
 
 ## Lands you on a grind rail if your feet come down on (or close to) one.
 func _try_land_on_rail() -> bool:
-	if player.zipline_cooldown > 0.0 or player.velocity.y > 0.0:
+	if player.grind_cooldown > 0.0 or player.velocity.y > 0.0:
 		return false # (Going up: you'd pass through it from below.)
 	var feet := player.global_position
-	for zipline: Zipline in player.get_tree().get_nodes_in_group(&"ziplines"):
-		var t := zipline.closest_t(feet)
-		var rail := zipline.point_at(t)
-		if t < 0.98 and feet.y > rail.y - 0.3 and rail.distance_to(feet) <= player.zipline_grab_radius:
-			player.change_state(&"Zipline", {"zipline": zipline})
+	for rail: GrindRail in player.get_tree().get_nodes_in_group(&"grind_rails"):
+		var t := rail.closest_t(feet)
+		var spot := rail.point_at(t)
+		if t < 0.98 and feet.y > spot.y - 0.3 and spot.distance_to(feet) <= player.grind_land_radius:
+			player.change_state(&"Grind", {"rail": rail})
 			return true
 	return false
 

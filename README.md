@@ -62,7 +62,7 @@ player/states/                    – one script per movement "mode" (state mach
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
             wall_scramble.gd      – running up a too-tall wall
-            zipline.gd            – grinding a rail (once a zipline)
+            grind.gd              – grinding a rail
             glide.gd              – gliding (started by the glider item, items/abilities/glide.gd)
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
@@ -70,7 +70,7 @@ levels/     free_run_line.tscn    – straight test course with every move in or
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
-            zipline.tscn/.gd      – a grind rail (set its end_point)
+            grind_rail.tscn/.gd   – a grind rail (set its end_point)
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands

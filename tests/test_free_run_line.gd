@@ -161,17 +161,17 @@ func test_ledge_leaps_up_the_sills() -> void:
 func test_running_off_the_roof_lands_you_on_the_rail() -> void:
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	expect(await _wait_for(&"Zipline", 90), "should land on the rail, at %s state %s" % [player.global_position, player.state.name])
+	expect(await _wait_for(&"Grind", 90), "should land on the rail, at %s state %s" % [player.global_position, player.state.name])
 	await ticks(10)
-	var rail: Zipline = main.level.get_node("Ziplines/ZiplineDown")
+	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
 	var under_feet := rail.point_at(rail.closest_t(player.global_position))
-	expect_near(player.global_position.y - under_feet.y, Zipline.RAIL_RADIUS, 0.05, "feet on top of the rail")
+	expect_near(player.global_position.y - under_feet.y, GrindRail.RAIL_RADIUS, 0.05, "feet on top of the rail")
 
 
-func test_zipline_speeds_up_and_flings_you_off_the_end() -> void:
+func test_grinding_speeds_up_and_flings_you_off_the_end() -> void:
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	await _wait_for(&"Zipline", 90)
+	await _wait_for(&"Grind", 90)
 	release_all()
 	await ticks(10)
 	var early_speed := player.get_horizontal_speed()
@@ -180,13 +180,13 @@ func test_zipline_speeds_up_and_flings_you_off_the_end() -> void:
 	expect(await _wait_for(&"Ground", 300), "should come off the end and land")
 	expect(player.global_position.z < -638.0 and player.global_position.y > -22.5,
 			"should land on the final platform, at %s" % player.global_position)
-	expect(_holding("RelicZipline"), "should pick up the relic along the zipline")
+	expect(_holding("RelicRail"), "should pick up the relic along the rail")
 
 
-func test_jump_off_the_zipline_at_any_time() -> void:
+func test_jump_off_the_rail_at_any_time() -> void:
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	await _wait_for(&"Zipline", 90)
+	await _wait_for(&"Grind", 90)
 	release_all()
 	await ticks(30)
 	await tap(&"jump")
@@ -195,26 +195,26 @@ func test_jump_off_the_zipline_at_any_time() -> void:
 	expect(player.get_horizontal_speed() > 8.0, "and keep the ride's speed, %.1f" % player.get_horizontal_speed())
 
 
-func test_crouch_lets_go_of_the_zipline() -> void:
+func test_crouch_steps_off_the_rail() -> void:
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	await _wait_for(&"Zipline", 90)
+	await _wait_for(&"Grind", 90)
 	release_all()
 	await ticks(20)
 	await tap(&"crouch")
 	expect_state(&"Air")
 
 
-func test_ziplines_only_go_downhill() -> void:
+func test_rails_only_go_downhill() -> void:
 	# Land on the middle of the rail while moving uphill (toward +Z): you still slide down.
-	var zipline: Zipline = main.level.get_node("Ziplines/ZiplineDown")
-	var middle := zipline.point_at(0.5)
+	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
+	var middle := rail.point_at(0.5)
 	player.global_position = middle + Vector3.UP * 0.2
 	player.velocity = Vector3(0, -1, 10)
 	player.change_state(&"Air")
 	player.reset_physics_interpolation()
 	await ticks(2)
-	expect_state(&"Zipline")
+	expect_state(&"Grind")
 	await ticks(30)
 	expect(player.global_position.z < middle.z - 1.0, "should be sliding toward the low end, at z = %.1f (grabbed at %.1f)" % [player.global_position.z, middle.z])
 
@@ -226,7 +226,7 @@ func test_free_run_takes_the_new_sections_to_the_end() -> void:
 	await _free_run_for(60 * 20)
 	expect(respawns == 0, "should never fall off, fell %d time(s)" % respawns)
 	expect(player.global_position.z < -670.0, "should reach the end of the line, got to z = %.1f" % player.global_position.z)
-	for state in [&"WallScramble", &"Hang", &"Zipline"]:
+	for state in [&"WallScramble", &"Hang", &"Grind"]:
 		expect(state in states_entered, "should %s on the way" % state)
 
 
@@ -331,15 +331,15 @@ func test_grinding_keeps_your_hands_free() -> void:
 	glider.host_give_to(player)
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	expect(await _wait_for(&"Zipline", 90), "should land on the rail holding the glider, state %s" % player.state.name)
+	expect(await _wait_for(&"Grind", 90), "should land on the rail holding the glider, state %s" % player.state.name)
 	await ticks(20)
-	expect_state(&"Zipline")
+	expect_state(&"Grind")
 	expect(player.items.hands_item() == glider, "and still be holding it")
 	release_all()
 
 
 func test_you_cant_land_on_a_rail_from_below() -> void:
-	var rail: Zipline = main.level.get_node("Ziplines/ZiplineDown")
+	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
 	var middle := rail.point_at(0.5)
 	player.global_position = middle + Vector3.DOWN * 0.5
 	player.velocity = Vector3(0, 8, 0) # Jumping up into it.
