@@ -118,7 +118,7 @@ func test_the_pillar_relic_can_be_reached_by_hand() -> void:
 
 # --- Wall scramble (8.5 m wall at z = -507..-513), ledge leaps (tower at
 #     z = -540..-550 with sills at x = -2..2, tops -10, -6, -2; roof +1) and the
-#     zipline (from z = -551, just past the roof, down to the landing at -22) ---
+#     grind rail (from z = -551, just past the roof, down to the landing at -22) ---
 
 func test_scramble_up_a_wall_too_tall_to_grab() -> void:
 	await place(Vector3(0, -14.95, -505), FACE_NORTH)
@@ -158,10 +158,14 @@ func test_ledge_leaps_up_the_sills() -> void:
 	expect(await wait_until_on_top(0.9, 60), "should climb onto the tower roof, at %s" % player.global_position)
 
 
-func test_running_off_the_roof_grabs_the_zipline() -> void:
+func test_running_off_the_roof_lands_you_on_the_rail() -> void:
 	await place(Vector3(0, 1.05, -545), FACE_NORTH)
 	Input.action_press(&"move_forward")
-	expect(await _wait_for(&"Zipline", 90), "should catch the zipline, at %s state %s" % [player.global_position, player.state.name])
+	expect(await _wait_for(&"Zipline", 90), "should land on the rail, at %s state %s" % [player.global_position, player.state.name])
+	await ticks(10)
+	var rail: Zipline = main.level.get_node("Ziplines/ZiplineDown")
+	var under_feet := rail.point_at(rail.closest_t(player.global_position))
+	expect_near(player.global_position.y - under_feet.y, Zipline.RAIL_RADIUS, 0.05, "feet on top of the rail")
 
 
 func test_zipline_speeds_up_and_flings_you_off_the_end() -> void:
@@ -202,11 +206,11 @@ func test_crouch_lets_go_of_the_zipline() -> void:
 
 
 func test_ziplines_only_go_downhill() -> void:
-	# Grab the middle of the cable while moving uphill (toward +Z): you still slide down.
+	# Land on the middle of the rail while moving uphill (toward +Z): you still slide down.
 	var zipline: Zipline = main.level.get_node("Ziplines/ZiplineDown")
 	var middle := zipline.point_at(0.5)
-	player.global_position = middle + Vector3.DOWN * player.zipline_hang_height
-	player.velocity = Vector3(0, 0, 10)
+	player.global_position = middle + Vector3.UP * 0.2
+	player.velocity = Vector3(0, -1, 10)
 	player.change_state(&"Air")
 	player.reset_physics_interpolation()
 	await ticks(2)
@@ -319,3 +323,27 @@ func _highest_point() -> float:
 		if player.velocity.y < 0.0:
 			break
 	return highest
+
+
+func test_grinding_keeps_your_hands_free() -> void:
+	# A bulky glider in your hands (no climbing) doesn't stop you grinding.
+	var glider: WorldItem = main.level.get_node("Items/Glider")
+	glider.host_give_to(player)
+	await place(Vector3(0, 1.05, -545), FACE_NORTH)
+	Input.action_press(&"move_forward")
+	expect(await _wait_for(&"Zipline", 90), "should land on the rail holding the glider, state %s" % player.state.name)
+	await ticks(20)
+	expect_state(&"Zipline")
+	expect(player.items.hands_item() == glider, "and still be holding it")
+	release_all()
+
+
+func test_you_cant_land_on_a_rail_from_below() -> void:
+	var rail: Zipline = main.level.get_node("Ziplines/ZiplineDown")
+	var middle := rail.point_at(0.5)
+	player.global_position = middle + Vector3.DOWN * 0.5
+	player.velocity = Vector3(0, 8, 0) # Jumping up into it.
+	player.change_state(&"Air")
+	player.reset_physics_interpolation()
+	await ticks(3)
+	expect_state(&"Air")

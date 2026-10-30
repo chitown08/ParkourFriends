@@ -456,7 +456,7 @@ font_size = 64
 outline_size = 16
 
 [node name="ZiplineDown" parent="Ziplines" instance=ExtResource("12_zipline")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, -551)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, -551)
 end_point = Vector3(0, -21.1, -94)
 
 [node name="RelicZipline" parent="Relics" instance=ExtResource("13_item")]
@@ -467,7 +467,7 @@ item = ExtResource("16_relic")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, -552)
 billboard = 1
 pixel_size = 0.02
-text = "ZIPLINE\n(run off the edge to grab it)"
+text = "GRIND RAIL\n(run off the edge onto it)"
 font_size = 64
 outline_size = 16
 

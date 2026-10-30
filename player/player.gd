@@ -132,7 +132,6 @@ var zipline_gravity: float
 var zipline_min_speed: float
 var zipline_max_speed: float
 var zipline_grab_radius: float
-var zipline_hang_height: float
 var zipline_regrab_delay: float
 var toss_range: float
 var toss_height: float
@@ -198,7 +197,7 @@ var lean := 0.0
 # --- Looks: squash and stretch, tilts, swings (stand-ins until there are animations).
 ## States you're in the air in, and landing states (for the landing thud).
 const AIRBORNE_STATES: Array[StringName] = [&"Air", &"Glide"]
-const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide"]
+const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Zipline"]
 ## How far the body squashes down for a fully readied leap (0.25 = a quarter).
 const LEAP_SQUASH := 0.28
 ## Landing faster than this (m/s) kicks up dust.
@@ -211,6 +210,8 @@ const SWING_TIME := 0.22
 const SWING_FROM := deg_to_rad(-120.0)
 const SWING_TO := deg_to_rad(80.0)
 const SWING_PIVOT := Vector3(0.0, 1.1, 0.0)
+## How often sparks fly from your feet while grinding a rail (seconds).
+const SPARK_INTERVAL := 0.06
 
 var _stretch := 0.0 ## Squash (below 0) or stretch (above 0) of the body.
 var _crouch_scale := 1.0
@@ -221,19 +222,20 @@ var _last_y := 0.0
 var _fall_speed := 0.0
 var _swing_timer := 0.0
 var _flash := 0.0 ## Hit flash brightness, fading to 0.
+var _spark_timer := 0.0
 ## The wall last jumped or run off. You can't use the same wall again until
 ## you land (so you can't climb a single wall forever). Zero = none.
 var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"WallScramble", &"Zipline"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"WallScramble"]
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
 const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
 
 ## States you can toss a friend from.
-const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide"]
+const TOSS_STATES: Array[StringName] = [&"Ground", &"Air", &"Crouch", &"Slide", &"Zipline"]
 ## Toss limits while in the air (see limit_tosses_per_air), refilled by
 ## refresh_air_moves(): you can toss once, and each person can toss you
 ## once. So two players can't juggle forever, but every extra friend adds
@@ -344,6 +346,10 @@ func _follow_network(delta: float) -> void:
 func _pose_visual(shown_state: StringName, crouched: bool, lean_angle: float, leap_charge: float, delta: float) -> void:
 	_watch_for_landing(shown_state, delta)
 	_swing_timer -= delta
+	_spark_timer -= delta
+	if shown_state == &"Zipline" and _spark_timer <= 0.0:
+		_spark_timer = SPARK_INTERVAL
+		Effects.burst(self, global_position, Effects.SPARK, 4, 4.0, true)
 	_flash = move_toward(_flash, 0.0, 4.0 * delta)
 	var material := _body_mesh.material_override as StandardMaterial3D
 	material.emission_enabled = _flash > 0.0

@@ -27,7 +27,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall run | Run fast, jump alongside a tall wall, hold forward | |
 | Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
 | Ledge leap | While hanging from a narrow sill, jump | A |
-| Zipline | Touch the cable; jump to leave, C to drop | |
+| Grind rail | Land on it (from above); jump to leave, C to step off | Hands stay free |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
@@ -62,7 +62,7 @@ player/states/                    – one script per movement "mode" (state mach
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
             wall_scramble.gd      – running up a too-tall wall
-            zipline.gd            – riding a zipline
+            zipline.gd            – grinding a rail (once a zipline)
             glide.gd              – gliding (started by the glider item, items/abilities/glide.gd)
 levels/     free_run_line.tscn    – straight test course with every move in order (default world;
                                     regenerate with tools/gen_free_run_line.sh)
@@ -70,7 +70,7 @@ levels/     free_run_line.tscn    – straight test course with every move in or
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
-            zipline.tscn/.gd      – a zipline cable (set its end_point)
+            zipline.tscn/.gd      – a grind rail (set its end_point)
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands

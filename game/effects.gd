@@ -1,13 +1,14 @@
 class_name Effects
 extends RefCounted
 ## Placeholder visual effects made from code: little bursts of bits (dust when
-## you land hard or leap, a "pop" when the bat connects).
+## you land hard or leap, a "pop" when the bat connects, sparks off a rail).
 ##
 ##   Effects.burst(self, global_position, Effects.DUST)
 
 
 const DUST := Color(0.8, 0.76, 0.68)
 const POP := Color(1.0, 0.9, 0.35)
+const SPARK := Color(1.0, 0.7, 0.25)
 
 
 ## A one-off burst of `amount` bits flying out from `position` at about

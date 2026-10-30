@@ -4,7 +4,7 @@ extends PlayerState
 ## - wall jump (press jump next to a wall),
 ## - start a wall run (move fast alongside a tall wall).
 ## - scramble up a wall too tall to grab (push straight into it),
-## - grab a zipline (touch the cable).
+## - land on a grind rail (come down on it).
 ## (Not the ones that need your hands while you hold a bulky item.)
 
 var _coyote_timer := 0.0
@@ -47,8 +47,10 @@ func physics_update(delta: float) -> void:
 		player.change_state(&"Ground")
 		return
 
-	# Ledges, ziplines and scrambles need your hands free of bulky items.
-	if not player.hands_busy() and (_try_grab_zipline() or _try_grab_ledge() or _try_wall_scramble()):
+	if _try_land_on_rail():
+		return
+	# Ledges and scrambles need your hands free of bulky items.
+	if not player.hands_busy() and (_try_grab_ledge() or _try_wall_scramble()):
 		return
 	_try_wall_run()
 
@@ -104,13 +106,15 @@ func _try_wall_run() -> void:
 	player.change_state(&"WallRun", {"wall_normal": wall.normal})
 
 
-func _try_grab_zipline() -> bool:
-	if player.zipline_cooldown > 0.0:
-		return false
-	var hands := player.global_position + Vector3.UP * player.zipline_hang_height
+## Lands you on a grind rail if your feet come down on (or close to) one.
+func _try_land_on_rail() -> bool:
+	if player.zipline_cooldown > 0.0 or player.velocity.y > 0.0:
+		return false # (Going up: you'd pass through it from below.)
+	var feet := player.global_position
 	for zipline: Zipline in player.get_tree().get_nodes_in_group(&"ziplines"):
-		var t := zipline.closest_t(hands)
-		if t < 0.98 and zipline.point_at(t).distance_to(hands) <= player.zipline_grab_radius:
+		var t := zipline.closest_t(feet)
+		var rail := zipline.point_at(t)
+		if t < 0.98 and feet.y > rail.y - 0.3 and rail.distance_to(feet) <= player.zipline_grab_radius:
 			player.change_state(&"Zipline", {"zipline": zipline})
 			return true
 	return false

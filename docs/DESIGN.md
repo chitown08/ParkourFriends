@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Zipline. Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Zipline (grinding a rail). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
@@ -47,7 +47,7 @@ built and the details the code relies on.
 | Wall scramble | ~3.5 m up, once per wall until you land |
 | Ledge leap (from a hang-only sill) | up to 4.5 m |
 | Toss | ~8 m up, ~8 m/s in the camera's direction |
-| Zipline top speed | 26 m/s |
+| Grind rail top speed | 26 m/s |
 
 ## Multiplayer
 
@@ -68,8 +68,9 @@ built and the details the code relies on.
   hands and pushes the current one into the backpack; with no room, F drops instead. F with
   empty hands takes the backpack off (what was in it comes out into your hands).
 - **Bulky** items (the crate now, the glider later) need both hands: no ledge grabs, climbs,
-  vaults, scrambles or ziplines while one is in your hands, and you let go if one lands in your
-  hands mid-climb. Stow it in a backpack to climb. Wall runs and wall jumps still work.
+  vaults or scrambles while one is in your hands, and you let go if one lands in your hands
+  mid-climb. Stow it in a backpack to climb. Wall runs, wall jumps and grind rails still work
+  (you grind a rail on your feet, like a skateboarder, so your hands stay free).
 - **Relics** are items: they hover at home until touched (touching picks them up if your hands
   are free), and only count once carried or thrown into a drop-off (`levels/drop_off.tscn`,
   beside the Free-Run Line's spawn). A relic you drop or throw needs F to pick up again.

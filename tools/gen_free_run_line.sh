@@ -202,12 +202,12 @@ floor GlideIsland -535 -555 -6 16 40
 relic RelicGlide 40 -4.4 -545
 label LabelGlide 3 4 -543 "GLIDER: hold right mouse / LT in the air\n(island to the east)"
 
-# --- 12. Zipline from the tower top down to the final landing ---
-# Starts just past the tower's north edge (z = -550) at shoulder height, so
-# running off the roof catches it. Ends above the landing (top -22).
-zipline ZiplineDown 0 2.6 -551 0 -21.1 -94
+# --- 12. Grind rail from the tower top down to the final landing ---
+# Starts just past the tower's north edge (z = -550), a little below the roof
+# (top 1), so running off the roof drops you onto it. Ends above the landing (top -22).
+zipline ZiplineDown 0 0.6 -551 0 -21.1 -94
 relic RelicZipline 0 -9.4 -600
-label LabelZipline 0 6 -552 "ZIPLINE\n(run off the edge to grab it)"
+label LabelZipline 0 6 -552 "GRIND RAIL\n(run off the edge onto it)"
 floor ZipLanding -638 -680 -22
 checkpoint Checkpoint9 0 -22 -650
 
