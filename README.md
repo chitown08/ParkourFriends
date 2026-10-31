@@ -2,7 +2,7 @@
 
 **Design:** the master design document is the Claude doc
 ["Parkour Friendslop – Game Design Doc"](https://claude.ai/artifact/FaCnq4frncwnN9L2MgsfSU);
-[docs/DESIGN.md](docs/DESIGN.md) has the technical notes.
+[docs/DESIGN.md](docs/DESIGN.md) has the technical notes. [docs/CHARACTER_GUIDE.md](docs/CHARACTER_GUIDE.md) explains how to make a character in Meshy and Mixamo.
 
 Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
@@ -83,7 +83,7 @@ items/      world_item.tscn/.gd   – a physical item in the world (the host dec
 player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
-materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (yellow grid_climb = climbable)
+materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it)
 audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)
 ```
 

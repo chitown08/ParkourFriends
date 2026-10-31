@@ -190,6 +190,124 @@ func test_hugging_the_wall_up_a_fire_escape_doesnt_turn_into_a_wall_run() -> voi
 		expect(not &"WallRun" in states_entered, "and never wall-run on the way up (%.1f m, %.0f deg)" % start)
 
 
+func test_clutter_colour_says_what_its_for() -> void:
+	# Red is low enough to vault, yellow is a climb, grey huts are just in the way.
+	var vault := load("res://materials/grid_vault.tres")
+	var climb := load("res://materials/grid_climb.tres")
+	var things := _clutter()
+	expect(things.size() > 300, "roofs and pavements should be cluttered, %d things" % things.size())
+	for thing in things:
+		if thing.material == vault:
+			expect(thing.size.y <= 1.3, "%s is red, so it should be low enough to vault (%.1f m)" % [thing.name, thing.size.y])
+		elif thing.material == climb:
+			expect(thing.size.y <= 3.0, "%s is yellow, so it should be climbable from a jump (%.1f m)" % [thing.name, thing.size.y])
+		else:
+			expect("Hut" in thing.name, "%s is grey, so it should be a stairwell hut" % thing.name)
+
+
+func test_roof_clutter_leaves_room_to_land_and_ride_rails() -> void:
+	for thing: CSGBox3D in main.level.get_node("RoofClutter").get_children():
+		var roof := _building_under(thing.global_position + Vector3.DOWN * thing.size.y / 2.0)
+		expect(roof != null and not _is_tower(roof), "%s should stand on a roof (not a tower)" % thing.name)
+		if roof == null:
+			continue
+		var clear := _footprint(roof).grow(-6.0)
+		expect(clear.encloses(_footprint(thing)), "%s should be 6 m from %s's edges, to land jumps" % [thing.name, roof.name])
+		for rail: GrindRail in main.level.get_node("GrindRails").get_children():
+			var way := _flat(rail.bottom() - rail.top()).normalized()
+			var from := _flat(rail.top()) - way * 10.0
+			var to := _flat(rail.bottom()) + way * 10.0
+			var middle := _flat(thing.global_position)
+			var nearest := Geometry3D.get_closest_point_to_segment(middle, from, to)
+			expect(nearest.distance_to(middle) > _flat(thing.size).length() / 2.0 + 1.0,
+					"%s shouldn't block %s's run-up or landing" % [thing.name, rail.name])
+	for marker: Node3D in [main.level.get_node("SpawnPoint")] + main.level.get_node("Checkpoints").get_children():
+		for thing in _clutter():
+			expect(_flat(thing.global_position).distance_to(_flat(marker.global_position)) > 4.0,
+					"%s shouldn't be on top of %s" % [thing.name, marker.name])
+
+
+func test_street_clutter_stays_on_the_pavement_clear_of_fire_escapes() -> void:
+	var steps: Array[Rect2] = []
+	for step: CSGBox3D in main.level.get_node("FireEscapes").get_children():
+		steps.append(_footprint(step).grow(8.0))
+	for thing: CSGBox3D in main.level.get_node("StreetClutter").get_children():
+		expect(is_equal_approx(thing.global_position.y, thing.size.y / 2.0), "%s should stand on the street" % thing.name)
+		var spot := _footprint(thing)
+		expect(not steps.any(func(r: Rect2) -> bool: return r.intersects(spot)), "%s shouldn't be in the way of a fire escape (or the run-up to it)" % thing.name)
+		expect(not _buildings().any(func(b: CSGBox3D) -> bool: return _footprint(b).grow(1.0).intersects(spot)),
+				"%s should leave room to run between it and the buildings" % thing.name)
+		expect(absf(thing.global_position.x) > 5.0, "%s shouldn't be on the subway tracks" % thing.name)
+
+
+func test_free_run_vaults_a_roof_box_and_carries_on() -> void:
+	var box := _clutter_named("Vault")
+	expect(await _free_run_over(box, _short_way(box), 8.0), "should go over %s" % box.name)
+	expect(player.is_on_floor() and _building_under(player.global_position) != null,
+			"should be back on the roof past %s, at %v" % [box.name, player.global_position])
+
+
+func test_free_run_vaults_a_bench() -> void:
+	var bench := _clutter_named("Bench")
+	expect(await _free_run_over(bench, _along_kerb(bench), 5.0), "should go over %s" % bench.name)
+	expect(player.is_on_floor() and player.global_position.y < 0.2, "should be back on the street past %s (running along the pavement), at %v" % [bench.name, player.global_position])
+
+
+func test_free_run_gets_over_a_phone_booth() -> void:
+	var booth := _clutter_named("Booth")
+	expect(await _free_run_over(booth, _along_kerb(booth), 5.0), "should go over %s" % booth.name)
+	expect(player.is_on_floor() and player.global_position.y < 0.2, "should be back on the street past %s, at %v" % [booth.name, player.global_position])
+
+
+## Free-runs at `thing` heading `across`, from `run_up` metres away, until
+## you're 2 m past it. Fails if you never get past; says if you went over the top.
+func _free_run_over(thing: CSGBox3D, across: Vector3, run_up: float) -> bool:
+	var floor_y := thing.global_position.y - thing.size.y / 2.0
+	var start := _flat(thing.global_position) - across * (_extent(thing, across) + run_up)
+	await place(start + Vector3.UP * (floor_y + 0.05), yaw_for(across))
+	Input.action_press(&"free_run")
+	Input.action_press(&"move_forward")
+	var past := false
+	var highest := -INF
+	for i in 60 * 4:
+		await ticks(1)
+		highest = maxf(highest, player.global_position.y)
+		if (player.global_position - thing.global_position).dot(across) > _extent(thing, across) + 2.0 and player.is_on_floor():
+			past = true
+			break
+	release_all()
+	expect(past, "should get past %s, ended at %v" % [thing.name, player.global_position])
+	return highest > _top(thing) - 0.2
+
+
+## Across a box's short side.
+func _short_way(thing: CSGBox3D) -> Vector3:
+	return Vector3.RIGHT if thing.size.x < thing.size.z else Vector3.BACK
+
+
+## Along the kerb a pavement thing stands by (its name says which side of the block).
+func _along_kerb(thing: CSGBox3D) -> Vector3:
+	var side := String(thing.name).get_slice("_", 1).left(1)
+	return Vector3.RIGHT if side in ["N", "S"] else Vector3.BACK
+
+
+## Roof and street things.
+func _clutter() -> Array[CSGBox3D]:
+	var found: Array[CSGBox3D] = []
+	for group in ["RoofClutter", "StreetClutter"]:
+		for child in main.level.get_node(group).get_children():
+			found.append(child as CSGBox3D)
+	return found
+
+
+## The first clutter thing of a kind ("Vault", "Bench", "Booth"...).
+func _clutter_named(kind: String) -> CSGBox3D:
+	for thing in _clutter():
+		if kind in thing.name:
+			return thing
+	return null
+
+
 ## Walks up to a building's fire escape from the street with free-run, climbs
 ## the steps, then turns to the wall for the roof. Says if you got onto the roof.
 ## `toward_wall` starts you that many metres off the middle of the steps toward

@@ -48,8 +48,35 @@ const RAIL_END_IN := 3.0
 const RAIL_END_RISE := 0.7
 const RAIL_MARGIN := 4.0 ## Keeps rails this far from a roof's corners.
 
+## Clutter: things to vault, climb and weave through. Colour says what it's
+## for: red to vault, yellow to climb, grey is just in the way.
+## On roofs: air-con boxes (red) and stairwell huts (grey)...
+const VAULT_BOX := Vector3(2.5, 1.1, 1.5) ## Typical size (each one varies a bit).
+const HUT := Vector3(3.5, 2.8, 3.5)
+const ROOF_EDGE_CLEAR := 6.0 ## Nothing this close to a roof's edge: room to land a jump.
+const ROOF_AREA_PER_ITEM := 250.0 ## About one thing per this many square metres of roof.
+const MAX_ROOF_ITEMS := 6
+const ITEM_SPACING := 3.0 ## Room to run between things.
+## ...and along the pavements: benches and bins (red), phone booths (yellow).
+const BENCH := Vector3(2.0, 0.6, 0.7) ## (Length along the kerb, height, depth.)
+const BIN := Vector3(0.8, 1.1, 0.8)
+const PHONE_BOOTH := Vector3(1.2, 2.6, 1.2)
+const KERB_OUT := 1.5 ## How far out from the buildings the pavement things stand.
+const STREET_SPACING := Vector2(8.0, 16.0) ## Gap between pavement things (random in this range).
+const FIRE_ESCAPE_CLEAR := 10.0 ## Pavement stays clear this far around a fire escape (room to run at it).
+## Rail run-ups and landings stay clear this wide, this far onto each roof.
+const RAIL_CLEAR_WIDTH := 3.0
+const RAIL_RUN_UP := 10.0
+const RAIL_LANDING := 12.0
+const MARKER_CLEAR := 4.0 ## And this far around the spawn and checkpoints.
+
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
+## Places clutter mustn't go: rail paths as [from, to] (seen from above), the
+## spawn and checkpoints, and fire escape footprints (Rect2s, for the pavement).
+var _rail_paths: Array = []
+var _marker_spots: Array[Vector2] = []
+var _fire_escapes: Array[Rect2] = []
 ## The plaza (where the avenues cross) is the origin of the world.
 var _plaza_middle := 0.0
 var _out := PackedStringArray()
@@ -81,13 +108,20 @@ func _init() -> void:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	_write_markers(buildings)
+	var roof_things := 0
+	for b in buildings:
+		roof_things += _write_roof_clutter(b)
+	var street_things := 0
+	for bx in BLOCKS:
+		for bz in BLOCKS:
+			street_things += _write_street_clutter(Vector2i(bx, bz))
 
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d rails (seed %d)" % [OUTPUT,
-			buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, rails, SEED])
+	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d rails, %d roof things, %d street things (seed %d)" % [
+			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
+			staircases, rails, roof_things, street_things, SEED])
 	quit()
 
 
@@ -191,6 +225,8 @@ func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 			start += along * length
 			along = -along
 		var out: Vector2 = wall[2]
+		var far_corner := start + along * steps * run + out * STEP_DEPTH
+		_fire_escapes.append(Rect2(start, Vector2.ZERO).expand(far_corner))
 		for k in range(1, steps + 1):
 			var middle := start + along * (k - 0.5) * run + out * STEP_DEPTH / 2.0
 			var size := along.abs() * run + out.abs() * STEP_DEPTH
@@ -230,6 +266,9 @@ func _write_rail(buildings: Array[Dictionary], i: int, across_x: bool) -> bool:
 		var end := Vector3(end_along, end_y, lane) if across_x else Vector3(lane, end_y, end_along)
 		var name := "Rail%s%d" % ["EW" if across_x else "NS", i]
 		var offset := end - start
+		var way := Vector2(offset.x, offset.z).normalized()
+		_rail_paths.append([Vector2(start.x, start.z) - way * (RAIL_START_OUT + RAIL_RUN_UP),
+				Vector2(end.x, end.z) + way * RAIL_LANDING])
 		_out.append("\n[node name=\"%s\" parent=\"GrindRails\" instance=ExtResource(\"8_rail\")]\ntransform = %s\nend_point = Vector3(%s, %s, %s)" % [
 				name, _at(start.x, start.y, start.z), _num(offset.x), _num(offset.y), _num(offset.z)])
 		return true
@@ -252,6 +291,88 @@ func _facing(buildings: Array[Dictionary], block: Vector2i, edge: float, lane: f
 	return {}
 
 
+## Scatters vault boxes and stairwell huts over a roof, clear of its edges,
+## each other, rail run-ups and landings, and markers. Towers stay bare (no way
+## up yet). Returns how many it placed.
+func _write_roof_clutter(b: Dictionary) -> int:
+	if b.tower:
+		return 0
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, b.name, "roof"])
+	var inner := Rect2(b.x, b.z, b.w, b.d).grow(-ROOF_EDGE_CLEAR)
+	if inner.size.x <= 0.0 or inner.size.y <= 0.0:
+		return 0
+	var roof: float = b.storeys * STOREY
+	var wanted := mini(int(inner.get_area() / ROOF_AREA_PER_ITEM) + dice.randi_range(0, 1), MAX_ROOF_ITEMS)
+	var placed: Array[Rect2] = []
+	for attempt in wanted * 6:
+		if placed.size() >= wanted:
+			break
+		var hut := dice.randf() < 0.3
+		var size := (HUT if hut else VAULT_BOX) * Vector3(dice.randf_range(0.8, 1.2), dice.randf_range(0.9, 1.1), dice.randf_range(0.8, 1.2))
+		if dice.randf() < 0.5:
+			size = Vector3(size.z, size.y, size.x) # Turned the other way.
+		var middle := Vector2(dice.randf_range(inner.position.x, inner.end.x), dice.randf_range(inner.position.y, inner.end.y))
+		var footprint := Rect2(middle - Vector2(size.x, size.z) / 2.0, Vector2(size.x, size.z))
+		if not inner.encloses(footprint) or not _clear_of(footprint, placed):
+			continue
+		placed.append(footprint)
+		_box("%s_%s%d" % [b.name, "Hut" if hut else "Vault", placed.size()], "RoofClutter",
+				middle.x, roof + size.y / 2.0, middle.y, size.x, size.y, size.z, "4_building" if hut else "9_vault")
+	return placed.size()
+
+
+## Lines the pavements around a block with benches, bins and phone booths,
+## clear of its fire escape. Returns how many it placed.
+func _write_street_clutter(block: Vector2i) -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, block.x, block.y, "street"])
+	var area := _block_rect(block)
+	# Each side: [a corner, the way along it, the way out into the street, its name].
+	var sides := [[area.position, Vector2.RIGHT, Vector2.UP, "N"],
+			[Vector2(area.position.x, area.end.y), Vector2.RIGHT, Vector2.DOWN, "S"],
+			[area.position, Vector2.DOWN, Vector2.LEFT, "W"],
+			[Vector2(area.end.x, area.position.y), Vector2.DOWN, Vector2.RIGHT, "E"]]
+	var count := 0
+	for side: Array in sides:
+		var at := dice.randf_range(3.0, STREET_SPACING.y)
+		var n := 0
+		while at < BLOCK - 3.0:
+			var roll := dice.randf()
+			var kind := "Bench" if roll < 0.45 else ("Bin" if roll < 0.8 else "Booth")
+			var shape: Vector3 = {"Bench": BENCH, "Bin": BIN, "Booth": PHONE_BOOTH}[kind]
+			var along: Vector2 = side[1]
+			var out: Vector2 = side[2]
+			var middle: Vector2 = side[0] + along * at + out * (KERB_OUT + shape.z / 2.0)
+			var size := along.abs() * shape.x + out.abs() * shape.z
+			var footprint := Rect2(middle - size / 2.0, size)
+			at += dice.randf_range(STREET_SPACING.x, STREET_SPACING.y)
+			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(FIRE_ESCAPE_CLEAR).intersects(footprint)):
+				continue
+			n += 1
+			_box("Block%d%d_%s%s%d" % [block.x, block.y, side[3], kind, n], "StreetClutter",
+					middle.x, shape.y / 2.0, middle.y, size.x, shape.y, size.y, "7_climb" if kind == "Booth" else "9_vault")
+		count += n
+	return count
+
+
+## True if `footprint` keeps ITEM_SPACING from everything in `placed`, and is
+## clear of rail paths and markers.
+func _clear_of(footprint: Rect2, placed: Array[Rect2]) -> bool:
+	var roomy := footprint.grow(ITEM_SPACING)
+	if placed.any(func(r: Rect2) -> bool: return roomy.intersects(r)):
+		return false
+	for spot in _marker_spots:
+		if footprint.grow(MARKER_CLEAR).has_point(spot):
+			return false
+	var middle := footprint.get_center()
+	var reach := footprint.size.length() / 2.0 + RAIL_CLEAR_WIDTH
+	for path: Array in _rail_paths:
+		if Geometry2D.get_closest_point_to_segment(middle, path[0], path[1]).distance_to(middle) < reach:
+			return false
+	return true
+
+
 func _block_rect(block: Vector2i) -> Rect2:
 	return Rect2(_starts[block.x] - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
 
@@ -267,6 +388,7 @@ func _write_header() -> void:
 [ext_resource type="AudioStream" path="res://audio/music/test_level.mp3" id="6_music"]
 [ext_resource type="Material" path="res://materials/grid_climb.tres" id="7_climb"]
 [ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="8_rail"]
+[ext_resource type="Material" path="res://materials/grid_vault.tres" id="9_vault"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -308,6 +430,10 @@ directional_shadow_max_distance = 250.0
 
 [node name="GrindRails" type="Node3D" parent="."]
 
+[node name="RoofClutter" type="Node3D" parent="."]
+
+[node name="StreetClutter" type="Node3D" parent="."]
+
 [node name="Checkpoints" type="Node3D" parent="."]
 
 [node name="Labels" type="Node3D" parent="."]""")
@@ -331,6 +457,7 @@ func _write_markers(buildings: Array[Dictionary]) -> void:
 	var spawn_roof: Dictionary = _nearest(buildings.filter(func(b: Dictionary) -> bool:
 			return b.block == corner and not b.tower), Vector2(0, 0))
 	var spawn := _roof_spot(spawn_roof)
+	_marker_spots.append(Vector2(spawn.x, spawn.z))
 	_out.append("\n[node name=\"SpawnPoint\" type=\"Marker3D\" parent=\".\"]\ntransform = %s" % _at(spawn.x, spawn.y + 0.05, spawn.z))
 	_checkpoint("CheckpointSpawn", spawn + Vector3(0, 0, 4))
 	_label("LabelSpawn", spawn + Vector3(-3, 3, -2),
@@ -366,6 +493,7 @@ func _box(name: String, parent: String, cx: float, cy: float, cz: float,
 
 
 func _checkpoint(name: String, at: Vector3) -> void:
+	_marker_spots.append(Vector2(at.x, at.z))
 	_out.append("\n[node name=\"%s\" parent=\"Checkpoints\" instance=ExtResource(\"2_checkpoint\")]\ntransform = %s" % [name, _at(at.x, at.y, at.z)])
 
 
