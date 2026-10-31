@@ -15,6 +15,7 @@
 [ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
+[ext_resource type="AudioStream" path="res://audio/music/test_level.mp3" id="20_music"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -38,6 +39,7 @@ fog_density = 0.0008
 [node name="FreeRunLine" type="Node3D"]
 script = ExtResource("1_level")
 kill_height = -60.0
+music = ExtResource("20_music")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")

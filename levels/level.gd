@@ -5,6 +5,8 @@ extends Node3D
 
 ## Falling below this height respawns you at your last checkpoint.
 @export var kill_height := -15.0
+## Background music for this world (loops). Leave empty for silence.
+@export var music: AudioStream
 
 @onready var spawn_point: Marker3D = $SpawnPoint
 

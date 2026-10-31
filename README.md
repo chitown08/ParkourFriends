@@ -39,6 +39,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
 | Camera | Mouse or arrow keys | Right stick |
 | Respawn at checkpoint | R | Back / Select |
+| Music on/off (volume is in the pause menu) | M | |
 | Pause menu (sensitivity, invert, leave, quit) | Esc | Start |
 | Hide help | F1 | |
 
@@ -83,6 +84,7 @@ player/     item_carrier.gd       – your item slots (hands, plus a backpack if
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
+audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)
 ```
 
 Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 = players, 3 = triggers, 4 = items.

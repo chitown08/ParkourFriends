@@ -45,6 +45,7 @@ var delivered_relics := {}
 @onready var menu: CanvasLayer = $MainMenu
 @onready var pause_menu: CanvasLayer = $PauseMenu
 @onready var network: Network = $Network
+@onready var music: AudioStreamPlayer = $Music
 
 
 func _ready() -> void:
@@ -59,6 +60,8 @@ func _ready() -> void:
 	menu.join_pressed.connect(start_join)
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
+	pause_menu.music_changed.connect(update_music_volume)
+	update_music_volume()
 	pause_menu.quit_pressed.connect(get_tree().quit)
 	pause_menu.movement_changed.connect(set_movement_profile)
 
@@ -79,6 +82,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif is_paused:
 		return
+	elif event.is_action_pressed("toggle_music"):
+		Settings.music_on = not Settings.music_on
+		Settings.save_to_disk()
+		update_music_volume()
 	elif event.is_action_pressed("call_buddy"):
 		call_buddy()
 	elif event.is_action_pressed("buddy_toss_me"):
@@ -208,6 +215,7 @@ func _return_to_menu(message: String) -> void:
 
 
 func _clear_world() -> void:
+	music.stop()
 	for child in world.get_children():
 		child.queue_free()
 	level = null
@@ -255,6 +263,7 @@ func _on_world_added(node: Node) -> void:
 
 func _on_world_ready(new_level: Level) -> void:
 	level = new_level
+	_play_music(level.music)
 	for player: Player in players.get_children():
 		player.kill_height = level.kill_height
 	for checkpoint: Checkpoint in get_tree().get_nodes_in_group(&"checkpoints"):
@@ -357,3 +366,21 @@ func _handle_command_line() -> void:
 			start_host(Network.DEFAULT_PORT, world_id)
 		elif arg.begins_with("--join"):
 			start_join(arg.get_slice("=", 1))
+
+
+# --- Music -------------------------------------------------------------------
+
+## Sets the music's loudness from Settings (the pause menu slider and M to mute).
+func update_music_volume() -> void:
+	music.volume_db = linear_to_db(Settings.music_volume) if Settings.music_on else -80.0
+
+
+## Loops `song` from the start (or goes quiet if the world has none).
+func _play_music(song: AudioStream) -> void:
+	music.stop()
+	music.stream = song
+	if song == null:
+		return
+	if "loop" in song:
+		song.loop = true
+	music.play()

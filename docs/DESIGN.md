@@ -36,6 +36,8 @@ built and the details the code relies on.
   `Player._pose_visual()` squashes, stretches and tilts the body model: squashed while crouched
   or readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
   gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.
+  Background music: each world names its song (`Level.music`, set by the level generators), which
+  loops; M mutes it and the pause menu has a volume slider (both saved in Settings).
   Sounds are made from code (`game/sfx.gd`) and bursts of bits (dust, the bat's "pop") by
   `game/effects.gd`. One-off effects reach everyone through `Player.show_effect()`.
 

@@ -5,6 +5,7 @@
 [ext_resource type="Material" path="res://materials/grid_ground.tres" id="3_ground"]
 [ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_building"]
 [ext_resource type="Material" path="res://materials/grid_track.tres" id="5_track"]
+[ext_resource type="AudioStream" path="res://audio/music/test_level.mp3" id="6_music"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -28,6 +29,7 @@ fog_density = 0.0015
 [node name="RooftopDistrict" type="Node3D"]
 script = ExtResource("1_level")
 kill_height = -20.0
+music = ExtResource("6_music")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
