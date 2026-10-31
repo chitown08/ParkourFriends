@@ -32,6 +32,22 @@ const TOWER_STOREYS := Vector2i(12, 16) ## ...this many storeys tall.
 const MAX_ALLEY_STEP := 2
 const EDGE := 20.0 ## Street around the outside of the district.
 
+## Fire escapes: a staircase of solid steps (one storey each) along a street-facing
+## wall, up to one storey below the roof. One per block, on its lowest building
+## (alley steps take you up the rest). Towers don't get one.
+const STEP_RUN := 6.0 ## Length of each step along the wall...
+const MIN_STEP_RUN := 4.5 ## ...squeezed down to this on a short wall.
+const STEP_DEPTH := 3.0 ## How far each step sticks out into the street.
+
+## Grind rails cross the avenues, from a taller roof down to a lower one: they
+## start just past the taller roof's edge, a little below it (run off onto it),
+## and end over the lower roof (you're flung off onto it).
+const RAIL_START_OUT := 1.0
+const RAIL_START_DROP := 0.4
+const RAIL_END_IN := 3.0
+const RAIL_END_RISE := 0.7
+const RAIL_MARGIN := 4.0 ## Keeps rails this far from a roof's corners.
+
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
 ## The plaza (where the avenues cross) is the origin of the world.
@@ -56,13 +72,22 @@ func _init() -> void:
 	for b in buildings:
 		_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
 				b.w, b.storeys * STOREY, b.d, "4_building")
+	var staircases := 0
+	for bx in BLOCKS:
+		for bz in BLOCKS:
+			staircases += 1 if _write_staircase(buildings, Vector2i(bx, bz)) else 0
+	var rails := 0
+	for i in BLOCKS:
+		rails += 1 if _write_rail(buildings, i, true) else 0
+		rails += 1 if _write_rail(buildings, i, false) else 0
 	_write_markers(buildings)
 
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	print("Wrote %s: %d buildings, %d towers (seed %d)" % [OUTPUT, buildings.size(),
-			buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(), SEED])
+	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d rails (seed %d)" % [OUTPUT,
+			buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
+			staircases, rails, SEED])
 	quit()
 
 
@@ -133,6 +158,104 @@ func _across_alley(a: Dictionary, b: Dictionary) -> bool:
 	return (absf(gap_x - ALLEY) < 0.1 and overlap_z > 2.0) or (absf(gap_z - ALLEY) < 0.1 and overlap_x > 2.0)
 
 
+## Adds a fire escape to the block's lowest building that has a long enough
+## street-facing wall (trying the next lowest if not). Returns false if none fits.
+func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, block.x, block.y, "stairs"])
+	var area := _block_rect(block)
+	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.block == block and not b.tower)
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys < b.storeys)
+	for b: Dictionary in candidates:
+		var steps: int = b.storeys - 1
+		# Each street-facing wall: [a corner, the way along the wall, the way out into the street].
+		var walls := []
+		if is_equal_approx(b.z, area.position.y):
+			walls.append([Vector2(b.x, b.z), Vector2.RIGHT, Vector2.UP])
+		if is_equal_approx(b.z + b.d, area.end.y):
+			walls.append([Vector2(b.x, b.z + b.d), Vector2.RIGHT, Vector2.DOWN])
+		if is_equal_approx(b.x, area.position.x):
+			walls.append([Vector2(b.x, b.z), Vector2.DOWN, Vector2.LEFT])
+		if is_equal_approx(b.x + b.w, area.end.x):
+			walls.append([Vector2(b.x + b.w, b.z), Vector2.DOWN, Vector2.RIGHT])
+		walls = walls.filter(func(w: Array) -> bool:
+				return (b.w if w[1] == Vector2.RIGHT else b.d) >= steps * MIN_STEP_RUN)
+		if walls.is_empty():
+			continue
+		var wall: Array = walls[dice.randi() % walls.size()]
+		var length: float = b.w if wall[1] == Vector2.RIGHT else b.d
+		var run := minf(STEP_RUN, length / steps)
+		var along: Vector2 = wall[1]
+		var start: Vector2 = wall[0]
+		if dice.randf() < 0.5: # Climb from the other end.
+			start += along * length
+			along = -along
+		var out: Vector2 = wall[2]
+		for k in range(1, steps + 1):
+			var middle := start + along * (k - 0.5) * run + out * STEP_DEPTH / 2.0
+			var size := along.abs() * run + out.abs() * STEP_DEPTH
+			_box("%s_Step%d" % [b.name, k], "FireEscapes", middle.x, k * STOREY / 2.0, middle.y,
+					size.x, k * STOREY, size.y, "7_climb")
+		return true
+	return false
+
+
+## Adds a grind rail across one of the avenues, at row (or column) `i`, from the
+## taller of the two facing roofs down to the other. `across_x` is the
+## north-south avenue (the rail runs east or west). Returns false if the roofs
+## there are the same height or nowhere fits.
+func _write_rail(buildings: Array[Dictionary], i: int, across_x: bool) -> bool:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, i, "rail", across_x])
+	var near := Vector2i(AVENUE_AFTER, i) if across_x else Vector2i(i, AVENUE_AFTER)
+	var far := near + (Vector2i.RIGHT if across_x else Vector2i.DOWN)
+	var side := -AVENUE / 2.0 # The near side of the avenue (it's centred on the plaza).
+	var lane_start := _block_rect(near).position.y if across_x else _block_rect(near).position.x
+	for attempt in 8:
+		var lane := lane_start + dice.randf_range(RAIL_MARGIN, BLOCK - RAIL_MARGIN)
+		var a := _facing(buildings, near, side, lane, across_x)
+		var b := _facing(buildings, far, -side, lane, across_x)
+		if a.is_empty() or b.is_empty() or a.storeys == b.storeys:
+			continue
+		var high := a if a.storeys > b.storeys else b
+		var low := b if high == a else a
+		var toward := 1.0 if high == a else -1.0 # Along the axis, from high to low.
+		var high_edge := side if high == a else -side
+		var low_edge := -high_edge
+		var start_along := high_edge + toward * RAIL_START_OUT
+		var end_along := low_edge + toward * RAIL_END_IN
+		var start_y: float = high.storeys * STOREY - RAIL_START_DROP
+		var end_y: float = low.storeys * STOREY + RAIL_END_RISE
+		var start := Vector3(start_along, start_y, lane) if across_x else Vector3(lane, start_y, start_along)
+		var end := Vector3(end_along, end_y, lane) if across_x else Vector3(lane, end_y, end_along)
+		var name := "Rail%s%d" % ["EW" if across_x else "NS", i]
+		var offset := end - start
+		_out.append("\n[node name=\"%s\" parent=\"GrindRails\" instance=ExtResource(\"8_rail\")]\ntransform = %s\nend_point = Vector3(%s, %s, %s)" % [
+				name, _at(start.x, start.y, start.z), _num(offset.x), _num(offset.y), _num(offset.z)])
+		return true
+	return false
+
+
+## The building in `block` whose wall is at `edge` (across the axis) and covers
+## `lane` (along the wall) with RAIL_MARGIN to spare, or {} if there's an alley there.
+func _facing(buildings: Array[Dictionary], block: Vector2i, edge: float, lane: float, across_x: bool) -> Dictionary:
+	for b in buildings:
+		if b.block != block or b.tower:
+			continue
+		var low_side: float = b.x if across_x else b.z
+		var high_side: float = (b.x + b.w) if across_x else (b.z + b.d)
+		var from: float = b.z if across_x else b.x
+		var to: float = (b.z + b.d) if across_x else (b.x + b.w)
+		var at_edge := is_equal_approx(low_side, edge) or is_equal_approx(high_side, edge)
+		if at_edge and lane > from + RAIL_MARGIN and lane < to - RAIL_MARGIN:
+			return b
+	return {}
+
+
+func _block_rect(block: Vector2i) -> Rect2:
+	return Rect2(_starts[block.x] - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
+
+
 func _write_header() -> void:
 	_out.append("""[gd_scene format=3]
 
@@ -142,6 +265,8 @@ func _write_header() -> void:
 [ext_resource type="Material" path="res://materials/grid_platform.tres" id="4_building"]
 [ext_resource type="Material" path="res://materials/grid_track.tres" id="5_track"]
 [ext_resource type="AudioStream" path="res://audio/music/test_level.mp3" id="6_music"]
+[ext_resource type="Material" path="res://materials/grid_climb.tres" id="7_climb"]
+[ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="8_rail"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -178,6 +303,10 @@ directional_shadow_max_distance = 250.0
 [node name="Street" type="Node3D" parent="."]
 
 [node name="Buildings" type="Node3D" parent="."]
+
+[node name="FireEscapes" type="Node3D" parent="."]
+
+[node name="GrindRails" type="Node3D" parent="."]
 
 [node name="Checkpoints" type="Node3D" parent="."]
 

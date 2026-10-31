@@ -6,6 +6,7 @@ extends GameTest
 const ALLEY := 5.0
 const STREET := 10.0
 const AVENUE := 24.0
+const STOREY := 3.5
 
 
 func before_each() -> void:
@@ -84,6 +85,120 @@ func test_falling_into_the_street_and_r_brings_you_back() -> void:
 	expect(player.global_position.y > 10.0, "R should take you back up to a roof checkpoint")
 
 
+func test_a_two_storey_alley_step_can_be_leapt_up() -> void:
+	var pair := _pair_across(ALLEY, 2.0 * STOREY)
+	expect(not pair.is_empty(), "the district should have a two-storey alley step to test")
+	if pair.is_empty():
+		return
+	expect(await _run_across_pair(pair, true, 20.0), "a readied leap should get you up a two-storey step")
+
+
+func test_every_block_has_a_fire_escape_from_the_street() -> void:
+	var climbed := {}
+	for building in _buildings():
+		var steps := _steps_of(building)
+		if steps.is_empty():
+			continue
+		var block := building.name.get_slice("_", 0)
+		climbed[block] = true
+		expect_near(_top(steps[0]), STOREY, 0.01, "%s's fire escape should start one storey up" % building.name)
+		expect_near(_top(steps[-1]), _top(building) - STOREY, 0.01, "and end one storey below its roof")
+		for k in range(1, steps.size()):
+			expect_near(_top(steps[k]) - _top(steps[k - 1]), STOREY, 0.01, "each step one storey up")
+	expect(climbed.size() == 25, "all 25 blocks should have one, %d do" % climbed.size())
+
+
+func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
+	# The squeezed-up one (shortest steps) and the tallest one.
+	var all := _staircases()
+	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _step_run(a) < _step_run(b))
+	var squeezed: CSGBox3D = all[0]
+	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _steps_of(a).size() > _steps_of(b).size())
+	for building: CSGBox3D in [squeezed, all[0]]:
+		expect(await _climb_fire_escape(building), "should climb %s's fire escape (%d steps of %.1f m) to the roof, ended at %v" % [
+				building.name, _steps_of(building).size(), _step_run(building), player.global_position])
+
+
+func test_rails_cross_the_avenues_downhill_onto_a_lower_roof() -> void:
+	var rails: Array[Node] = main.level.get_node("GrindRails").get_children()
+	expect(rails.size() >= 6, "there should be rails across the avenues, %d" % rails.size())
+	for rail: GrindRail in rails:
+		var landing := _building_under(rail.bottom() + Vector3.DOWN * 0.7)
+		expect(landing != null, "%s should end over a roof" % rail.name)
+		var start := _building_under(rail.top() + Vector3.UP * 0.4 - _flat(rail.bottom() - rail.top()).normalized() * 2.0)
+		expect(start != null, "%s should start just off a roof" % rail.name)
+		if start and landing:
+			expect(_top(start) > _top(landing), "%s should go from a taller roof to a lower one" % rail.name)
+
+
+func test_running_off_a_roof_rides_a_rail_over_the_avenue() -> void:
+	var rail: GrindRail = main.level.get_node("GrindRails").get_child(0)
+	var way := _flat(rail.bottom() - rail.top()).normalized()
+	var landing := _building_under(rail.bottom() + Vector3.DOWN * 0.7)
+	await place(rail.top() + Vector3.UP * 0.45 - way * 8.0, yaw_for(way))
+	Input.action_press(&"move_forward")
+	var grinding := false
+	var landed := false
+	for i in 60 * 8:
+		await ticks(1)
+		grinding = grinding or player.state.name == &"Grind"
+		if grinding and player.is_on_floor() and _building_under(player.global_position) == landing:
+			landed = true
+			break
+	release_all()
+	expect(grinding, "should land on %s" % rail.name)
+	expect(landed, "and ride it onto %s, ended at %v" % [landing.name, player.global_position])
+
+
+## Walks up to a building's fire escape from the street with free-run, climbs
+## the steps, then turns to the wall for the roof. Says if you got onto the roof.
+func _climb_fire_escape(building: CSGBox3D) -> bool:
+	var steps := _steps_of(building)
+	var along := _flat(steps[1].global_position - steps[0].global_position).normalized() if steps.size() > 1 \
+			else Vector3.ZERO
+	var to_wall := _flat(building.global_position - steps[0].global_position)
+	to_wall = to_wall - along * to_wall.dot(along)
+	to_wall = to_wall.normalized()
+	var foot := steps[0].global_position - along * (_step_run(building) / 2.0 + 8.0)
+	await place(Vector3(foot.x, 0.05, foot.z), yaw_for(along))
+	Input.action_press(&"free_run")
+	Input.action_press(&"move_forward")
+	for i in 60 * 15:
+		await ticks(1)
+		if player.is_on_floor() and player.global_position.y > _top(steps[-1]) - 0.2:
+			player.camera_rig.yaw = yaw_for(to_wall) # Last step: turn to the wall.
+		if player.is_on_floor() and _building_under(player.global_position) == building:
+			release_all()
+			return true
+	release_all()
+	return false
+
+
+func _staircases() -> Array:
+	return _buildings().filter(func(b: CSGBox3D) -> bool: return not _steps_of(b).is_empty())
+
+
+## A building's fire escape steps, lowest first.
+func _steps_of(building: CSGBox3D) -> Array[CSGBox3D]:
+	var steps: Array[CSGBox3D] = []
+	var k := 1
+	while main.level.has_node("FireEscapes/%s_Step%d" % [building.name, k]):
+		steps.append(main.level.get_node("FireEscapes/%s_Step%d" % [building.name, k]))
+		k += 1
+	return steps
+
+
+## How long each step of a building's fire escape is.
+func _step_run(building: CSGBox3D) -> float:
+	var steps := _steps_of(building)
+	return maxf(steps[0].size.x, steps[0].size.z) if steps[0].size.x != 3.0 and steps[0].size.z != 3.0 \
+			else (steps[0].size.z if steps[0].size.x == 3.0 else steps[0].size.x)
+
+
+func _flat(v: Vector3) -> Vector3:
+	return Vector3(v.x, 0, v.z)
+
+
 ## Finds two same-height buildings across a gap of `size`, runs at it with
 ## free-run from `run_up` metres back (holding jump near the edge if `leap`),
 ## and says whether you landed on the second.
@@ -92,6 +207,10 @@ func _run_across(size: float, leap: bool, run_up: float) -> bool:
 	expect(not pair.is_empty(), "the district should have a %d m gap to test" % size)
 	if pair.is_empty():
 		return false
+	return await _run_across_pair(pair, leap, run_up)
+
+
+func _run_across_pair(pair: Array, leap: bool, run_up: float) -> bool:
 	var from: CSGBox3D = pair[0]
 	var to: CSGBox3D = pair[1]
 	var direction: Vector3 = pair[2]
@@ -111,20 +230,20 @@ func _run_across(size: float, leap: bool, run_up: float) -> bool:
 				and absf(player.global_position.y - _top(to)) < 0.2:
 			landed = true
 			break
-		if player.global_position.y < _top(to) - 3.0:
+		if player.global_position.y < minf(_top(from), _top(to)) - 3.0:
 			break
 	release_all()
 	return landed
 
 
-## [from, to, direction]: the first pair across a gap of `size` where `to` is the
-## same height as `from` (no help from dropping down) and they face each other
-## along at least 12 m.
-func _pair_across(size: float) -> Array:
+## [from, to, direction]: the first pair across a gap of `size` where `to` is
+## `rise` metres higher than `from` (by default the same height: no help from
+## dropping down) and they face each other along at least 12 m.
+func _pair_across(size: float, rise := 0.0) -> Array:
 	var buildings := _buildings()
 	for a in buildings:
 		for b in buildings:
-			if a == b or _is_tower(a) or _is_tower(b) or absf(_top(b) - _top(a)) > 0.01:
+			if a == b or _is_tower(a) or _is_tower(b) or absf(_top(b) - _top(a) - rise) > 0.01:
 				continue
 			if _gap_size(_facing_gap(a, b)) != size or _overlap(a, b) < 12.0:
 				continue

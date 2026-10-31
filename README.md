@@ -83,7 +83,7 @@ items/      world_item.tscn/.gd   – a physical item in the world (the host dec
 player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
-materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid
+materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (yellow grid_climb = climbable)
 audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)
 ```
 

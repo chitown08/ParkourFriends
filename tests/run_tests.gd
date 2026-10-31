@@ -90,4 +90,8 @@ func _run_all() -> void:
 		failed += 1
 		print("\nErrors outside of tests, or no tests found.")
 	print("\n%d passed, %d failed" % [passed, failed])
+	# Give the audio server a moment to let go of the last sounds, so quitting
+	# doesn't report them as leaks.
+	for i in 10:
+		await process_frame
 	quit(1 if failed > 0 else 0)
