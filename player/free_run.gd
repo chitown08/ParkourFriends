@@ -14,6 +14,7 @@ extends Node
 ##   Gap with a landing in jumping range -> jump it
 ##   Gap with no landing, wall alongside -> jump toward the wall (you wall-run across)
 ##   Gap with nothing to land on        -> keep running (you drop off)
+##   Ramp                               -> keep running (its lip launches you)
 ##   Hanging from a ledge               -> pull up (or leap to the next ledge up)
 ##
 ## Your own jump button becomes a leap: tap it for a normal jump, or hold it to
@@ -95,6 +96,8 @@ func _look_ahead() -> void:
 		input.crouch_held = true # Something at head height with room below: slide under.
 		return
 
+	if _on_ramp(feet):
+		return # Ride it to the lip: the ramp launches you.
 	if not _edge_ahead(feet, direction, speed):
 		return
 	if readying_leap:
@@ -175,6 +178,12 @@ func _can_get_on_top(wall: Dictionary, direction: Vector3, feet: Vector3) -> boo
 ## True if we're hitting the wall at a shallow angle (good for a wall run).
 func _is_glancing(wall: Dictionary, direction: Vector3) -> bool:
 	return direction.dot(-(wall.normal as Vector3)) < 0.5
+
+
+## True if you're running up a ramp (see Ramp).
+func _on_ramp(feet: Vector3) -> bool:
+	var hit := player.raycast(feet + Vector3.UP * 0.5, feet + Vector3.DOWN * 0.6)
+	return not hit.is_empty() and hit.collider is Node and (hit.collider as Node).get_parent() is Ramp
 
 
 ## True if the ground runs out just ahead.

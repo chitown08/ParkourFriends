@@ -308,6 +308,88 @@ func _clutter_named(kind: String) -> CSGBox3D:
 	return null
 
 
+func test_four_ramps_launch_toward_the_middle_of_the_plaza() -> void:
+	var ramps: Array[Node] = main.level.get_node("Ramps").get_children()
+	expect(ramps.size() == 4, "one ramp in each avenue arm, %d" % ramps.size())
+	for ramp: Ramp in ramps:
+		var launches := -ramp.global_basis.z
+		var to_middle := -_flat(ramp.global_position).normalized()
+		expect(launches.dot(to_middle) > 0.99, "%s should launch toward the middle" % ramp.name)
+		expect(ramp.material == load("res://materials/grid_ramp.tres"), "%s should be orange" % ramp.name)
+
+
+func test_crouch_walking_up_a_ramp_doesnt_launch_you() -> void:
+	var peak := await _run_at_ramp({"crouch": true, "run_up": 6.0})
+	expect(peak < 2.5, "too slow for a launch: just roll off the lip, peak %.1f m" % peak)
+
+
+func test_running_into_a_ramp_launches_you() -> void:
+	var peak := await _run_at_ramp({})
+	expect(peak > 6.0, "a full-speed run should launch you well up, peak %.1f m" % peak)
+
+
+func test_sliding_into_a_ramp_launches_you_higher() -> void:
+	var running := await _run_at_ramp({})
+	var sliding := await _run_at_ramp({"slide": true})
+	expect(sliding > running + 1.5, "sliding in should go higher than running in (%.1f m vs %.1f m)" % [sliding, running])
+	expect(sliding > 9.0, "the big one, peak %.1f m" % sliding)
+
+
+func test_free_run_rides_a_ramp_and_a_readied_leap_adds_height() -> void:
+	var free_running := await _run_at_ramp({"free_run": true})
+	expect(free_running > 6.0, "free-run should ride up to the lip and launch, peak %.1f m" % free_running)
+	var leaping := await _run_at_ramp({"free_run": true, "ready_leap": true})
+	expect(leaping > free_running + 1.0, "a readied leap at the lip adds height (%.1f m vs %.1f m)" % [leaping, free_running])
+
+
+func test_you_can_steer_in_the_air_after_a_launch() -> void:
+	var straight := await _run_at_ramp({})
+	var straight_x := player.global_position.x
+	await _run_at_ramp({"steer": &"move_left"})
+	expect(player.global_position.x < straight_x - 2.0, "holding left in the air should carry you left, x %.1f vs %.1f" % [player.global_position.x, straight_x])
+
+
+## Runs at the plaza's south ramp from far up the avenue at full flow, with
+## `how` options: slide (slide in from 10 m out), crouch (crouch-walk),
+## free_run, ready_leap (hold jump with free-run), steer (an action held once
+## launched), run_up (how far back to start). Returns how high your feet got
+## above the street, and leaves you where you landed.
+func _run_at_ramp(how: Dictionary) -> float:
+	var ramp: Ramp = main.level.get_node("Ramps/RampSouth")
+	var back := ramp.global_basis.z # From the lip back down the run-up.
+	await place(ramp.global_position + back * (ramp.length + how.get("run_up", 40.0)) + Vector3.UP * 0.05, yaw_for(-back))
+	player.debug_full_flow = not how.get("crouch", false)
+	var launched := [false]
+	var on_launch := func() -> void: launched[0] = true
+	player.launched_off_ramp.connect(on_launch)
+	if how.get("free_run", false):
+		Input.action_press(&"free_run")
+	if how.get("ready_leap", false):
+		Input.action_press(&"jump")
+	if how.get("crouch", false):
+		Input.action_press(&"crouch")
+	Input.action_press(&"move_forward")
+	var peak := 0.0
+	var left_ground := false
+	for i in 60 * 8:
+		await ticks(1)
+		peak = maxf(peak, player.global_position.y)
+		var from_lip := (player.global_position - ramp.global_position).dot(-back)
+		if how.get("slide", false) and from_lip > -ramp.length - 10.0 and player.state.name == &"Ground":
+			Input.action_press(&"crouch")
+		if launched[0] and how.has("steer"):
+			Input.action_press(how["steer"])
+		left_ground = left_ground or from_lip > 0.5
+		if left_ground and player.is_on_floor():
+			break
+	release_all()
+	player.launched_off_ramp.disconnect(on_launch)
+	player.debug_full_flow = false
+	if not how.get("crouch", false):
+		expect(launched[0], "should launch off the ramp (%s)" % [how])
+	return peak
+
+
 ## Walks up to a building's fire escape from the street with free-run, climbs
 ## the steps, then turns to the wall for the roof. Says if you got onto the roof.
 ## `toward_wall` starts you that many metres off the middle of the steps toward

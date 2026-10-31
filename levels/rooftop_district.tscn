@@ -9,6 +9,8 @@
 [ext_resource type="Material" path="res://materials/grid_climb.tres" id="7_climb"]
 [ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="8_rail"]
 [ext_resource type="Material" path="res://materials/grid_vault.tres" id="9_vault"]
+[ext_resource type="Script" path="res://levels/ramp.gd" id="10_ramp"]
+[ext_resource type="Material" path="res://materials/grid_ramp.tres" id="11_ramp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -49,6 +51,8 @@ directional_shadow_max_distance = 250.0
 [node name="FireEscapes" type="Node3D" parent="."]
 
 [node name="GrindRails" type="Node3D" parent="."]
+
+[node name="Ramps" type="Node3D" parent="."]
 
 [node name="RoofClutter" type="Node3D" parent="."]
 
@@ -1095,6 +1099,26 @@ end_point = Vector3(-26.0, -5.9, 0.0)
 [node name="RailNS4" parent="GrindRails" instance=ExtResource("8_rail")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 99.05, 20.6, 11.0)
 end_point = Vector3(0.0, -5.9, -26.0)
+
+[node name="RampNorth" type="Node3D" parent="Ramps"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 0.0, 0, -13.0)
+script = ExtResource("10_ramp")
+material = ExtResource("11_ramp")
+
+[node name="RampSouth" type="Node3D" parent="Ramps"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 0.0, 0, 13.0)
+script = ExtResource("10_ramp")
+material = ExtResource("11_ramp")
+
+[node name="RampEast" type="Node3D" parent="Ramps"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 13.0, 0, 0.0)
+script = ExtResource("10_ramp")
+material = ExtResource("11_ramp")
+
+[node name="RampWest" type="Node3D" parent="Ramps"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -13.0, 0, 0.0)
+script = ExtResource("10_ramp")
+material = ExtResource("11_ramp")
 
 [node name="SpawnPoint" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.57, 24.55, 42.0)

@@ -70,6 +70,10 @@ const RAIL_RUN_UP := 10.0
 const RAIL_LANDING := 12.0
 const MARKER_CLEAR := 4.0 ## And this far around the spawn and checkpoints.
 
+## The launch plaza: a kicker ramp in each avenue arm, its lip this far from
+## the middle of the plaza, all launching toward the middle (see levels/ramp.gd).
+const RAMP_DISTANCE := 13.0
+
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
 ## Places clutter mustn't go: rail paths as [from, to] (seen from above), the
@@ -107,6 +111,7 @@ func _init() -> void:
 	for i in BLOCKS:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
+	_write_ramps()
 	_write_markers(buildings)
 	var roof_things := 0
 	for b in buildings:
@@ -373,6 +378,22 @@ func _clear_of(footprint: Rect2, placed: Array[Rect2]) -> bool:
 	return true
 
 
+## Four ramps round the plaza, one in each avenue arm, all launching toward
+## the middle. (A ramp launches toward its -Z; `yaw` turns it to face the middle.)
+func _write_ramps() -> void:
+	var ramps := {"North": [Vector3(0, 0, -RAMP_DISTANCE), PI], "South": [Vector3(0, 0, RAMP_DISTANCE), 0.0],
+			"East": [Vector3(RAMP_DISTANCE, 0, 0), PI / 2.0], "West": [Vector3(-RAMP_DISTANCE, 0, 0), -PI / 2.0]}
+	for side: String in ramps:
+		var at: Vector3 = ramps[side][0]
+		var basis := Basis(Vector3.UP, ramps[side][1])
+		_out.append("
+[node name=\"Ramp%s\" type=\"Node3D\" parent=\"Ramps\"]
+transform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, 0, %s)
+script = ExtResource(\"10_ramp\")
+material = ExtResource(\"11_ramp\")" % [
+				side, _num(basis.x.x), _num(basis.z.x), _num(basis.x.z), _num(basis.z.z), _num(at.x), _num(at.z)])
+
+
 func _block_rect(block: Vector2i) -> Rect2:
 	return Rect2(_starts[block.x] - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
 
@@ -389,6 +410,8 @@ func _write_header() -> void:
 [ext_resource type="Material" path="res://materials/grid_climb.tres" id="7_climb"]
 [ext_resource type="PackedScene" path="res://levels/grind_rail.tscn" id="8_rail"]
 [ext_resource type="Material" path="res://materials/grid_vault.tres" id="9_vault"]
+[ext_resource type="Script" path="res://levels/ramp.gd" id="10_ramp"]
+[ext_resource type="Material" path="res://materials/grid_ramp.tres" id="11_ramp"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -429,6 +452,8 @@ directional_shadow_max_distance = 250.0
 [node name="FireEscapes" type="Node3D" parent="."]
 
 [node name="GrindRails" type="Node3D" parent="."]
+
+[node name="Ramps" type="Node3D" parent="."]
 
 [node name="RoofClutter" type="Node3D" parent="."]
 

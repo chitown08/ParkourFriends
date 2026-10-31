@@ -22,6 +22,7 @@ signal respawned
 signal state_changed(new_state: StringName)
 signal tossed_someone(target: Player)
 signal got_tossed
+signal launched_off_ramp
 
 ## The movement numbers to use (how fast, how high, ...). Edit the profile
 ## files in player/profiles/ to change the feel; the pause menu can switch
@@ -709,6 +710,20 @@ func start_jump() -> void:
 		velocity += forward * leap_boost * pending_leap
 	show_effect(&"show_jump", [pending_leap])
 	pending_leap = 0.0
+
+
+## Launched off a ramp's lip (see Ramp): on along `forward` at `speed`, and
+## `rise` metres up, plus up to `leap_bonus` more for a readied free-run leap.
+func ramp_launch(forward: Vector3, speed: float, rise: float, leap_bonus: float) -> void:
+	rise += leap_bonus * _free_run.leap_charge()
+	_free_run.readying_leap = false
+	if is_crouched and can_stand():
+		set_crouched(false)
+	velocity = forward * speed + Vector3.UP * sqrt(2.0 * _rise_gravity * rise)
+	refresh_air_moves()
+	change_state(&"Air")
+	show_effect(&"show_jump", [1.0])
+	launched_off_ramp.emit()
 
 
 func apply_gravity(delta: float) -> void:

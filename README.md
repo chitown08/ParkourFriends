@@ -28,6 +28,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
 | Ledge leap | While hanging from a narrow sill, jump | A |
 | Grind rail | Land on it (from above) and it slides you down; push up it to climb (slower), jump to hop along or leave, C to step off | Hands stay free |
+| Ramp launch (orange) | Run or slide into one fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
@@ -77,6 +78,7 @@ levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two c
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
             grind_rail.tscn/.gd   – a grind rail (set its end_point)
+            ramp.gd               – a kicker ramp: hit it fast and its lip launches you
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands
@@ -86,7 +88,7 @@ items/      world_item.tscn/.gd   – a physical item in the world (the host dec
 player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
 ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
             main_menu.tscn/.gd    – start menu
-materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it)
+materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it, orange grid_ramp = launch off it)
 audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)
 ```
 
