@@ -32,9 +32,13 @@ built and the details the code relies on.
   full flow. A tap (under 0.1 s) is a normal jump. Numbers: the "Leap" group in the movement profile.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
-- **Looks and sounds are stand-ins** until there are real animations and recordings.
-  `Player._pose_visual()` squashes, stretches and tilts the body model: squashed while crouched
-  or readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
+- **The character** is a Meshy model rigged and animated in Mixamo (`characters/blob/`, see
+  `docs/CHARACTER_GUIDE.md`). Godot pulls each animation out of its FBX on import (scaled to 1.8 m,
+  looping set per move); `CharacterModel` picks one from your state and speed each frame (puppets
+  too, from what the network sends), strips any travel Mixamo baked in, and plays one-off moves
+  (swing, throw, toss, hard landing). Sounds are still stand-ins.
+  On top, `Player._pose_visual()` squashes, stretches and tilts the whole model: squashed while
+  readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
   gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.
   Background music: each world names its song (`Level.music`, set by the level generators), which
   loops; M mutes it and the pause menu has a volume slider (both saved in Settings).

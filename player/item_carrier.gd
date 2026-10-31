@@ -35,6 +35,7 @@ func physics_update(delta: float) -> void:
 		var in_hands := hands_item()
 		if in_hands:
 			in_hands.request_throw.rpc_id(1, player.aim_direction())
+			player.show_effect(&"show_action", [&"throw"])
 	if input.switch_item_just_pressed:
 		request_swap.rpc_id(1)
 	_pick_up_touched(delta)

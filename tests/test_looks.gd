@@ -64,7 +64,7 @@ func test_a_bat_swing_sweeps_the_bat_and_flashes_who_it_hits() -> void:
 	await ticks(1)
 	var swinging := bat.global_position - player.global_position
 	expect(swinging.distance_to(resting) > 0.3, "the bat should swing round, moved %.2f m" % swinging.distance_to(resting))
-	var buddy_body := main.buddy.get_node("Visual/Body") as MeshInstance3D
+	var buddy_body: MeshInstance3D = main.buddy.model.body
 	var material := buddy_body.material_override as StandardMaterial3D
 	expect(material.emission_enabled, "the buddy should flash when hit")
 	await ticks(30)

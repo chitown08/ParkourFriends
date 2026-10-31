@@ -53,11 +53,11 @@ func test_crouching_shows_up_on_the_other_screen() -> void:
 	await hold(&"crouch", 30)
 	Input.action_press(&"crouch")
 	await ticks(30)
-	var puppet_visual: Node3D = _find(host_main, client_id).get_node("Visual")
-	expect(puppet_visual.scale.y < 0.7, "host should see the client squashed down, scale is %.2f" % puppet_visual.scale.y)
+	var puppet: Player = _find(host_main, client_id)
+	expect(puppet.model.current_animation() == &"crouch_idle", "host should see the client crouching, playing %s" % puppet.model.current_animation())
 	Input.action_release(&"crouch")
 	await ticks(40)
-	expect(puppet_visual.scale.y > 0.95, "and standing again afterwards, scale is %.2f" % puppet_visual.scale.y)
+	expect(puppet.model.current_animation() == &"idle", "and standing again afterwards, playing %s" % puppet.model.current_animation())
 
 
 func test_wall_run_lean_shows_up_on_the_other_screen() -> void:

@@ -13,3 +13,6 @@ export_presets.cfg
 # OS junk
 Thumbs.db
 .DS_Store
+
+# Animations Godot pulls out of the character FBX files on import
+characters/**/anims/*.res

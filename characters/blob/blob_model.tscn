@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://player/character_model.gd" id="1_model"]
+[ext_resource type="PackedScene" path="res://characters/blob/blob.fbx" id="2_blob"]
+
+[node name="Model" type="Node3D"]
+script = ExtResource("1_model")
+
+[node name="Blob" parent="." instance=ExtResource("2_blob")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0)

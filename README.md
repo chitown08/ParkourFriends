@@ -51,11 +51,14 @@ Folders are organized by *feature*: each scene (`.tscn`) sits next to its script
 game/       main.tscn + main.gd   – menu → solo/host/join, loads the level, spawns players
             network.gd            – hosting, joining and leaving online games
 player/     player.tscn           – the character
+            character_model.gd    – the model you see: picks and blends its animations
             player.gd             – shared movement helpers, flow, ledge detection, tossing
             movement_profile.gd   – all the movement numbers; profiles/ has superhuman + human
             player_input.gd       – turns keyboard/gamepad into plain variables
             camera_rig.gd         – third-person orbit camera
             ledge.gd              – data about a grabbable ledge
+characters/blob/   blob.fbx + anims/*.fbx – the character and its animations, from Meshy + Mixamo
+                   blob_model.tscn       – the model scene the player uses
 player/states/                    – one script per movement "mode" (state machine):
             player_state.gd       – base class every state extends
             ground.gd, air.gd     – running; jumping/falling (+ starts ledge grabs)

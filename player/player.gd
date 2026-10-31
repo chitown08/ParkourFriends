@@ -179,7 +179,9 @@ var _jump_buffer_timer := 0.0
 @onready var input: PlayerInput = $PlayerInput
 @onready var camera_rig: CameraRig = $CameraRig
 @onready var _visual: Node3D = $Visual
-@onready var _body_mesh: MeshInstance3D = $Visual/Body
+## The character model and its animations.
+@onready var model: CharacterModel = $Visual/Model
+@onready var _body_mesh: MeshInstance3D = model.body
 @onready var _states: Node = $States
 @onready var _free_run: FreeRun = $FreeRun
 ## Your two item slots (hands, back) and the item buttons.
@@ -189,15 +191,12 @@ var _jump_buffer_timer := 0.0
 @onready var _stand_shape: CapsuleShape3D = _collision.shape
 @onready var body_radius: float = _stand_shape.radius
 
-## Which states keep the body low.
-const CROUCHED_STATES: Array[StringName] = [&"Crouch", &"Slide"]
-
 ## True while the body is shrunk down (crouching or sliding).
 var is_crouched := false
 ## Sideways body lean in radians (wall running, banking a glide). Reset whenever the state changes.
 var lean := 0.0
 
-# --- Looks: squash and stretch, tilts, swings (stand-ins until there are animations).
+# --- Looks: animations (see CharacterModel), plus squash and stretch, tilts and swings on top.
 ## States you're in the air in, and landing states (for the landing thud).
 const AIRBORNE_STATES: Array[StringName] = [&"Air", &"Glide"]
 const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Grind"]
@@ -205,6 +204,8 @@ const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Grin
 const LEAP_SQUASH := 0.28
 ## Landing faster than this (m/s) kicks up dust.
 const DUST_LANDING_SPEED := 20.0
+## Landing faster than this (m/s) from a standstill plays the landing animation.
+const HARD_LANDING_SPEED := 12.0
 ## How far the body tips forward while gliding (radians).
 const GLIDE_PITCH := deg_to_rad(-35.0) # (Negative tips forward.)
 ## A bat swing: how long it takes and the arc it sweeps (radians, around
@@ -217,11 +218,13 @@ const SWING_PIVOT := Vector3(0.0, 1.1, 0.0)
 const SPARK_INTERVAL := 0.06
 
 var _stretch := 0.0 ## Squash (below 0) or stretch (above 0) of the body.
-var _crouch_scale := 1.0
 var _pitch := 0.0
 var _shown_lean := 0.0
 var _shown_state := &""
 var _last_y := 0.0
+var _last_position := Vector3.ZERO
+var _ground_speed := 0.0 ## How fast you're seen moving across the ground (smoothed).
+var _rising := false
 var _fall_speed := 0.0
 var _swing_timer := 0.0
 var _flash := 0.0 ## Hit flash brightness, fading to 0.
@@ -322,7 +325,7 @@ func _physics_process(delta: float) -> void:
 		respawn()
 
 	sync_leap_charge = _free_run.leap_charge()
-	_pose_visual(state.name, is_crouched, lean, sync_leap_charge, delta)
+	_pose_visual(state.name, lean, sync_leap_charge, delta)
 	sync_position = global_position
 	sync_facing = _visual.rotation.y
 	sync_state = state.name
@@ -339,15 +342,19 @@ func _follow_network(delta: float) -> void:
 		var weight := 1.0 - exp(-puppet_smoothing * delta)
 		global_position = global_position.lerp(sync_position, weight)
 	_visual.rotation.y = lerp_angle(_visual.rotation.y, sync_facing, 1.0 - exp(-puppet_smoothing * delta))
-	_pose_visual(sync_state, sync_state in CROUCHED_STATES, sync_lean, sync_leap_charge, delta)
+	_pose_visual(sync_state, sync_lean, sync_leap_charge, delta)
 
 
 ## Poses the body model (stand-ins until there are animations): squashed down
 ## while crouched or readying a leap, stretched by a jump, squashed by a
 ## landing, leaning sideways on a wall run or a glide's turns, tipped forward
 ## while gliding. Runs on everyone's computer, from what they know of us.
-func _pose_visual(shown_state: StringName, crouched: bool, lean_angle: float, leap_charge: float, delta: float) -> void:
+func _pose_visual(shown_state: StringName, lean_angle: float, leap_charge: float, delta: float) -> void:
 	_watch_for_landing(shown_state, delta)
+	var moved := (global_position - _last_position).slide(Vector3.UP).length() / maxf(delta, 0.001)
+	_last_position = global_position
+	_ground_speed = lerpf(_ground_speed, moved, 1.0 - exp(-12.0 * delta))
+	model.animate(shown_state, _ground_speed, _rising, lean_angle, not sync_tossed_by.is_empty(), hands_busy(), delta)
 	_swing_timer -= delta
 	_spark_timer -= delta
 	if shown_state == &"Grind" and _spark_timer <= 0.0:
@@ -360,14 +367,13 @@ func _pose_visual(shown_state: StringName, crouched: bool, lean_angle: float, le
 	material.emission_energy_multiplier = _flash * 2.0
 
 	var weight := 1.0 - exp(-20.0 * delta)
-	_crouch_scale = lerpf(_crouch_scale, crouch_height / stand_height if crouched else 1.0, weight)
 	_stretch = lerpf(_stretch, -LEAP_SQUASH * leap_charge, 1.0 - exp(-10.0 * delta))
 	_pitch = lerpf(_pitch, GLIDE_PITCH if shown_state == &"Glide" else 0.0, 1.0 - exp(-8.0 * delta))
 	_shown_lean = lerp_angle(_shown_lean, lean_angle, weight)
 
 	# Squash and stretch keep the body's volume: shorter means wider.
 	var wide := 1.0 / sqrt(1.0 + _stretch)
-	var size := Vector3(wide, _crouch_scale * (1.0 + _stretch), wide)
+	var size := Vector3(wide, 1.0 + _stretch, wide)
 	var yaw := _visual.rotation.y
 	var tilted := Basis.from_euler(Vector3(_pitch, yaw, _shown_lean))
 	var upright := Basis.from_euler(Vector3(0.0, yaw, _shown_lean))
@@ -379,6 +385,7 @@ func _pose_visual(shown_state: StringName, crouched: bool, lean_angle: float, le
 ## Squash and thud when landing (from a fall or a jump).
 func _watch_for_landing(shown_state: StringName, delta: float) -> void:
 	var rising_speed := (global_position.y - _last_y) / maxf(delta, 0.001)
+	_rising = rising_speed > 0.5
 	_last_y = global_position.y
 	if shown_state != _shown_state:
 		if _shown_state in AIRBORNE_STATES and shown_state in LANDED_STATES:
@@ -393,6 +400,8 @@ func _watch_for_landing(shown_state: StringName, delta: float) -> void:
 func _landed(speed: float) -> void:
 	if speed < 2.0:
 		return
+	if speed > HARD_LANDING_SPEED and _ground_speed < 3.0:
+		model.play_landing()
 	_stretch = -clampf(speed / 50.0, 0.06, 0.35)
 	Sfx.play(self, global_position, &"land", linear_to_db(clampf(speed / 25.0, 0.2, 1.0)) - 4.0)
 	if speed > DUST_LANDING_SPEED:
@@ -416,6 +425,7 @@ func show_jump(leap: float) -> void:
 @rpc("authority", "call_local", "unreliable")
 func show_swing(hit: String, at: Vector3) -> void:
 	_swing_timer = SWING_TIME
+	model.play_action(&"swing")
 	if hit.is_empty():
 		Sfx.play(self, global_position + Vector3.UP, &"swing", -4.0)
 		return
@@ -426,12 +436,18 @@ func show_swing(hit: String, at: Vector3) -> void:
 		friend.flash()
 
 
+## Plays a one-off move (`throw`, `toss`) on everyone's screen.
+@rpc("authority", "call_local", "unreliable")
+func show_action(animation: StringName) -> void:
+	model.play_action(animation)
+
+
 ## Flashes the body white for a moment (just got hit).
 func flash() -> void:
 	_flash = 1.0
 
 
-## Calls an effect (show_jump, show_swing) on everyone's computer. (The practice
+## Calls an effect (show_jump, show_swing, show_action) on everyone's computer. (The practice
 ## buddy only exists on this computer, so its effects stay here.)
 func show_effect(effect: StringName, args: Array) -> void:
 	if is_bot:
@@ -521,6 +537,9 @@ func apply_profile() -> void:
 	_fall_gravity = 2.0 * jump_height / (jump_time_to_fall * jump_time_to_fall)
 	wall_jump_velocity = sqrt(2.0 * _rise_gravity * wall_jump_height)
 	_toss_recoil_velocity = sqrt(2.0 * _rise_gravity * toss_recoil_height)
+	if model:
+		model.climb_up_time = climb_up_time
+		model.mantle_time = mantle_time
 
 
 ## How fast you run right now: normal speed, rising to top speed with flow.
@@ -579,6 +598,7 @@ func try_toss() -> bool:
 
 	_toss_cooldown_timer = toss_cooldown
 	launch_friend(target, toss_velocity(camera_rig.yaw))
+	show_effect(&"show_action", [&"toss"])
 	if airborne:
 		# Pushing off your friend gives you a little hop: a co-op double jump.
 		can_toss_in_air = false
