@@ -126,11 +126,14 @@ var wall_run_gravity: float
 var wall_run_max_time: float
 var wall_run_min_height: float
 var wall_run_lean_degrees: float
+var wall_run_runway: float
 var wall_scramble_speed: float
 var wall_scramble_time: float
 var grind_gravity: float
 var grind_min_speed: float
 var grind_max_speed: float
+var grind_climb_speed: float
+var grind_climb_acceleration: float
 var grind_land_radius: float
 var grind_land_delay: float
 var toss_range: float
@@ -765,6 +768,18 @@ func wall_jump(wall_normal: Vector3, along: Vector3) -> void:
 	change_state(&"Air", {"jumped": true, "control_lock": wall_jump_control_lock})
 
 
+## True if something stands in the way of a wall run heading `direction`
+## within wall_run_runway (e.g. the next step of a fire escape): then it's
+## something to climb, not a wall to run along.
+func wall_run_blocked(direction: Vector3) -> bool:
+	var reach := body_radius + wall_run_runway
+	for height: float in [0.3, 0.9]:
+		var hit := _wall_hit(global_position + Vector3.UP * height, direction, reach)
+		if not hit.is_empty() and direction.dot(-(hit.normal as Vector3)) > 0.5:
+			return true
+	return false
+
+
 ## True if there's ground within `distance` below your feet.
 func is_near_ground(distance: float) -> bool:
 	var from := global_position + Vector3.UP * 0.05
@@ -836,13 +851,27 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	var over_edge := ledge.position + wall_normal * reach + Vector3.UP * 0.15
 	if not raycast(over_edge, over_edge - wall_normal * (reach + 0.3)).is_empty():
 		return null # The wall keeps going up; that "top" was something else.
-	var hang_column := hang_position(ledge)
-	hang_column.y = ledge.position.y + 0.05
-	if not _body_fits(hang_column):
+	if not _shuffle_to_fit(ledge):
 		return null
 	# No room to stand on top (e.g. a narrow sill): still fine to hang from.
 	ledge.can_stand = _room_on_top(ledge) and _body_fits(stand_position(ledge))
 	return ledge
+
+
+## True if there's room to hang from `ledge` and pull up over it. In a corner
+## (say, where a fire escape step meets the building's wall) you'd be pressed
+## into the side wall, so this tries shuffling the grab sideways along the edge
+## first, moving `ledge` to the spot that fits.
+func _shuffle_to_fit(ledge: Ledge) -> bool:
+	var sideways := ledge.normal.cross(Vector3.UP)
+	for shift: float in [0.0, 0.15, -0.15, 0.3, -0.3, 0.5, -0.5]:
+		var spot := ledge.position + sideways * shift
+		var hang_column := spot + ledge.normal * (body_radius + 0.05)
+		hang_column.y = spot.y + 0.05
+		if _body_fits(hang_column):
+			ledge.position = spot
+			return true
+	return false
 
 
 ## True if the top of the ledge is deep enough to stand on: nothing (like the

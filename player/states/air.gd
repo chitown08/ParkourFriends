@@ -103,6 +103,8 @@ func _try_wall_run() -> void:
 	var along: Vector3 = horizontal - wall.normal * horizontal.dot(wall.normal)
 	if along.length() < player.wall_run_min_speed or wish_dir.normalized().dot(along.normalized()) < 0.5:
 		return
+	if player.wall_run_blocked(along.normalized()):
+		return # Something to climb just ahead (like the next fire escape step).
 	player.change_state(&"WallRun", {"wall_normal": wall.normal})
 
 

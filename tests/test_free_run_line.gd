@@ -205,18 +205,69 @@ func test_crouch_steps_off_the_rail() -> void:
 	expect_state(&"Air")
 
 
-func test_rails_only_go_downhill() -> void:
-	# Land on the middle of the rail while moving uphill (toward +Z): you still slide down.
+func test_push_up_a_rail_to_climb_it_slowly() -> void:
 	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
-	var middle := rail.point_at(0.5)
-	player.global_position = middle + Vector3.UP * 0.2
-	player.velocity = Vector3(0, -1, 10)
-	player.change_state(&"Air")
-	player.reset_physics_interpolation()
-	await ticks(2)
+	await _climb_rail_from(rail, 0.5)
+	var from := _along(rail)
+	await ticks(60)
 	expect_state(&"Grind")
-	await ticks(30)
-	expect(player.global_position.z < middle.z - 1.0, "should be sliding toward the low end, at z = %.1f (grabbed at %.1f)" % [player.global_position.z, middle.z])
+	expect_near(from - _along(rail), player.grind_climb_speed, 0.3, "should go up the rail at climbing speed (metres in a second)")
+	expect(player.grind_climb_speed < player.grind_max_speed / 3.0, "much slower than you can slide down")
+
+	release_all()
+	await ticks(90)
+	expect_state(&"Grind")
+	expect(player.velocity.dot(rail.down_direction()) > 1.0, "let go and you slide back down, at %.1f m/s" % player.velocity.dot(rail.down_direction()))
+
+
+func test_hop_up_a_rail_faster_than_climbing_it() -> void:
+	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
+	await _climb_rail_from(rail, 0.6)
+	var from := _along(rail)
+	var elapsed := 0
+	for hop in 3:
+		Input.action_press(&"jump")
+		await ticks(5)
+		elapsed += 5
+		expect_state(&"Air")
+		Input.action_release(&"jump")
+		var landed := false
+		for i in 90:
+			await ticks(1)
+			elapsed += 1
+			if player.state.name == &"Grind":
+				landed = true
+				break
+		expect(landed, "hop %d should land back on the rail, state %s" % [hop + 1, player.state.name])
+	var speed := (from - _along(rail)) / (elapsed / 60.0)
+	expect(speed > player.grind_climb_speed * 1.2, "hopping should get you up quicker than climbing, %.1f m/s" % speed)
+
+
+func test_climb_off_the_top_of_a_rail_onto_the_roof() -> void:
+	var rail: GrindRail = main.level.get_node("GrindRails/RailDown")
+	await _climb_rail_from(rail, 0.08)
+	var on_roof := false
+	for i in 60 * 4:
+		await ticks(1)
+		if player.is_on_floor() and player.global_position.y > rail.top().y:
+			on_roof = true
+			break
+	expect(on_roof, "should hop off the top onto the roof, at %v" % player.global_position)
+
+
+## Drops you onto `rail` at `t` (0 = top, 1 = bottom), facing up it and
+## pushing that way, and waits until you're climbing.
+func _climb_rail_from(rail: GrindRail, t: float) -> void:
+	var up_the_rail := rail.top() - rail.bottom()
+	await place(rail.point_at(t) + Vector3.UP * 0.3, yaw_for(Vector3(up_the_rail.x, 0.0, up_the_rail.z)))
+	Input.action_press(&"move_forward")
+	expect(await _wait_for(&"Grind", 30), "should land on the rail")
+	await ticks(60) # Up to climbing speed.
+
+
+## How far down the rail you are (metres from the top).
+func _along(rail: GrindRail) -> float:
+	return rail.closest_t(player.global_position) * rail.length()
 
 
 func test_free_run_takes_the_new_sections_to_the_end() -> void:

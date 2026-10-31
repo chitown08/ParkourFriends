@@ -4,7 +4,8 @@ extends PlayerState
 ##   Jump              -> kick off the wall, keeping your speed
 ##   Crouch            -> drop off
 ##   Let go of moving  -> drop off
-## You slowly lose height and peel off after wall_run_max_time.
+## You slowly lose height and peel off after wall_run_max_time, or as soon as
+## something blocks the way ahead (you climb it instead).
 
 var _wall_normal: Vector3
 var _direction: Vector3
@@ -44,6 +45,8 @@ func physics_update(delta: float) -> void:
 		player.change_state(&"Air")
 	elif not _still_on_wall():
 		player.change_state(&"Air") # Ran past the end of the wall.
+	elif player.wall_run_blocked(_direction):
+		player.change_state(&"Air") # Something in the way: climb it instead.
 
 
 func _still_on_wall() -> bool:

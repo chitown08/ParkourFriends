@@ -1,7 +1,8 @@
 @tool
 class_name GrindRail
 extends Node3D
-## A rail you can land on and grind down (downhill only), like a skateboarder.
+## A rail you can land on and grind, like a skateboarder: it slides you down,
+## or you can push your way (more slowly) up.
 ## The rail runs from this node's position to end_point (relative to the node);
 ## whichever end is higher is the top. The ride itself is the player's Grind state.
 

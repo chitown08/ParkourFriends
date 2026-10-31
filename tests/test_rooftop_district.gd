@@ -8,6 +8,9 @@ const STREET := 10.0
 const AVENUE := 24.0
 const STOREY := 3.5
 
+## Every state the player has entered since the test began, in order.
+var states_entered: Array[StringName] = []
+
 
 func before_each() -> void:
 	main = MAIN_SCENE.instantiate()
@@ -18,6 +21,7 @@ func before_each() -> void:
 	expect(player != null, "the game should have created a player")
 	if player:
 		player.set_profile(SUPERHUMAN)
+		player.state_changed.connect(func(new_state: StringName) -> void: states_entered.append(new_state))
 
 
 func test_its_the_default_world() -> void:
@@ -150,17 +154,56 @@ func test_running_off_a_roof_rides_a_rail_over_the_avenue() -> void:
 	expect(landed, "and ride it onto %s, ended at %v" % [landing.name, player.global_position])
 
 
+func test_jump_on_a_rail_from_the_lower_roof_and_climb_it_back_up() -> void:
+	# Stand under the low end, jump onto it facing up, and keep pushing.
+	var rail: GrindRail = main.level.get_node("GrindRails").get_child(0)
+	var up := _flat(rail.top() - rail.bottom()).normalized()
+	var start := _building_under(rail.top() + Vector3.UP * 0.4 + up * 2.0)
+	var under := rail.bottom() + up * 1.5
+	await place(Vector3(under.x, _top(_building_under(under)) + 0.05, under.z), yaw_for(up))
+	await ticks(10)
+	Input.action_press(&"move_forward")
+	await tap(&"jump")
+	var grinding := false
+	var on_top := false
+	for i in 60 * 10:
+		await ticks(1)
+		grinding = grinding or player.state.name == &"Grind"
+		if grinding and player.is_on_floor() and _building_under(player.global_position) == start:
+			on_top = true
+			break
+	release_all()
+	expect(grinding, "should land on %s" % rail.name)
+	expect(on_top, "and climb it up onto %s, ended at %v" % [start.name, player.global_position])
+
+
+func test_hugging_the_wall_up_a_fire_escape_doesnt_turn_into_a_wall_run() -> void:
+	# Running right beside the building's wall, or drifting into it, you should
+	# still go up step by step - not wall-run into the next step and then kick
+	# off away from the building.
+	var all := _staircases()
+	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _steps_of(a).size() > _steps_of(b).size())
+	for start: Array in [[1.0, 0.0], [0.0, 5.0]]: # [metres toward the wall, degrees into it]
+		states_entered.clear()
+		expect(await _climb_fire_escape(all[0], start[0], start[1]), "should climb %s's fire escape (%.1f m toward the wall, %.0f deg into it), ended at %v" % [
+				all[0].name, start[0], start[1], player.global_position])
+		expect(not &"WallRun" in states_entered, "and never wall-run on the way up (%.1f m, %.0f deg)" % start)
+
+
 ## Walks up to a building's fire escape from the street with free-run, climbs
 ## the steps, then turns to the wall for the roof. Says if you got onto the roof.
-func _climb_fire_escape(building: CSGBox3D) -> bool:
+## `toward_wall` starts you that many metres off the middle of the steps toward
+## the building, and `angle_in` aims you that many degrees into its wall.
+func _climb_fire_escape(building: CSGBox3D, toward_wall := 0.0, angle_in := 0.0) -> bool:
 	var steps := _steps_of(building)
 	var along := _flat(steps[1].global_position - steps[0].global_position).normalized() if steps.size() > 1 \
 			else Vector3.ZERO
 	var to_wall := _flat(building.global_position - steps[0].global_position)
 	to_wall = to_wall - along * to_wall.dot(along)
 	to_wall = to_wall.normalized()
-	var foot := steps[0].global_position - along * (_step_run(building) / 2.0 + 8.0)
-	await place(Vector3(foot.x, 0.05, foot.z), yaw_for(along))
+	var foot := steps[0].global_position - along * (_step_run(building) / 2.0 + 8.0) + to_wall * toward_wall
+	var aim := along.rotated(Vector3.UP, deg_to_rad(angle_in) * signf(along.cross(to_wall).y))
+	await place(Vector3(foot.x, 0.05, foot.z), yaw_for(aim))
 	Input.action_press(&"free_run")
 	Input.action_press(&"move_forward")
 	for i in 60 * 15:

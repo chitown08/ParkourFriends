@@ -27,7 +27,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall run | Run fast, jump alongside a tall wall, hold forward | |
 | Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
 | Ledge leap | While hanging from a narrow sill, jump | A |
-| Grind rail | Land on it (from above); jump to leave, C to step off | Hands stay free |
+| Grind rail | Land on it (from above) and it slides you down; push up it to climb (slower), jump to hop along or leave, C to step off | Hands stay free |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
