@@ -10,7 +10,7 @@ built and the details the code relies on.
 
 | Decision | What it means in the code |
 |---|---|
-| One big city | The floating-islands prototype (Old Town) was removed; the Free-Run Line is the default world for now |
+| One big city | The floating-islands prototype (Old Town) was removed; the Rooftop District is the default world for now |
 | Free-run stays | `player/free_run.gd`, switchable in the pause menu |
 | Throw chains are rewarded | You can toss once per air time, and each friend can toss you once per air time (`tossed_by` in `player.gd`) |
 | Base moves never change | No agility levels; relics are collectibles you carry back to a drop-off |
@@ -98,7 +98,8 @@ built and the details the code relies on.
 
 | World | Purpose |
 |---|---|
-| `free_run_line.tscn` | Default. One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
+| `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m), towers aside. R takes you back to a roof checkpoint |
+| `free_run_line.tscn` | One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Human-scale lab the move tests rely on |
 
 ## Testing

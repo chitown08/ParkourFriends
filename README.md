@@ -10,7 +10,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
-2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Free-Run Line, or the
+2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Rooftop District, the Free-Run Line, or the
    Test Course playground), then **Play Solo** or **Host**. Joining players get the host's world.
 
 ## Controls
@@ -64,8 +64,10 @@ player/states/                    – one script per movement "mode" (state mach
             wall_scramble.gd      – running up a too-tall wall
             grind.gd              – grinding a rail
             glide.gd              – gliding (started by the glider item, items/abilities/glide.gd)
-levels/     free_run_line.tscn    – straight test course with every move in order (default world;
-                                    regenerate with tools/gen_free_run_line.sh)
+levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two crossing avenues (default
+                                    world; regenerate with tools/gen_district.gd, see the top of that file)
+            free_run_line.tscn    – straight test course with every move in order (regenerate with
+                                    tools/gen_free_run_line.sh)
             test_course.tscn      – grey-box playground for each move (the tests use it)
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint

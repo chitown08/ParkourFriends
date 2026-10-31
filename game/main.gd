@@ -6,7 +6,7 @@ extends Node3D
 ## copies them to everyone who's connected (including people who join later).
 ## Each character is named after its player's network id, e.g. "1" for the host.
 ##
-## The world (the Free-Run Line, the test course, ...) is loaded into the World node
+## The world (the rooftop district, the Free-Run Line, ...) is loaded into the World node
 ## when a game starts. The host's choice is copied to joining players by the
 ## WorldSpawner node, the same way characters are.
 ##
@@ -18,10 +18,11 @@ const PLAYER_SCENE := preload("res://player/player.tscn")
 ## The worlds you can play in: id -> scene. (New ones also need adding to the
 ## WorldSpawner's spawnable scenes in main.tscn.)
 const WORLDS := {
+	"rooftop_district": "res://levels/rooftop_district.tscn",
 	"free_run_line": "res://levels/free_run_line.tscn",
 	"test_course": "res://levels/test_course.tscn",
 }
-const DEFAULT_WORLD := "free_run_line"
+const DEFAULT_WORLD := "rooftop_district"
 ## Movement feels you can pick in the pause menu.
 const PROFILES := {
 	"superhuman": preload("res://player/profiles/superhuman.tres"),
