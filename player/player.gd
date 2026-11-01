@@ -880,9 +880,13 @@ func hang_position(ledge: Ledge) -> Vector3:
 	return ledge.position + ledge.normal * (body_radius + 0.05) + Vector3.DOWN * hang_height
 
 
-## Where the player's feet go after climbing up onto `ledge`.
+## Where the player's feet go after climbing up onto `ledge`. (On a sloped
+## top, that far up the slope, and a little higher so the round bottom of the
+## body clears it.)
 func stand_position(ledge: Ledge) -> Vector3:
-	return ledge.position - ledge.normal * (body_radius + 0.15) + Vector3.UP * 0.02
+	var inward := body_radius + 0.15
+	var lift := ledge.slope * inward + body_radius * (sqrt(1.0 + ledge.slope * ledge.slope) - 1.0)
+	return ledge.position - ledge.normal * inward + Vector3.UP * (lift + 0.02)
 
 
 ## Looks for a grabbable ledge in front of a player standing at `feet` and
@@ -918,9 +922,12 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	ledge.normal = wall_normal
 	ledge.position = Vector3(wall.position.x, top.position.y, wall.position.z)
 	ledge.height = ledge.position.y - feet.y
+	# A sloped top (a roof seen from its eave) rises as you go in from the edge.
+	var top_normal: Vector3 = top.normal
+	ledge.slope = maxf(top_normal.dot(wall_normal) / top_normal.y, 0.0)
 
 	# 3. Is there open space above the edge, room to pull up, and room to stand?
-	var over_edge := ledge.position + wall_normal * reach + Vector3.UP * 0.15
+	var over_edge := ledge.position + wall_normal * reach + Vector3.UP * (0.15 + ledge.slope * 0.3)
 	if not raycast(over_edge, over_edge - wall_normal * (reach + 0.3)).is_empty():
 		return null # The wall keeps going up; that "top" was something else.
 	if not _shuffle_to_fit(ledge):
@@ -949,12 +956,13 @@ func _shuffle_to_fit(ledge: Ledge) -> bool:
 ## True if the top of the ledge is deep enough to stand on: nothing (like the
 ## wall a sill sticks out of) within a body's width behind the edge. (A plain
 ## line check, because a body-shape check can't tell when the body would be
-## mostly inside a wall.)
+## mostly inside a wall. On a sloped top, the lines run up the slope.)
 func _room_on_top(ledge: Ledge) -> bool:
 	var depth_needed := body_radius * 2.0 + 0.2
 	for height: float in [0.3, 1.2]:
 		var from := ledge.position + Vector3.UP * height + ledge.normal * 0.05
-		if not raycast(from, from - ledge.normal * depth_needed).is_empty():
+		var to := from - ledge.normal * depth_needed + Vector3.UP * ledge.slope * depth_needed
+		if not raycast(from, to).is_empty():
 			return false
 	return true
 

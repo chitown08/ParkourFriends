@@ -80,6 +80,47 @@ func test_free_run_crosses_a_sawtooth_shed_either_way() -> void:
 	expect(slid and skimmed, "one way, you should slide down the long slopes and skim over the glass (slid %s, skimmed %s)" % [slid, skimmed])
 
 
+func test_you_can_pull_yourself_up_from_hanging_off_a_sloped_roof() -> void:
+	# The steepest house end on the outside of a terrace, and a sawtooth shed's
+	# low end (the one whose slope rises gently from it).
+	var steepest: CSGPolygon3D = null
+	for roof in _roofs():
+		if String(roof.name).ends_with("_House0_Roof") and (steepest == null or _pitch(roof) > _pitch(steepest)):
+			steepest = roof
+	var shed := _sawtooth_sheds()[0]
+	var shed_end := 0.0 if shed.polygon[1].x > 1.0 else _width(shed)
+	for eave: Array in [[steepest, 0.0], [shed, shed_end]]:
+		var roof: CSGPolygon3D = eave[0]
+		var along: float = eave[1]
+		var out := -roof.global_basis.x if along == 0.0 else roof.global_basis.x
+		var edge := _on_roof(roof, along)
+		# Just below the edge, beside the wall, pushing into it: grab on as you drop.
+		player.camera_rig.yaw = yaw_for(-out)
+		player.global_position = edge + out * (player.body_radius + 0.15) + Vector3.DOWN * 1.6
+		player.velocity = Vector3.ZERO
+		player.change_state(&"Air")
+		player.reset_physics_interpolation()
+		Input.action_press(&"move_forward")
+		for i in 60:
+			await ticks(1)
+			if player.state.name == &"Hang":
+				break
+		release_all()
+		expect(player.state.name == &"Hang", "should catch hold of %s's edge, %s" % [roof.name, player.state.name])
+		await tap(&"jump")
+		for i in 60:
+			await ticks(1)
+			if player.state.name == &"Ground":
+				break
+		expect(player.is_on_floor() and player.global_position.y > edge.y - 0.1 and (player.global_position - edge).dot(-out) > 0.2,
+				"should pull up onto %s (%.0f° slope), ended at %v in %s" % [roof.name, rad_to_deg(atan(_pitch(roof))), player.global_position, player.state.name])
+
+
+## How steeply `roof` rises from its start (metres up per metre along).
+func _pitch(roof: CSGPolygon3D) -> float:
+	return roof.polygon[1].y / roof.polygon[1].x
+
+
 ## Free-runs from `start` along `axis` until you're `finish` metres along (on
 ## the floor). Returns the lowest your feet got.
 func _free_run_along(start: Vector3, axis: Vector3, finish: float, max_ticks: int) -> float:
