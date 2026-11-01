@@ -31,6 +31,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Ramp launch (orange) | Run or slide into one fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
+| Try on the next outfit (until the mall opens) | O | |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
 | Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
 | Item: swap your hands and backpack (once you wear one) | Tab | D-pad right |

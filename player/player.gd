@@ -69,6 +69,14 @@ var sync_lean := 0.0
 var sync_leap_charge := 0.0
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
+## What this player wears: an item name (or "" for nothing) for each slot in
+## Cosmetics.SLOTS, in order. Chosen on the player's own computer and sent to
+## everyone, so friends see it too.
+var sync_outfit := PackedStringArray():
+	set(value):
+		sync_outfit = value
+		if is_node_ready():
+			_apply_outfit()
 
 # The movement numbers actually in use, copied from `profile` (see
 # apply_profile()). Documented in movement_profile.gd. Change them by editing a
@@ -176,6 +184,7 @@ var jump_velocity: float
 var _rise_gravity: float
 var _fall_gravity: float
 var _jump_buffer_timer := 0.0
+var _outfit_index := 0
 
 @onready var input: PlayerInput = $PlayerInput
 @onready var camera_rig: CameraRig = $CameraRig
@@ -270,6 +279,7 @@ func _ready() -> void:
 	is_local = is_multiplayer_authority()
 	add_to_group(&"players")
 	_apply_color()
+	_apply_outfit()
 
 	apply_profile()
 
@@ -578,6 +588,25 @@ func _apply_color() -> void:
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
 	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
 	_body_mesh.material_override = material
+
+
+func _apply_outfit() -> void:
+	for i in Cosmetics.SLOTS.size():
+		model.wear(Cosmetics.SLOTS[i], sync_outfit[i] if i < sync_outfit.size() else "")
+
+
+## Until the mall opens: puts on the next outfit (the next item in every slot
+## at once), then nothing, and round again.
+func next_outfit() -> void:
+	var outfits := 0
+	for slot in Cosmetics.SLOTS:
+		outfits = maxi(outfits, Cosmetics.available(slot).size())
+	_outfit_index = (_outfit_index + 1) % (outfits + 1)
+	var outfit := PackedStringArray()
+	for slot in Cosmetics.SLOTS:
+		var items := Cosmetics.available(slot)
+		outfit.append("" if _outfit_index == 0 or items.is_empty() else items[mini(_outfit_index - 1, items.size() - 1)])
+	sync_outfit = outfit
 
 
 # --- Tossing friends -----------------------------------------------------------

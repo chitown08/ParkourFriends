@@ -37,6 +37,13 @@ built and the details the code relies on.
   looping set per move); `CharacterModel` picks one from your state and speed each frame (puppets
   too, from what the network sends), strips any travel Mixamo baked in, and plays one-off moves
   (swing, throw, toss, hard landing). Sounds are still stand-ins.
+- **Cosmetics** (`player/cosmetics.gd`, `docs/COSMETICS_GUIDE.md`): GLBs in `cosmetics/<slot>/`, each fitted
+  onto the blob at rest by an entry in `cosmetics/fits.cfg` (check with `tools/cosmetics_lineup.gd`,
+  which renders every outfit; `tools/inspect_cosmetics.gd` and `tools/cosmetics_sheet.gd` help
+  fit a new one) and hung from a bone with a BoneAttachment3D, so it follows the animations. Pairs
+  are fitted on the left and mirrored for the right. `Player.sync_outfit` (sent to everyone) says
+  what you wear; O cycles outfits until the mall exists. Trails come next. When exporting, add
+  `*.cfg` to the export filter so the fits file goes along.
   On top, `Player._pose_visual()` squashes, stretches and tilts the whole model: squashed while
   readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
   gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.

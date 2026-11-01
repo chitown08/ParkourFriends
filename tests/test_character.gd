@@ -107,3 +107,52 @@ func _animation_speed() -> float:
 
 func _expect_playing(animation: StringName, doing: String) -> void:
 	expect(player.model.current_animation() == animation, "%s should play %s, playing %s" % [doing, animation, player.model.current_animation()])
+
+
+# --- Cosmetics (player/cosmetics.gd, cosmetics/fits.cfg) ---------------------------
+
+func test_every_cosmetic_has_a_fit() -> void:
+	var fits := ConfigFile.new()
+	expect(fits.load(Cosmetics.FITS) == OK, "the fits file should load")
+	for slot in Cosmetics.SLOTS:
+		for item in Cosmetics.available(slot):
+			expect(fits.has_section("%s/%s" % [slot, item]), "%s/%s should be fitted in %s" % [slot, item, Cosmetics.FITS])
+
+
+func test_cosmetics_sit_on_their_bones_with_pairs_mirrored() -> void:
+	var outfit := PackedStringArray()
+	for slot in Cosmetics.SLOTS:
+		outfit.append(Cosmetics.available(slot)[0])
+	player.sync_outfit = outfit
+	await ticks(2)
+	# How far each item's middle may be from its bone (the waist bone is low in the belly).
+	var reach := {&"head": 0.45, &"hands": 0.3, &"waist": 0.35, &"feet": 0.3}
+	for slot in Cosmetics.SLOTS:
+		var bones: Array = Cosmetics.BONES[slot]
+		for i in bones.size():
+			var attachment := skeleton.get_node_or_null("%s%s_%d" % [Cosmetics.PREFIX, slot, i]) as BoneAttachment3D
+			expect(attachment != null, "%s should be worn on %s" % [slot, bones[i]])
+			if attachment == null:
+				continue
+			var item := attachment.get_child(0) as Node3D
+			var bone := _bone(StringName(bones[i]))
+			expect(item.global_position.distance_to(bone) < reach[slot], "%s should sit on %s, %.2f m away" % [slot, bones[i], item.global_position.distance_to(bone)])
+			var mirrored := item.global_basis.determinant() < 0.0
+			expect(mirrored == (i == 1), "the %s %s should %sbe the mirror image" % [["left", "right"][i], slot, "" if i == 1 else "not "])
+	var hat := skeleton.get_node("%shead_0" % Cosmetics.PREFIX).get_child(0) as Node3D
+	expect(hat.global_position.y > _bone(&"mixamorig_Head").y + 0.15, "the hat should sit on top of the head")
+	player.sync_outfit = PackedStringArray()
+	await ticks(2)
+	expect(skeleton.get_children().all(func(node: Node) -> bool: return not node.name.begins_with(Cosmetics.PREFIX)),
+			"an empty outfit should take everything off")
+
+
+func test_o_cycles_through_outfits_and_back_to_nothing() -> void:
+	var outfits := 0
+	for slot in Cosmetics.SLOTS:
+		outfits = maxi(outfits, Cosmetics.available(slot).size())
+	await press_event(&"cycle_outfit")
+	expect(player.sync_outfit[0] == Cosmetics.available(&"head")[0], "the first outfit should have the first hat, got %s" % [player.sync_outfit])
+	for i in outfits:
+		await press_event(&"cycle_outfit")
+	expect(Array(player.sync_outfit).all(func(item: String) -> bool: return item.is_empty()), "then back to nothing, got %s" % [player.sync_outfit])

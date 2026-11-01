@@ -28,7 +28,7 @@ One item per slot. A combo like "beanie and sunglasses" is fine, but make it as
   generate (or crop) an image of **the item on its own**: no mannequin head, arm or
   body, a plain background, and a three-quarter view. If the head or arm is in the
   picture, Meshy builds it into the model and it will poke out of the blob.
-- **Hands and feet: make only the right one.** I mirror it for the left, so a pair
+- **Hands and feet: make only one side** (either is fine; tell me which). I mirror it for the other, so a pair
   always matches.
 - Make gloves, mittens and shoes **a bit chunky**. The blob's hands and feet are
   round mitts, and a slim glove lets the hand poke through.
@@ -93,9 +93,9 @@ mall:
 ```
 cosmetics/head/pirate_hat.glb
 cosmetics/head/beanie_long_hair.glb
-cosmetics/hands/boxing_glove.glb          (right hand only)
+cosmetics/hands/boxing_glove.glb          (one hand only)
 cosmetics/waist/champion_belt.glb
-cosmetics/feet/high_tops.glb              (right foot only)
+cosmetics/feet/high_tops.glb              (one foot only)
 cosmetics/trail/banner/pirate_banner.glb
 cosmetics/trail/streamer/dragon.glb
 cosmetics/trail/scarf/tartan_neck.glb

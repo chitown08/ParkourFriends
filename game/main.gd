@@ -90,6 +90,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		call_buddy()
 	elif event.is_action_pressed("buddy_toss_me"):
 		buddy_toss_me()
+	elif event.is_action_pressed("cycle_outfit") and local_player:
+		local_player.next_outfit()
 
 
 ## Starts a solo game in `world_id` (or the world picked in the menu).

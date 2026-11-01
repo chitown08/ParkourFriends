@@ -108,6 +108,18 @@ func test_host_leaving_sends_client_to_menu() -> void:
 	expect(_player_count(client_main) == 0, "client's characters should be removed")
 
 
+func test_outfits_show_up_on_the_other_screen() -> void:
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	client_main.local_player.next_outfit()
+	host_main.local_player.next_outfit()
+	host_main.local_player.next_outfit()
+	await ticks(30)
+	expect(_find(host_main, client_id).sync_outfit == client_main.local_player.sync_outfit, "host should see what the client wears")
+	expect(_find(client_main, 1).sync_outfit == host_main.local_player.sync_outfit, "client should see what the host wears")
+	var puppet_skeleton: Skeleton3D = _find(host_main, client_id).model.find_children("*", "Skeleton3D", true, false)[0]
+	expect(puppet_skeleton.has_node(Cosmetics.PREFIX + "head_0"), "and the client's hat should be on their head on the host's screen")
+
+
 func test_a_readied_leap_shows_up_on_the_other_screen() -> void:
 	host_main.local_player.set_controls_enabled(false)
 	var client_id: int = client_main.multiplayer.get_unique_id()

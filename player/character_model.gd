@@ -37,6 +37,7 @@ var mantle_time := 0.2
 ## The skinned body mesh (the Player recolours it per player).
 @onready var body: MeshInstance3D = find_children("*", "MeshInstance3D", true, false)[0]
 @onready var _animations: AnimationPlayer = find_children("*", "AnimationPlayer", true, false)[0]
+@onready var _skeleton: Skeleton3D = find_children("*", "Skeleton3D", true, false)[0]
 
 static var _library: AnimationLibrary
 
@@ -152,6 +153,11 @@ static func _hold_in_place(animation: Animation, rising: bool) -> void:
 
 func _length(animation: StringName) -> float:
 	return _library.get_animation(animation).length if _library.has_animation(animation) else 1.0
+
+
+## Puts on a cosmetic: `item` from Cosmetics.available(slot), or "" to take it off.
+func wear(slot: StringName, item: String) -> void:
+	Cosmetics.wear(_skeleton, slot, item)
 
 
 ## The animation playing now (for tests).
