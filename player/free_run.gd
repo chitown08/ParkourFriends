@@ -9,6 +9,7 @@ extends Node
 ## presses (a manual jump, a slide) still work at any time. The one move of
 ## its own is the flow vault: skimming over low things without a jump.
 ##   Something low and short, head-on    -> flow vault (you skim over it, keeping your speed)
+##   Running down a slope (a roof)        -> crouch (you slide down it, speeding up)
 ##   Wall you can get on top of         -> jump (you vault, climb or scramble up it)
 ##   Wall with a ledge in reach          -> jump (you grab it; jump again to leap up)
 ##   Wall at an angle                   -> jump (you wall-run along it)
@@ -32,6 +33,8 @@ const HEAD_HEIGHT := 1.5
 ## Free-run jumps a gap only toward a landing at most this far below your feet;
 ## anything lower and you just run off the edge (e.g. down to the street).
 const MAX_LANDING_DROP := 3.0
+## A drop this short with ground right below isn't jumped: you just run off it.
+const MAX_STEP_DOWN := 1.5
 ## Minimum time between automatic jumps.
 const JUMP_COOLDOWN := 0.3
 ## How far to the side a wall can be for free-run to steer to it and wall-run a gap.
@@ -46,6 +49,13 @@ const LEAP_TAP_TIME := 0.1
 const VAULT_HEAD_ON := 0.7
 ## Steps (metres) when feeling across the top of something to vault.
 const VAULT_PROBE_STEP := 0.15
+## A top that drops this far below its highest point counts as its far side.
+const VAULT_FALL_AWAY := 0.3
+
+## Free-run slides down slopes steeper than this (degrees)...
+const SLIDE_SLOPE_DEGREES := 10.0
+## ...when you're heading this squarely down them (1 = straight down).
+const SLIDE_HEADING := 0.5
 
 ## What _try_vault() decided: not one to vault, one to vault in a moment, vaulting.
 enum Vault { NO, SOON, STARTED }
@@ -94,6 +104,10 @@ func _look_ahead() -> void:
 	var speed := maxf(player.get_horizontal_speed(), player.run_speed)
 	var reach := player.body_radius + maxf(MIN_LOOK_AHEAD, speed * LOOK_AHEAD_TIME)
 
+	if not readying_leap and _heading_downhill(direction) and (player.state.name == &"Slide" \
+			or player.get_horizontal_speed() >= player.slide_min_start_speed):
+		input.crouch_held = true # Slide down it for speed (stand up again where it levels out).
+
 	var low := _wall_ahead(feet + Vector3.UP * KNEE_HEIGHT, direction, reach)
 	if not low.is_empty():
 		if not readying_leap and _try_vault(low, direction, feet) != Vault.NO:
@@ -114,6 +128,8 @@ func _look_ahead() -> void:
 	if readying_leap:
 		_take_off() # Leap off any edge, landing or not: your call.
 		return
+	if _step_down_ahead(feet, direction, speed):
+		return # Just a short drop (like off a sawtooth roof's ridge): run off it.
 	if _landing_ahead(feet, direction, speed):
 		_press_jump()
 		return
@@ -192,8 +208,8 @@ func _try_vault(wall: Dictionary, direction: Vector3, feet: Vector3) -> Vault:
 		var height: float = hit.position.y - feet.y if not hit.is_empty() else -INF
 		if height > player.vault_max_height:
 			return Vault.NO # Too tall.
-		if height < player.mantle_min_height:
-			depth = across # Past the far side.
+		if height < player.mantle_min_height or height < top - VAULT_FALL_AWAY:
+			depth = across # Past the far side (or where its top slopes away, like a sawtooth roof's).
 			break
 		top = maxf(top, height)
 		across += VAULT_PROBE_STEP
@@ -220,14 +236,18 @@ func _try_vault(wall: Dictionary, direction: Vector3, feet: Vector3) -> Vault:
 
 
 ## True if we can get on top of the obstacle: within jump-and-grab reach, or
-## with a wall scramble's extra height on top of that.
+## with a wall scramble's extra height on top of that. (Looks a little way in,
+## and further, past a face that leans back like a sawtooth roof's glass.)
 func _can_get_on_top(wall: Dictionary, direction: Vector3, feet: Vector3) -> bool:
 	var scramble_height := player.wall_scramble_speed * player.wall_scramble_time
 	var max_height := player.jump_height + scramble_height + player.ledge_max_height
-	var above: Vector3 = wall.position + direction * 0.3
-	above.y = feet.y + max_height + 0.1
-	var top := player.raycast(above, Vector3(above.x, feet.y + 0.1, above.z))
-	return not top.is_empty() and top.normal.y > 0.7
+	for inward: float in [0.3, 0.9]:
+		var above: Vector3 = wall.position + direction * inward
+		above.y = feet.y + max_height + 0.1
+		var top := player.raycast(above, Vector3(above.x, feet.y + 0.1, above.z))
+		if not top.is_empty() and top.normal.y > 0.7:
+			return true
+	return false
 
 
 ## True if we're hitting the wall at a shallow angle (good for a wall run).
@@ -241,10 +261,26 @@ func _on_ramp(feet: Vector3) -> bool:
 	return not hit.is_empty() and hit.collider is Node and (hit.collider as Node).get_parent() is Ramp
 
 
+## True if you're on a slope (a sloped roof) and heading down it.
+func _heading_downhill(direction: Vector3) -> bool:
+	if not player.is_on_floor():
+		return false
+	var normal := player.get_floor_normal()
+	var downhill := Vector3(normal.x, 0.0, normal.z)
+	return normal.y < cos(deg_to_rad(SLIDE_SLOPE_DEGREES)) and direction.dot(downhill.normalized()) > SLIDE_HEADING
+
+
 ## True if the ground runs out just ahead.
 func _edge_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
 	var probe := feet + direction * (player.body_radius + 0.35 + speed * 0.03)
 	return player.raycast(probe + Vector3.UP * 0.5, probe + Vector3.DOWN * 0.6).is_empty()
+
+
+## True if the edge ahead is only a short drop onto more ground right there.
+func _step_down_ahead(feet: Vector3, direction: Vector3, speed: float) -> bool:
+	var probe := feet + direction * (player.body_radius + 0.35 + speed * 0.03)
+	var hit := player.raycast(probe, probe + Vector3.DOWN * MAX_STEP_DOWN)
+	return not hit.is_empty() and hit.normal.y > 0.7
 
 
 ## True if there's somewhere to land on the far side of the gap, within

@@ -3,6 +3,7 @@ extends GameTest
 ## and the superhuman profile. Gaps between buildings come in three sizes:
 ## alleys (5 m), streets (10 m) and avenues (24 m).
 
+const LANE := 1.5 ## Between some of the houses in an old-town terrace.
 const ALLEY := 5.0
 const STREET := 10.0
 const AVENUE := 24.0
@@ -43,7 +44,7 @@ func test_you_start_on_a_roof() -> void:
 
 func test_every_gap_is_an_alley_a_street_or_an_avenue() -> void:
 	var odd := []
-	var counts := {ALLEY: 0, STREET: 0, AVENUE: 0}
+	var counts := {LANE: 0, ALLEY: 0, STREET: 0, AVENUE: 0}
 	var buildings := _buildings()
 	for i in buildings.size():
 		for j in range(i + 1, buildings.size()):
@@ -55,7 +56,7 @@ func test_every_gap_is_an_alley_a_street_or_an_avenue() -> void:
 				counts[size] += 1
 			else:
 				odd.append("%s-%s %.2f m" % [buildings[i].name, buildings[j].name, gap])
-	expect(odd.is_empty(), "gaps should only be 5, 10 or 24 m: %s" % [odd])
+	expect(odd.is_empty(), "gaps should only be 1.5 (between old-town houses), 5, 10 or 24 m: %s" % [odd])
 	for size: float in counts:
 		expect(counts[size] > 0, "there should be at least one %d m gap" % size)
 
@@ -396,10 +397,16 @@ func test_relics_float_in_the_open() -> void:
 		var relic: WorldItem = main.level.get_node("Relics/" + roof_relic)
 		var under := _building_under(relic.global_position + Vector3.DOWN * 0.5)
 		expect(under != null and absf(relic.global_position.y - _top(under) - 1.0) < 0.1, "%s should hover just over a roof" % roof_relic)
+	# (Not counting roofs with something else on them: a checkpoint, the spawn, the far-corner relic.)
 	var high: WorldItem = main.level.get_node("Relics/RelicHighRoof")
+	var taken: Array[CSGBox3D] = []
+	var markers: Array[Node3D] = [main.level.get_node("SpawnPoint"), main.level.get_node("Relics/RelicFarCorner")]
+	markers.append_array(main.level.get_node("Checkpoints").get_children())
+	for marker in markers:
+		taken.append(_building_under(marker.global_position + Vector3.DOWN * 0.5))
 	for b in _buildings():
-		if not _is_tower(b):
-			expect(_top(b) <= high.global_position.y - 1.0 + 0.01, "the high-roof relic should be on the tallest roof, but %s is taller" % b.name)
+		if not _is_tower(b) and _is_flat(b) and not b in taken:
+			expect(_top(b) <= high.global_position.y - 1.0 + 0.01, "the high-roof relic should be on the tallest free flat roof, but %s is taller" % b.name)
 
 
 func test_running_into_relics_on_roofs_and_the_street_picks_them_up() -> void:
@@ -628,6 +635,12 @@ func _is_tower(b: CSGBox3D) -> bool:
 	return b.size.y > 30.0
 
 
+## False for an old-town house or a sawtooth shed (their roofs are in Roofs).
+func _is_flat(b: CSGBox3D) -> bool:
+	return main.level.get_node("Roofs").get_children().all(func(roof: Node) -> bool:
+			return not String(roof.name).begins_with(b.name + "_"))
+
+
 ## How far `b`'s edge is from its middle along `direction`.
 func _extent(b: CSGBox3D, direction: Vector3) -> float:
 	return absf((b.size / 2.0).dot(direction.abs()))
@@ -664,7 +677,7 @@ func _facing_gap(a: CSGBox3D, b: CSGBox3D) -> float:
 	var gx := _gap_x(a, b)
 	var gz := _gap_z(a, b)
 	var gap := maxf(gx, gz)
-	if gap <= 0.0 or minf(gx, gz) > -2.0 or gap > AVENUE + 1.0:
+	if gap < 0.1 or minf(gx, gz) > -2.0 or gap > AVENUE + 1.0:
 		return -1.0
 	# The open space between them, which no other building may be in.
 	var ra := _footprint(a)
@@ -685,7 +698,7 @@ func _footprint(b: CSGBox3D) -> Rect2:
 
 ## Which of the three gap sizes `gap` is (0 if none).
 func _gap_size(gap: float) -> float:
-	for size in [ALLEY, STREET, AVENUE]:
+	for size in [LANE, ALLEY, STREET, AVENUE]:
 		if absf(gap - size) < 0.05:
 			return size
 	return 0.0

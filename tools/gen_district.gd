@@ -70,6 +70,26 @@ const RAIL_RUN_UP := 10.0
 const RAIL_LANDING := 12.0
 const MARKER_CLEAR := 4.0 ## And this far around the spawn and checkpoints.
 
+## Sloped roofs, sprinkled through the city: slide down them for speed and hop
+## off the bottom. Never on towers, and only flat roofs get fire escapes, rails,
+## checkpoints, relics and clutter (each block's lowest building stays flat).
+const PITCHED_CHANCE := 0.25
+const SAWTOOTH_CHANCE := 0.15
+## Pitched ("old town"): the building becomes a terrace of narrow houses along
+## its longer side, each with its own roof, the ridge across the row. Running
+## along it: up, over the ridge, slide down, hop to the next house. Some have a
+## lane between them, some touch (a valley between their roofs).
+const HOUSE_WIDTH := 8.0 ## About this wide (each varies a bit).
+const LANE := 1.5
+const LANE_CHANCE := 0.5
+const PITCH_DEGREES := Vector2(28.0, 36.0)
+## Sawtooth ("industrial"): teeth along the longer side, each a long gentle
+## slope up to a steep glass face down. Against the grain you slide down each
+## slope and skim over the next face; with it, you run up and drop off.
+const TOOTH := 5.0 ## About this long...
+const TOOTH_RISE := 1.2 ## ...and this tall (low enough for free-run to flow-vault each face).
+const GLASS_DEGREES := 75.0
+
 ## The launch plaza: a kicker ramp in each avenue arm, its lip this far from
 ## the middle of the plaza, all launching toward the middle (see levels/ramp.gd).
 const RAMP_DISTANCE := 13.0
@@ -115,8 +135,13 @@ func _init() -> void:
 	_write_header()
 	_write_ground()
 	for b in buildings:
+		if b.roof == "pitched":
+			_write_terrace(b)
+			continue
 		_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
 				b.w, b.storeys * STOREY, b.d, "4_building")
+		if b.roof == "sawtooth":
+			_write_sawtooth(b)
 	var staircases := 0
 	for bx in BLOCKS:
 		for bz in BLOCKS:
@@ -173,8 +198,20 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 				else dice.randi_range(MIN_STOREYS, MAX_STOREYS)
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
-				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz)})
+				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat"})
 	_limit_alley_steps(buildings)
+	var lowest := buildings[0]
+	for b in buildings:
+		if b.storeys < lowest.storeys:
+			lowest = b
+	for b in buildings:
+		var roll := dice.randf()
+		if b.tower or b == lowest:
+			continue
+		if roll < PITCHED_CHANCE:
+			b.roof = "pitched"
+		elif roll < PITCHED_CHANCE + SAWTOOTH_CHANCE:
+			b.roof = "sawtooth"
 	return buildings
 
 
@@ -218,7 +255,7 @@ func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, block.x, block.y, "stairs"])
 	var area := _block_rect(block)
-	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.block == block and not b.tower)
+	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.block == block and b.roof == "flat" and not b.tower)
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys < b.storeys)
 	for b: Dictionary in candidates:
 		var steps: int = b.storeys - 1
@@ -300,7 +337,7 @@ func _write_rail(buildings: Array[Dictionary], i: int, across_x: bool) -> bool:
 ## `lane` (along the wall) with RAIL_MARGIN to spare, or {} if there's an alley there.
 func _facing(buildings: Array[Dictionary], block: Vector2i, edge: float, lane: float, across_x: bool) -> Dictionary:
 	for b in buildings:
-		if b.block != block or b.tower:
+		if b.block != block or b.tower or b.roof != "flat":
 			continue
 		var low_side: float = b.x if across_x else b.z
 		var high_side: float = (b.x + b.w) if across_x else (b.z + b.d)
@@ -314,9 +351,9 @@ func _facing(buildings: Array[Dictionary], block: Vector2i, edge: float, lane: f
 
 ## Scatters vault boxes and stairwell huts over a roof, clear of its edges,
 ## each other, rail run-ups and landings, and markers. Towers stay bare (no way
-## up yet). Returns how many it placed.
+## up yet), and so do sloped roofs. Returns how many it placed.
 func _write_roof_clutter(b: Dictionary) -> int:
-	if b.tower:
+	if b.tower or b.roof != "flat":
 		return 0
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, b.name, "roof"])
@@ -410,6 +447,75 @@ material = ExtResource(\"11_ramp\")" % [
 				side, _num(basis.x.x), _num(basis.z.x), _num(basis.x.z), _num(basis.z.z), _num(at.x), _num(at.z)])
 
 
+## A pitched-roof building: a terrace of houses along its longer side (see PITCHED_CHANCE).
+func _write_terrace(b: Dictionary) -> void:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, b.name, "terrace"])
+	var along_x: bool = b.w >= b.d
+	var length: float = b.w if along_x else b.d
+	var count := maxi(1, roundi(length / HOUSE_WIDTH))
+	var lanes: Array[float] = []
+	var sizes: Array[float] = []
+	var lanes_total := 0.0
+	var sizes_total := 0.0
+	for i in count:
+		sizes.append(dice.randf_range(0.8, 1.2))
+		sizes_total += sizes[i]
+		if i < count - 1:
+			lanes.append(LANE if dice.randf() < LANE_CHANCE else 0.0)
+			lanes_total += lanes[i]
+	var height: float = b.storeys * STOREY
+	var at := 0.0
+	for i in count:
+		var width := sizes[i] / sizes_total * (length - lanes_total)
+		var rise := width / 2.0 * tan(deg_to_rad(dice.randf_range(PITCH_DEGREES.x, PITCH_DEGREES.y)))
+		var house := "%s_House%d" % [b.name, i]
+		if along_x:
+			_box(house, "Buildings", b.x + at + width / 2.0, height / 2.0, b.z + b.d / 2.0, width, height, b.d, "4_building")
+		else:
+			# (Counted from the far end, as _roof() lays them that way along z.)
+			_box(house, "Buildings", b.x + b.w / 2.0, height / 2.0, b.z + b.d - at - width / 2.0, b.w, height, width, "4_building")
+		_roof(house + "_Roof", b, along_x, at, height,
+				PackedVector2Array([Vector2(0, 0), Vector2(width / 2.0, rise), Vector2(width, 0)]))
+		at += width + (lanes[i] if i < lanes.size() else 0.0)
+
+
+## A sawtooth roof along the building's longer side (see SAWTOOTH_CHANCE).
+func _write_sawtooth(b: Dictionary) -> void:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, b.name, "sawtooth"])
+	var along_x: bool = b.w >= b.d
+	var length: float = b.w if along_x else b.d
+	var count := maxi(1, roundi(length / TOOTH))
+	var tooth := length / count
+	var glass := TOOTH_RISE / tan(deg_to_rad(GLASS_DEGREES))
+	var profile := PackedVector2Array([Vector2(0, 0)])
+	for i in count:
+		profile.append(Vector2((i + 1) * tooth - glass, TOOTH_RISE))
+		profile.append(Vector2((i + 1) * tooth, 0))
+	if dice.randf() < 0.5: # The grain runs the other way.
+		var flipped := PackedVector2Array()
+		for i in range(profile.size() - 1, -1, -1):
+			flipped.append(Vector2(length - profile[i].x, profile[i].y))
+		profile = flipped
+	_roof(b.name + "_Roof", b, along_x, 0.0, b.storeys * STOREY, profile)
+
+
+## A sloped roof on building `b`: `profile` is its outline seen side-on (along
+## the building, then up), from `start` metres along it, laid on top at
+## `height` and stretched right across the building.
+func _roof(name: String, b: Dictionary, along_x: bool, start: float, height: float, profile: PackedVector2Array) -> void:
+	var points := PackedStringArray()
+	for p in profile:
+		points.append("%s, %s" % [_num(p.x), _num(p.y)])
+	# A CSGPolygon3D's outline is in its x and y, pushed out along -z. Along x
+	# it's as it is; along z, it's turned so x runs toward -z and it's pushed out toward -x.
+	var transform := "Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, %s, %s, %s)" % [_num(b.x + start), _num(height), _num(b.z + b.d)] if along_x \
+			else "Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, %s, %s, %s)" % [_num(b.x + b.w), _num(height), _num(b.z + b.d - start)]
+	_out.append("\n[node name=\"%s\" type=\"CSGPolygon3D\" parent=\"Roofs\"]\ntransform = %s\nuse_collision = true\npolygon = PackedVector2Array(%s)\ndepth = %s\nmaterial = ExtResource(\"4_building\")" % [
+			name, transform, ", ".join(points), _num(b.d if along_x else b.w)])
+
+
 func _block_rect(block: Vector2i) -> Rect2:
 	return Rect2(_starts[block.x] - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
 
@@ -469,6 +575,8 @@ directional_shadow_max_distance = 250.0
 
 [node name="Buildings" type="Node3D" parent="."]
 
+[node name="Roofs" type="Node3D" parent="."]
+
 [node name="FireEscapes" type="Node3D" parent="."]
 
 [node name="GrindRails" type="Node3D" parent="."]
@@ -502,7 +610,7 @@ func _write_ground() -> void:
 func _write_markers(buildings: Array[Dictionary]) -> void:
 	var corner := Vector2i(AVENUE_AFTER, AVENUE_AFTER + 1)
 	var spawn_roof: Dictionary = _nearest(buildings.filter(func(b: Dictionary) -> bool:
-			return b.block == corner and not b.tower), Vector2(0, 0))
+			return b.block == corner and b.roof == "flat" and not b.tower), Vector2(0, 0))
 	var spawn := _roof_spot(spawn_roof)
 	_marker_spots.append(Vector2(spawn.x, spawn.z))
 	_out.append("\n[node name=\"SpawnPoint\" type=\"Marker3D\" parent=\".\"]\ntransform = %s" % _at(spawn.x, spawn.y + 0.05, spawn.z))
@@ -512,7 +620,7 @@ func _write_markers(buildings: Array[Dictionary]) -> void:
 	var quarters := {"NW": Vector2i(1, 1), "NE": Vector2i(3, 1), "SW": Vector2i(1, 3), "SE": Vector2i(3, 3)}
 	for quarter: String in quarters:
 		var in_block := buildings.filter(func(b: Dictionary) -> bool:
-				return b.block == quarters[quarter] and not b.tower)
+				return b.block == quarters[quarter] and b.roof == "flat" and not b.tower)
 		in_block.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys)
 		_checkpoint("Checkpoint" + quarter, _roof_spot(in_block[0]))
 
@@ -539,12 +647,12 @@ func _write_relics(buildings: Array[Dictionary]) -> void:
 	var far_block := Vector2i(BLOCKS - 1, 0)
 	var corner := Vector2(_block_rect(far_block).end.x, _block_rect(far_block).position.y)
 	var far := _nearest(buildings.filter(func(b: Dictionary) -> bool:
-			return b.block == far_block and not b.tower), corner)
+			return b.block == far_block and b.roof == "flat" and not b.tower), corner)
 	var spot := Vector2(far.x + far.w - CORNER_RELIC_IN, far.z + CORNER_RELIC_IN)
 	_relic("RelicFarCorner", Vector3(spot.x, far.storeys * STOREY + RELIC_HOVER, spot.y), true)
 
 	var climbable := buildings.filter(func(b: Dictionary) -> bool:
-			return not b.tower and not _marker_spots.any(func(marker: Vector2) -> bool:
+			return not b.tower and b.roof == "flat" and not _marker_spots.any(func(marker: Vector2) -> bool:
 				return Rect2(b.x, b.z, b.w, b.d).has_point(marker)))
 	climbable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 			return a.storeys > b.storeys or (a.storeys == b.storeys and _middle(a).length() < _middle(b).length()))
