@@ -99,6 +99,10 @@ var jump_buffer_time: float
 var leap_height: float
 var leap_boost: float
 var leap_charge_time: float
+var vault_max_height: float
+var vault_max_depth: float
+var vault_clearance: float
+var vault_takeoff_time: float
 ## How readied the next jump's leap is (0 = a normal jump, 1 = a full leap).
 ## Set by free-run just before it takes off; used up by start_jump().
 var pending_leap := 0.0
@@ -247,7 +251,7 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"WallScramble"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble"]
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
 const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
@@ -568,8 +572,8 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Grind"]:
-		return # A quick vault, a pull-up or a rail grind doesn't break your flow.
+	if state.name in [&"Climb", &"Vault", &"Grind"]:
+		return # A vault, a pull-up or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * 0.9:
@@ -794,7 +798,7 @@ func set_crouched(crouched: bool) -> void:
 
 ## True if there's room to stand up right here (always true if not crouched).
 func can_stand() -> bool:
-	return not is_crouched or _body_fits(global_position)
+	return not is_crouched or body_fits(global_position)
 
 
 ## Looks around the body (8 directions) for the closest wall within
@@ -922,7 +926,7 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	if not _shuffle_to_fit(ledge):
 		return null
 	# No room to stand on top (e.g. a narrow sill): still fine to hang from.
-	ledge.can_stand = _room_on_top(ledge) and _body_fits(stand_position(ledge))
+	ledge.can_stand = _room_on_top(ledge) and body_fits(stand_position(ledge))
 	return ledge
 
 
@@ -936,7 +940,7 @@ func _shuffle_to_fit(ledge: Ledge) -> bool:
 		var spot := ledge.position + sideways * shift
 		var hang_column := spot + ledge.normal * (body_radius + 0.05)
 		hang_column.y = spot.y + 0.05
-		if _body_fits(hang_column):
+		if body_fits(hang_column):
 			ledge.position = spot
 			return true
 	return false
@@ -979,7 +983,7 @@ func raycast(from: Vector3, to: Vector3) -> Dictionary:
 
 ## True if the player's body would fit with its feet at `feet` without
 ## overlapping the level.
-func _body_fits(feet: Vector3) -> bool:
+func body_fits(feet: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = _stand_shape
 	query.transform = Transform3D(Basis.IDENTITY, feet + Vector3.UP * (_stand_shape.height * 0.5 + 0.02))

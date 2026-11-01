@@ -10,6 +10,11 @@ const STOREY := 3.5
 
 ## Every state the player has entered since the test began, in order.
 var states_entered: Array[StringName] = []
+## From the last _free_run_over(): your highest feet, your speed running up to
+## the thing, and your slowest just past it.
+var _highest := -INF
+var _speed_at_it := 0.0
+var _slowest_past := INF
 
 
 func before_each() -> void:
@@ -245,18 +250,30 @@ func test_free_run_vaults_a_roof_box_and_carries_on() -> void:
 	expect(await _free_run_over(box, _short_way(box), 8.0), "should go over %s" % box.name)
 	expect(player.is_on_floor() and _building_under(player.global_position) != null,
 			"should be back on the roof past %s, at %v" % [box.name, player.global_position])
+	_expect_skimmed(box)
 
 
 func test_free_run_vaults_a_bench() -> void:
 	var bench := _clutter_named("Bench")
 	expect(await _free_run_over(bench, _along_kerb(bench), 5.0), "should go over %s" % bench.name)
 	expect(player.is_on_floor() and player.global_position.y < 0.2, "should be back on the street past %s (running along the pavement), at %v" % [bench.name, player.global_position])
+	_expect_skimmed(bench)
 
 
 func test_free_run_gets_over_a_phone_booth() -> void:
 	var booth := _clutter_named("Booth")
 	expect(await _free_run_over(booth, _along_kerb(booth), 5.0), "should go over %s" % booth.name)
 	expect(player.is_on_floor() and player.global_position.y < 0.2, "should be back on the street past %s, at %v" % [booth.name, player.global_position])
+	expect(not &"Vault" in states_entered, "a booth is too tall to skim: you climb it")
+
+
+## A flow vault: only just over the top, without losing speed.
+func _expect_skimmed(thing: CSGBox3D) -> void:
+	expect(&"Vault" in states_entered and not &"Climb" in states_entered,
+			"should skim over %s, not jump up onto it, went through %s" % [thing.name, states_entered])
+	var over := _highest - _top(thing)
+	expect(over > 0.0 and over < 0.4, "should only just clear %s, %.2f m over the top" % [thing.name, over])
+	expect(_slowest_past > _speed_at_it * 0.9, "shouldn't lose speed: %.1f m/s at it, %.1f just past it" % [_speed_at_it, _slowest_past])
 
 
 ## Free-runs at `thing` heading `across`, from `run_up` metres away, until
@@ -267,17 +284,25 @@ func _free_run_over(thing: CSGBox3D, across: Vector3, run_up: float) -> bool:
 	await place(start + Vector3.UP * (floor_y + 0.05), yaw_for(across))
 	Input.action_press(&"free_run")
 	Input.action_press(&"move_forward")
+	states_entered.clear()
 	var past := false
-	var highest := -INF
+	_highest = -INF
+	_speed_at_it = 0.0
+	_slowest_past = INF
 	for i in 60 * 4:
 		await ticks(1)
-		highest = maxf(highest, player.global_position.y)
-		if (player.global_position - thing.global_position).dot(across) > _extent(thing, across) + 2.0 and player.is_on_floor():
+		_highest = maxf(_highest, player.global_position.y)
+		var beyond := (player.global_position - thing.global_position).dot(across) - _extent(thing, across)
+		if beyond < -_extent(thing, across) * 2.0 - 3.0:
+			_speed_at_it = player.get_horizontal_speed() # Still running up to it.
+		elif beyond > 0.5:
+			_slowest_past = minf(_slowest_past, player.get_horizontal_speed())
+		if beyond > 2.0 and player.is_on_floor():
 			past = true
 			break
 	release_all()
 	expect(past, "should get past %s, ended at %v" % [thing.name, player.global_position])
-	return highest > _top(thing) - 0.2
+	return _highest > _top(thing) - 0.2
 
 
 ## Across a box's short side.

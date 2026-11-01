@@ -25,7 +25,12 @@ built and the details the code relies on.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
   move tests on the test course use.
 - **Free-run** is a co-pilot that presses buttons on `PlayerInput` (jump, crouch); every
-  automatic move is a normal move a player could do by hand.
+  automatic move is a normal move a player could do by hand. The exception is the **flow vault**
+  (`player/states/vault.gd`): head-on at something up to 1.3 m high and 2 m deep (benches, bins,
+  red air-con boxes), free-run skims over it, feet 0.15 m clear of the top, at the speed you hit
+  it, then drops you down the far side still running. Anything taller or deeper is jumped as
+  before; a readied leap still leaps. Numbers: the "Flow vault" group in the movement profile.
+  It plays the `vault` animation for now; a lower, quicker one would suit it better.
 - **Free-run leap**: in free-run your jump button readies a leap while held (0.3 s for a full
   one) and takes off when you let go, or at the next edge or obstacle free-run would jump. A full
   leap is 4.5 m high (a jump is 3) and adds 3 m/s forward: enough to clear the 10 m gap without

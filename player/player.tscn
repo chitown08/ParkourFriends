@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://player/item_carrier.gd" id="14_items"]
 [ext_resource type="Script" path="res://player/states/glide.gd" id="15_glide"]
 [ext_resource type="PackedScene" path="res://characters/blob/blob_model.tscn" id="16_model"]
+[ext_resource type="Script" path="res://player/states/vault.gd" id="17_vault"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -83,6 +84,9 @@ script = ExtResource("6_hang")
 
 [node name="Climb" type="Node" parent="States"]
 script = ExtResource("7_climb")
+
+[node name="Vault" type="Node" parent="States"]
+script = ExtResource("17_vault")
 
 [node name="Crouch" type="Node" parent="States"]
 script = ExtResource("8_crouch")

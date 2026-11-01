@@ -22,6 +22,8 @@ const STILL_SPEED := 0.5
 ## One-off moves (bat swing, throw, toss, landing) are sped up to take this long.
 const ACTION_TIME := 0.6
 const LAND_TIME := 0.4
+## A flow vault (skimming over something low at a run) is played this fast.
+const FLOW_VAULT_TIME := 0.35
 ## Moves whose animation climbs upward by itself (the game already lifts you).
 const RISING_MOVES: Array[String] = ["climb_up", "wall_scramble", "vault"]
 ## The bone that carries the whole body.
@@ -98,6 +100,8 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 		&"Climb":
 			var time := climb_up_time if _climb_animation == &"climb_up" else mantle_time
 			_play(_climb_animation, _length(_climb_animation) / maxf(time, 0.05))
+		&"Vault":
+			_play(&"vault", _length(&"vault") / FLOW_VAULT_TIME)
 		&"WallRun":
 			_play(&"wall_run_right" if lean > 0.0 else &"wall_run_left", speed / RUN_ANIM_SPEED)
 		&"WallScramble":

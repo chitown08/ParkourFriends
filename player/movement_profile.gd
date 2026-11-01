@@ -33,6 +33,14 @@ extends Resource
 @export var leap_boost := 3.0 ## Extra forward speed (m/s) a full leap adds.
 @export var leap_charge_time := 0.3 ## Seconds of holding jump to ready a full leap.
 
+@export_group("Flow vault (free-run)")
+## In free-run, low things (benches, air-con boxes) are skimmed over, only just
+## clearing them and keeping your speed, instead of jumped.
+@export var vault_max_height := 1.3 ## The highest thing (above your feet) you skim over.
+@export var vault_max_depth := 2.0 ## The deepest (front to back): anything deeper, you jump up onto.
+@export var vault_clearance := 0.15 ## How far your feet clear the top.
+@export var vault_takeoff_time := 0.15 ## You take off this many seconds of running before it.
+
 @export_group("Ledges")
 @export var ledge_max_height := 2.6 ## Highest ledge (above your feet) you can grab.
 @export var hang_min_height := 1.2 ## Ledges lower than this are vaulted over instead of hung from.

@@ -6,7 +6,9 @@ extends Node
 ## It works like a helpful co-pilot pressing buttons: each tick it looks ahead
 ## and, if needed, presses jump or crouch on the PlayerInput. So every
 ## automatic move is a normal move you could also do yourself, and your own
-## presses (a manual jump, a slide) still work at any time.
+## presses (a manual jump, a slide) still work at any time. The one move of
+## its own is the flow vault: skimming over low things without a jump.
+##   Something low and short, head-on    -> flow vault (you skim over it, keeping your speed)
 ##   Wall you can get on top of         -> jump (you vault, climb or scramble up it)
 ##   Wall with a ledge in reach          -> jump (you grab it; jump again to leap up)
 ##   Wall at an angle                   -> jump (you wall-run along it)
@@ -40,6 +42,13 @@ const WALL_SEEK_TIME := 0.6
 const WALL_SEEK_STRENGTH := 0.7
 ## Holding jump shorter than this is a tap: a normal jump (seconds).
 const LEAP_TAP_TIME := 0.1
+## How squarely you must be heading at something to flow-vault it (1 = dead on).
+const VAULT_HEAD_ON := 0.7
+## Steps (metres) when feeling across the top of something to vault.
+const VAULT_PROBE_STEP := 0.15
+
+## What _try_vault() decided: not one to vault, one to vault in a moment, vaulting.
+enum Vault { NO, SOON, STARTED }
 
 var player: Player
 var input: PlayerInput
@@ -87,6 +96,8 @@ func _look_ahead() -> void:
 
 	var low := _wall_ahead(feet + Vector3.UP * KNEE_HEIGHT, direction, reach)
 	if not low.is_empty():
+		if not readying_leap and _try_vault(low, direction, feet) != Vault.NO:
+			return # Vaulting it, or about to.
 		if _can_get_on_top(low, direction, feet) or _ledge_in_reach(low, direction, feet) \
 				or _is_glancing(low, direction):
 			_press_jump()
@@ -162,6 +173,50 @@ func _wall_ahead(from: Vector3, direction: Vector3, reach: float) -> Dictionary:
 	if hit.is_empty() or absf(hit.normal.y) > 0.3:
 		return {}
 	return hit
+
+
+## Flow-vaults `wall` (hit at knee height) if it's low and short enough, you're
+## heading at it squarely and there's room to pass over it.
+func _try_vault(wall: Dictionary, direction: Vector3, feet: Vector3) -> Vault:
+	if player.hands_busy() or direction.dot(-(wall.normal as Vector3)) < VAULT_HEAD_ON:
+		return Vault.NO
+	if player.is_crouched and not player.can_stand():
+		return Vault.NO
+	# Feel across the top for its height and where its far side is.
+	var top := -INF
+	var depth := -1.0
+	var across := 0.1
+	while across <= player.vault_max_depth + VAULT_PROBE_STEP:
+		var spot: Vector3 = wall.position + direction * across
+		var hit := player.raycast(Vector3(spot.x, feet.y + player.vault_max_height + 0.5, spot.z), Vector3(spot.x, feet.y - 0.1, spot.z))
+		var height: float = hit.position.y - feet.y if not hit.is_empty() else -INF
+		if height > player.vault_max_height:
+			return Vault.NO # Too tall.
+		if height < player.mantle_min_height:
+			depth = across # Past the far side.
+			break
+		top = maxf(top, height)
+		across += VAULT_PROBE_STEP
+	if top == -INF or depth < 0.0:
+		return Vault.NO # Nothing on top (too tall to see), or too deep.
+
+	var speed := maxf(player.get_horizontal_speed(), player.run_speed)
+	var to_wall: float = (wall.position - feet).dot(direction)
+	var risen_at := to_wall - player.body_radius - 0.05
+	if risen_at > speed * player.vault_takeoff_time:
+		return Vault.SOON # Not yet: keep running at it.
+	risen_at = maxf(risen_at, 0.05)
+	var rise: float = top + player.vault_clearance
+	var clear_at := to_wall + depth + player.body_radius + 0.05
+	for along: float in [risen_at, (risen_at + clear_at) / 2.0, clear_at]:
+		if not player.body_fits(feet + direction * along + Vector3.UP * rise):
+			return Vault.NO # Something in the way: jump it the usual way.
+	if player.is_crouched:
+		player.set_crouched(false)
+	player.change_state(&"Vault", {"direction": direction, "speed": speed,
+			"risen_at": risen_at, "clear_at": clear_at, "rise": rise})
+	_cooldown_timer = JUMP_COOLDOWN
+	return Vault.STARTED
 
 
 ## True if we can get on top of the obstacle: within jump-and-grab reach, or
