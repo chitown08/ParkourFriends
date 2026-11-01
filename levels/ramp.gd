@@ -1,57 +1,71 @@
 @tool
 class_name Ramp
 extends Node3D
-## An orange kicker ramp: hit it fast and its lip launches you up and on,
-## keeping your speed (you can steer a bit in the air). The faster you hit it,
-## the higher you go; slide into it for the big one, and a readied free-run
-## leap at the lip adds a little more. Too slow and you just roll off the lip.
+## A launch roof: a low building whose orange roof slopes down to a lip. Climb
+## it from behind (the yellow step, then the back wall), slide down the slope
+## and the lip launches you up and on, keeping your speed (you can steer a bit
+## in the air). The faster you leave it, the higher you go; still sliding as
+## you leave it adds more, and so does a readied free-run leap. Too slow and you
+## just drop off the lip.
 ##
-## The ramp's origin is the foot of the lip and it faces -Z (the way you
-## launch). It rises along a curve from `length` behind that to `height`.
+## Its origin is on the ground under the lip, and it faces -Z (the way you
+## launch). The lip is `height` up; the roof rises at `pitch` degrees for
+## `length` metres back from it.
 
-@export var length := 5.0:
+const WALL_MATERIAL := preload("res://materials/grid_platform.tres")
+const STEP_MATERIAL := preload("res://materials/grid_climb.tres")
+
+@export var length := 8.0:
 	set(value):
 		length = value
 		_build()
-@export var height := 1.5:
+@export var height := 2.5:
 	set(value):
 		height = value
 		_build()
-@export var width := 4.0:
+@export var pitch := 25.0:
+	set(value):
+		pitch = value
+		_build()
+@export var width := 6.0:
 	set(value):
 		width = value
 		_build()
+## The sloping roof's material (the walls are grey, the step yellow).
 @export var material: Material:
 	set(value):
 		material = value
 		_build()
 
-## Hit the ramp slower than this (m/s) and there's no launch.
+## Leave it slower than this (m/s) and there's no launch.
 const MIN_SPEED := 8.0
 ## Launch height (metres above the lip) from MIN_SPEED up to FULL_SPEED.
 const MIN_LAUNCH := 3.0
 const FULL_SPEED := 16.0
 const MAX_LAUNCH := 8.0
-## Extra height for sliding into the ramp, and for a fully readied leap.
+## Extra height for leaving it sliding, and for a fully readied leap.
 const SLIDE_BONUS := 3.0
 const LEAP_BONUS := 2.0
-## Your feet must be within this of the lip's top as you pass it.
+## Your feet must be within this of the lip as you pass it.
 const LIP_REACH := 0.7
-## Your speed is taken as you come onto the ramp, from this far in front of it.
-const APPROACH := 4.0
-const CURVE_STEPS := 8
+## The step up the back: this deep, and halfway up the back wall.
+const STEP_DEPTH := 2.5
 
-var _surface: CSGPolygon3D
-## Per player: how far past the lip they were last tick, how fast they hit
-## the ramp, and whether they were sliding.
+var _base: CSGBox3D
+var _roof: CSGPolygon3D
+var _step: CSGBox3D
+## Per player: how far past the lip they were last tick.
 var _last_along := {}
-var _hit_speed := {}
-var _hit_sliding := {}
 
 
 func _ready() -> void:
 	add_to_group(&"ramps")
 	_build()
+
+
+## How high the roof's back edge is above the lip.
+func rise() -> float:
+	return length * tan(deg_to_rad(pitch))
 
 
 func _physics_process(_delta: float) -> void:
@@ -61,48 +75,45 @@ func _physics_process(_delta: float) -> void:
 		if not player.is_local:
 			continue
 		var local := to_local(player.global_position)
-		var along := -local.z # Metres past the lip (negative: still before it).
+		var along := -local.z # Metres past the lip (negative: still on the roof).
 		var before: float = _last_along.get(player, along)
 		_last_along[player] = along
-		var beside := absf(local.x) <= width / 2.0
-		if beside and along > -length - APPROACH and along < -length:
-			_hit_speed[player] = player.get_horizontal_speed() # Coming onto the ramp.
-			_hit_sliding[player] = player.state.name == &"Slide"
-		if beside and before < 0.0 and along >= 0.0 and absf(local.y - height) < LIP_REACH:
+		if absf(local.x) <= width / 2.0 and before < 0.0 and along >= 0.0 and absf(local.y - height) < LIP_REACH:
 			_launch(player)
-		if along < -length - APPROACH or along > 1.0 or not beside:
-			_hit_speed.erase(player) # Gone: only a fresh run at it counts.
 
 
 func _launch(player: Player) -> void:
-	var speed: float = maxf(_hit_speed.get(player, 0.0), player.get_horizontal_speed())
+	var speed := player.get_horizontal_speed()
 	if speed < MIN_SPEED:
 		return
-	var rise := lerpf(MIN_LAUNCH, MAX_LAUNCH, clampf(inverse_lerp(MIN_SPEED, FULL_SPEED, speed), 0.0, 1.0))
-	if _hit_sliding.get(player, false):
-		rise += SLIDE_BONUS
+	var launch := lerpf(MIN_LAUNCH, MAX_LAUNCH, clampf(inverse_lerp(MIN_SPEED, FULL_SPEED, speed), 0.0, 1.0))
+	if player.state.name == &"Slide":
+		launch += SLIDE_BONUS
 	var forward := -global_basis.z.slide(Vector3.UP).normalized()
-	player.ramp_launch(forward, speed, rise, LEAP_BONUS)
-	_hit_speed.erase(player)
+	player.ramp_launch(forward, speed, launch, LEAP_BONUS)
 
 
 func _build() -> void:
 	if not is_inside_tree():
 		return
-	if _surface == null:
-		_surface = CSGPolygon3D.new()
-		_surface.use_collision = true
-		add_child(_surface)
-	# The side profile, in (back-to-front, up): a curve that gets steeper
-	# toward the lip, then straight down at the lip. Laid on its side and
-	# stretched across the ramp's width.
-	var profile := PackedVector2Array([Vector2(-length, 0.0)])
-	for i in range(1, CURVE_STEPS + 1):
-		var t := float(i) / CURVE_STEPS
-		profile.append(Vector2(-length + length * t, height * t * t))
-	profile.append(Vector2(0.0, 0.0))
-	_surface.polygon = profile
-	_surface.depth = width
-	# The profile's x runs toward -Z once turned; it's pushed out along -X, so shift it back.
-	_surface.transform = Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(width / 2.0, 0.0, 0.0))
-	_surface.material = material
+	if _base == null:
+		_base = CSGBox3D.new()
+		_roof = CSGPolygon3D.new()
+		_step = CSGBox3D.new()
+		for part: CSGShape3D in [_base, _roof, _step]:
+			part.use_collision = true
+			add_child(part)
+	_base.size = Vector3(width, height, length)
+	_base.position = Vector3(0.0, height / 2.0, length / 2.0)
+	_base.material = WALL_MATERIAL
+	# The roof side-on, in (back-to-front, up): a wedge from the back edge down
+	# to the lip. Laid on its side and stretched across the width.
+	_roof.polygon = PackedVector2Array([Vector2(-length, 0.0), Vector2(-length, rise()), Vector2(0.0, 0.0)])
+	_roof.depth = width
+	# The outline's x runs toward -Z once turned; it's pushed out along -X, so shift it back.
+	_roof.transform = Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(width / 2.0, height, 0.0))
+	_roof.material = material
+	var step_height := (height + rise()) / 2.0
+	_step.size = Vector3(width, step_height, STEP_DEPTH)
+	_step.position = Vector3(0.0, step_height / 2.0, length + STEP_DEPTH / 2.0)
+	_step.material = STEP_MATERIAL

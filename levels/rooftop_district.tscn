@@ -1500,7 +1500,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 21.0, 56.56)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.0, 0.0)
 
 [node name="RelicSky" parent="Relics" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 15.0, 0.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 18.0, 0.0)
 item = ExtResource("15_relic_sky")
 
 [node name="RelicRail" parent="Relics" instance=ExtResource("12_item")]

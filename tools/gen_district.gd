@@ -90,8 +90,9 @@ const TOOTH := 5.0 ## About this long...
 const TOOTH_RISE := 1.2 ## ...and this tall (low enough for free-run to flow-vault each face).
 const GLASS_DEGREES := 75.0
 
-## The launch plaza: a kicker ramp in each avenue arm, its lip this far from
-## the middle of the plaza, all launching toward the middle (see levels/ramp.gd).
+## The launch plaza: a launch roof in each avenue arm (a low building whose roof
+## slopes down to a lip), its lip this far from the middle of the plaza, all
+## launching toward the middle (see levels/ramp.gd).
 const RAMP_DISTANCE := 13.0
 
 ## Relics, each in a spot that asks for something different (see _write_relics),
@@ -99,7 +100,7 @@ const RAMP_DISTANCE := 13.0
 ## The sky relic floats this high over the plaza: higher than any launch reaches
 ## alone, but in reach if a friend launching with you tosses you on the way up.
 ## (It can be caught from further away than other relics: items/data/relic_sky.tres.)
-const SKY_RELIC_HEIGHT := 15.0
+const SKY_RELIC_HEIGHT := 18.0
 ## The others hover this far above where you stand: chest height, so running
 ## (or grinding) into one picks it up.
 const RELIC_HOVER := 1.0
