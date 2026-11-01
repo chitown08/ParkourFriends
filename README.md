@@ -2,7 +2,7 @@
 
 **Design:** the master design document is the Claude doc
 ["Parkour Friendslop – Game Design Doc"](https://claude.ai/artifact/FaCnq4frncwnN9L2MgsfSU);
-[docs/DESIGN.md](docs/DESIGN.md) has the technical notes. [docs/CHARACTER_GUIDE.md](docs/CHARACTER_GUIDE.md) explains how to make a character in Meshy and Mixamo.
+[docs/DESIGN.md](docs/DESIGN.md) has the technical notes. [docs/CHARACTER_GUIDE.md](docs/CHARACTER_GUIDE.md) explains how to make a character in Meshy and Mixamo, and [docs/COSMETICS_GUIDE.md](docs/COSMETICS_GUIDE.md) how to make cosmetics.
 
 Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
