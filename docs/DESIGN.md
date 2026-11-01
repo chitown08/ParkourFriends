@@ -79,7 +79,7 @@ built and the details the code relies on.
   (you grind a rail on your feet, like a skateboarder, so your hands stay free).
 - **Relics** are items: they hover at home until touched (touching picks them up if your hands
   are free), and only count once carried or thrown into a drop-off (`levels/drop_off.tscn`,
-  beside the Free-Run Line's spawn). A relic you drop or throw needs F to pick up again.
+  beside the Free-Run Line's spawn, and in the middle of the district's plaza). A relic you drop or throw needs F to pick up again.
 - Throwing: items fly where the camera points. A thrown item passing within 1.3 m of a friend's
   chest is caught if they have a free slot (you can't catch your own for 0.4 s). Dropped items
   can't be caught. F while facing a friend within 2 m hands the item over.
@@ -104,7 +104,7 @@ built and the details the code relies on.
 
 | World | Purpose |
 |---|---|
-| `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Towers have no way up yet. R takes you back to a roof checkpoint |
+| `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Five relics come back to a drop-off in the middle of the plaza: one floating 15 m over the plaza (launch off a ramp with a friend who tosses you on the way up; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Towers have no way up yet. R takes you back to a roof checkpoint |
 | `free_run_line.tscn` | One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Human-scale lab the move tests rely on |
 

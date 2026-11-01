@@ -14,7 +14,8 @@ extends Node
 
 ## How close (metres) an item must be to pick it up, or a friend to hand it to.
 const PICKUP_RANGE := 2.0
-## How close (metres from your middle) a pick-up-on-touch item must be.
+## How close (metres from your middle) a pick-up-on-touch item must be, unless
+## the item says otherwise (ItemData.touch_range).
 const TOUCH_RANGE := 1.3
 ## Don't ask the host about the same touched item more often than this (seconds).
 const TOUCH_RETRY := 0.2
@@ -145,10 +146,15 @@ func _pick_up_touched(delta: float) -> void:
 		return
 	var middle := player.global_position + Vector3.UP * 0.9
 	for item in items_in_world():
-		if item.item and item.item.pick_up_on_touch and item.is_at_home() and middle.distance_to(item.global_position) <= TOUCH_RANGE and can_take(item):
+		if item.item and item.item.pick_up_on_touch and item.is_at_home() and middle.distance_to(item.global_position) <= touch_range_of(item.item) and can_take(item):
 			item.request_touch_pick_up.rpc_id(1)
 			_touch_cooldown = TOUCH_RETRY
 			return
+
+
+## How close you must pass to pick up `data` by touch.
+static func touch_range_of(data: ItemData) -> float:
+	return data.touch_range if data.touch_range > 0.0 else TOUCH_RANGE
 
 
 ## Starts/stops the ability of whatever is in your hands when that changes.

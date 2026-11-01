@@ -33,6 +33,9 @@ extends Resource
 @export var is_backpack := false
 ## Picked up just by touching it (if your hands are free), like a collectible.
 @export var pick_up_on_touch := false
+## How close (metres from your middle) you must pass to pick it up by touch.
+## The default (0) is ItemCarrier.TOUCH_RANGE; bigger for ones caught in mid-air.
+@export var touch_range := 0.0
 ## Floats in place at its home spot instead of falling (until someone takes it).
 @export var hovers_at_home := false
 ## Counts for the team when carried or thrown into a drop-off (levels/drop_off.tscn).

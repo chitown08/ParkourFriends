@@ -11,6 +11,10 @@
 [ext_resource type="Material" path="res://materials/grid_vault.tres" id="9_vault"]
 [ext_resource type="Script" path="res://levels/ramp.gd" id="10_ramp"]
 [ext_resource type="Material" path="res://materials/grid_ramp.tres" id="11_ramp"]
+[ext_resource type="PackedScene" path="res://items/world_item.tscn" id="12_item"]
+[ext_resource type="Resource" path="res://items/data/relic.tres" id="13_relic"]
+[ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="14_dropoff"]
+[ext_resource type="Resource" path="res://items/data/relic_sky.tres" id="15_relic_sky"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -61,6 +65,8 @@ directional_shadow_max_distance = 250.0
 [node name="Checkpoints" type="Node3D" parent="."]
 
 [node name="Labels" type="Node3D" parent="."]
+
+[node name="Relics" type="Node3D" parent="."]
 
 [node name="Ground" type="CSGBox3D" parent="Street"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.0, -1.0, -35.0)
@@ -1146,6 +1152,29 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -96.15, 28.0, 60.31)
 [node name="CheckpointSE" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 21.0, 56.56)
 
+[node name="DropOff" parent="." instance=ExtResource("14_dropoff")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.0, 0.0)
+
+[node name="RelicSky" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 15.0, 0.0)
+item = ExtResource("15_relic_sky")
+
+[node name="RelicRail" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, 22.15, 24.11)
+item = ExtResource("13_relic")
+
+[node name="RelicFarCorner" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 136.0, 29.0, -206.0)
+item = ExtResource("13_relic")
+
+[node name="RelicHighRoof" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 112.0, 29.0, -96.8)
+item = ExtResource("13_relic")
+
+[node name="RelicSubway" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 1.0, -210.0)
+item = ExtResource("13_relic")
+
 [node name="Block00_0_Vault1" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -198.89, 21.51, -198.32)
 use_collision = true
@@ -1794,22 +1823,22 @@ use_collision = true
 size = Vector3(3.39, 3.07, 3.69)
 material = ExtResource("4_building")
 
-[node name="Block41_1_Hut1" type="CSGBox3D" parent="RoofClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 116.18, 29.37, -93.3)
-use_collision = true
-size = Vector3(4.04, 2.74, 3.62)
-material = ExtResource("4_building")
-
-[node name="Block41_1_Vault2" type="CSGBox3D" parent="RoofClutter"]
+[node name="Block41_1_Vault1" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 94.56, 28.59, -92.46)
 use_collision = true
 size = Vector3(2.38, 1.19, 1.58)
 material = ExtResource("9_vault")
 
-[node name="Block41_1_Vault3" type="CSGBox3D" parent="RoofClutter"]
+[node name="Block41_1_Vault2" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 130.9, 28.52, -100.16)
 use_collision = true
 size = Vector3(2.18, 1.05, 1.45)
+material = ExtResource("9_vault")
+
+[node name="Block41_1_Vault3" type="CSGBox3D" parent="RoofClutter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 89.41, 28.57, -96.76)
+use_collision = true
+size = Vector3(1.43, 1.15, 2.24)
 material = ExtResource("9_vault")
 
 [node name="Block42_0_Vault1" type="CSGBox3D" parent="RoofClutter"]

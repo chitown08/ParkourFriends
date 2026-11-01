@@ -349,11 +349,91 @@ func test_you_can_steer_in_the_air_after_a_launch() -> void:
 	expect(player.global_position.x < straight_x - 2.0, "holding left in the air should carry you left, x %.1f vs %.1f" % [player.global_position.x, straight_x])
 
 
+func test_five_relics_and_a_drop_off_in_the_plaza() -> void:
+	var relics: Array[Node] = main.level.get_node("Relics").get_children()
+	expect(relics.size() == 5, "five relics, %d" % relics.size())
+	expect(main.hud.get_node("Relics").text == "Relics 0 / 5", "the counter should show them: %s" % main.hud.get_node("Relics").text)
+	var drop_off: DropOff = main.level.get_node("DropOff")
+	expect(_flat(drop_off.global_position).length() < 0.1 and absf(drop_off.global_position.y) < 0.1,
+			"the drop-off should be in the middle of the plaza, on the street")
+
+
+func test_relics_float_in_the_open() -> void:
+	var solid: Array[CSGBox3D] = _buildings()
+	solid.append_array(_clutter())
+	for step in main.level.get_node("FireEscapes").get_children():
+		solid.append(step)
+	for relic: WorldItem in main.level.get_node("Relics").get_children():
+		for box in solid:
+			var inside := (box.global_position - relic.global_position).abs() - box.size / 2.0
+			expect(inside.x > 1.0 or inside.y > 0.5 or inside.z > 1.0, "%s should be clear of %s" % [relic.name, box.name])
+	for roof_relic in ["RelicHighRoof", "RelicFarCorner"]:
+		var relic: WorldItem = main.level.get_node("Relics/" + roof_relic)
+		var under := _building_under(relic.global_position + Vector3.DOWN * 0.5)
+		expect(under != null and absf(relic.global_position.y - _top(under) - 1.0) < 0.1, "%s should hover just over a roof" % roof_relic)
+	var high: WorldItem = main.level.get_node("Relics/RelicHighRoof")
+	for b in _buildings():
+		if not _is_tower(b):
+			expect(_top(b) <= high.global_position.y - 1.0 + 0.01, "the high-roof relic should be on the tallest roof, but %s is taller" % b.name)
+
+
+func test_running_into_relics_on_roofs_and_the_street_picks_them_up() -> void:
+	for relic_name in ["RelicHighRoof", "RelicFarCorner", "RelicSubway"]:
+		var relic: WorldItem = main.level.get_node("Relics/" + relic_name)
+		var feet := relic.global_position + Vector3.DOWN * 1.0
+		await place(feet + Vector3(0, 0.05, 6), yaw_for(Vector3.FORWARD))
+		Input.action_press(&"move_forward")
+		await ticks(60)
+		release_all()
+		expect(relic.holder_name == "1", "running into %s should pick it up" % relic_name)
+		relic.host_return_home() # Hands free for the next one.
+		await ticks(5)
+
+
+func test_riding_the_rail_grabs_the_rail_relic() -> void:
+	var relic: WorldItem = main.level.get_node("Relics/RelicRail")
+	var rail: GrindRail = null
+	for r: GrindRail in main.level.get_node("GrindRails").get_children():
+		if rail == null or r.point_at(r.closest_t(relic.global_position)).distance_to(relic.global_position) \
+				< rail.point_at(rail.closest_t(relic.global_position)).distance_to(relic.global_position):
+			rail = r
+	var way := _flat(rail.bottom() - rail.top()).normalized()
+	await place(rail.top() + Vector3.UP * 0.45 - way * 8.0, yaw_for(way))
+	Input.action_press(&"move_forward")
+	var grinding := false
+	for i in 60 * 6:
+		await ticks(1)
+		grinding = grinding or player.state.name == &"Grind"
+		if relic.holder_name == "1":
+			break
+	release_all()
+	expect(grinding, "should ride %s" % rail.name)
+	expect(relic.holder_name == "1", "riding the rail should grab the relic over it")
+
+
+func test_the_sky_relic_is_out_of_reach_alone() -> void:
+	var relic: WorldItem = main.level.get_node("Relics/RelicSky")
+	var peak := await _run_at_ramp({"slide": true})
+	expect(peak + 0.9 + ItemCarrier.touch_range_of(relic.item) < relic.global_position.y, "the biggest launch alone peaks at %.1f m: it shouldn't reach" % peak)
+	expect(relic.is_at_home(), "the sky relic should still be up there")
+
+
+func test_a_friends_toss_on_the_way_up_reaches_the_sky_relic() -> void:
+	# The timing is forgiving: an early toss or a late one both get there.
+	var relic: WorldItem = main.level.get_node("Relics/RelicSky")
+	for toss_above in [4.5, 8.5]:
+		await _run_at_ramp({"toss_above": toss_above})
+		expect(relic.holder_name == "1", "launched, then tossed by a friend beside you at %.1f m up, you should catch the sky relic" % toss_above)
+		relic.host_return_home()
+		await ticks(5)
+
+
 ## Runs at the plaza's south ramp from far up the avenue at full flow, with
 ## `how` options: slide (slide in from 10 m out), crouch (crouch-walk),
 ## free_run, ready_leap (hold jump with free-run), steer (an action held once
-## launched), run_up (how far back to start). Returns how high your feet got
-## above the street, and leaves you where you landed.
+## launched), run_up (how far back to start), toss_above (a friend launching
+## beside you tosses you, toward the middle, once you rise past this height).
+## Returns how high your feet got above the street, and leaves you where you landed.
 func _run_at_ramp(how: Dictionary) -> float:
 	var ramp: Ramp = main.level.get_node("Ramps/RampSouth")
 	var back := ramp.global_basis.z # From the lip back down the run-up.
@@ -379,6 +459,8 @@ func _run_at_ramp(how: Dictionary) -> float:
 			Input.action_press(&"crouch")
 		if launched[0] and how.has("steer"):
 			Input.action_press(how["steer"])
+		if launched[0] and how.has("toss_above") and player.global_position.y > how["toss_above"] and player.tossed_by.is_empty():
+			player.apply_toss(player.toss_velocity(yaw_for(-back)), "Friend")
 		left_ground = left_ground or from_lip > 0.5
 		if left_ground and player.is_on_floor():
 			break

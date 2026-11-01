@@ -69,7 +69,7 @@ player/states/                    – one script per movement "mode" (state mach
             wall_scramble.gd      – running up a too-tall wall
             grind.gd              – grinding a rail
             glide.gd              – gliding (started by the glider item, items/abilities/glide.gd)
-levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two crossing avenues (default
+levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two crossing avenues, a launch plaza and five relics (default
                                     world; regenerate with tools/gen_district.gd, see the top of that file)
             free_run_line.tscn    – straight test course with every move in order (regenerate with
                                     tools/gen_free_run_line.sh)

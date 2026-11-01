@@ -74,6 +74,18 @@ const MARKER_CLEAR := 4.0 ## And this far around the spawn and checkpoints.
 ## the middle of the plaza, all launching toward the middle (see levels/ramp.gd).
 const RAMP_DISTANCE := 13.0
 
+## Relics, each in a spot that asks for something different (see _write_relics),
+## and the drop-off in the middle of the plaza, where every relic comes back to.
+## The sky relic floats this high over the plaza: higher than any launch reaches
+## alone, but in reach if a friend launching with you tosses you on the way up.
+## (It can be caught from further away than other relics: items/data/relic_sky.tres.)
+const SKY_RELIC_HEIGHT := 15.0
+## The others hover this far above where you stand: chest height, so running
+## (or grinding) into one picks it up.
+const RELIC_HOVER := 1.0
+## How far in from the roof's edge the far-corner relic sits.
+const CORNER_RELIC_IN := 6.0
+
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
 ## Places clutter mustn't go: rail paths as [from, to] (seen from above), the
@@ -81,6 +93,8 @@ var _starts: Array[float] = []
 var _rail_paths: Array = []
 var _marker_spots: Array[Vector2] = []
 var _fire_escapes: Array[Rect2] = []
+## Every rail as [start, end].
+var _rails: Array = []
 ## The plaza (where the avenues cross) is the origin of the world.
 var _plaza_middle := 0.0
 var _out := PackedStringArray()
@@ -113,6 +127,7 @@ func _init() -> void:
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	_write_ramps()
 	_write_markers(buildings)
+	_write_relics(buildings)
 	var roof_things := 0
 	for b in buildings:
 		roof_things += _write_roof_clutter(b)
@@ -272,6 +287,7 @@ func _write_rail(buildings: Array[Dictionary], i: int, across_x: bool) -> bool:
 		var name := "Rail%s%d" % ["EW" if across_x else "NS", i]
 		var offset := end - start
 		var way := Vector2(offset.x, offset.z).normalized()
+		_rails.append([start, end])
 		_rail_paths.append([Vector2(start.x, start.z) - way * (RAIL_START_OUT + RAIL_RUN_UP),
 				Vector2(end.x, end.z) + way * RAIL_LANDING])
 		_out.append("\n[node name=\"%s\" parent=\"GrindRails\" instance=ExtResource(\"8_rail\")]\ntransform = %s\nend_point = Vector3(%s, %s, %s)" % [
@@ -412,6 +428,10 @@ func _write_header() -> void:
 [ext_resource type="Material" path="res://materials/grid_vault.tres" id="9_vault"]
 [ext_resource type="Script" path="res://levels/ramp.gd" id="10_ramp"]
 [ext_resource type="Material" path="res://materials/grid_ramp.tres" id="11_ramp"]
+[ext_resource type="PackedScene" path="res://items/world_item.tscn" id="12_item"]
+[ext_resource type="Resource" path="res://items/data/relic.tres" id="13_relic"]
+[ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="14_dropoff"]
+[ext_resource type="Resource" path="res://items/data/relic_sky.tres" id="15_relic_sky"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -461,7 +481,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Checkpoints" type="Node3D" parent="."]
 
-[node name="Labels" type="Node3D" parent="."]""")
+[node name="Labels" type="Node3D" parent="."]
+
+[node name="Relics" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -493,6 +515,54 @@ func _write_markers(buildings: Array[Dictionary]) -> void:
 				return b.block == quarters[quarter] and not b.tower)
 		in_block.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys)
 		_checkpoint("Checkpoint" + quarter, _roof_spot(in_block[0]))
+
+
+## The drop-off in the middle of the plaza, and five relics:
+## - Sky: floating over the plaza; launch off a ramp with a friend, who tosses you.
+## - Rail: over the grind rail nearest the plaza; grab it as you ride across.
+## - Far corner: on the roof in the district's far corner from the spawn; explore.
+## - High roof: on the tallest roof nearest the plaza (not a tower, nor one with
+##   a checkpoint or another relic); climb.
+## - Subway: down on the tracks at the far end of the subway line; the street.
+## Clutter keeps clear of the roof ones (they count as markers).
+func _write_relics(buildings: Array[Dictionary]) -> void:
+	_out.append("\n[node name=\"DropOff\" parent=\".\" instance=ExtResource(\"14_dropoff\")]\ntransform = %s" % _at(0, 0, 0))
+	_relic("RelicSky", Vector3(0, SKY_RELIC_HEIGHT, 0), false, "15_relic_sky")
+
+	var rail: Array = _rails[0]
+	for r: Array in _rails:
+		if _flat_middle(r).length() < _flat_middle(rail).length():
+			rail = r
+	_relic("RelicRail", (rail[0] + rail[1]) / 2.0 + Vector3.UP * RELIC_HOVER)
+
+	# The spawn is at the plaza's south-west corner, so the far corner is north-east.
+	var far_block := Vector2i(BLOCKS - 1, 0)
+	var corner := Vector2(_block_rect(far_block).end.x, _block_rect(far_block).position.y)
+	var far := _nearest(buildings.filter(func(b: Dictionary) -> bool:
+			return b.block == far_block and not b.tower), corner)
+	var spot := Vector2(far.x + far.w - CORNER_RELIC_IN, far.z + CORNER_RELIC_IN)
+	_relic("RelicFarCorner", Vector3(spot.x, far.storeys * STOREY + RELIC_HOVER, spot.y), true)
+
+	var climbable := buildings.filter(func(b: Dictionary) -> bool:
+			return not b.tower and not _marker_spots.any(func(marker: Vector2) -> bool:
+				return Rect2(b.x, b.z, b.w, b.d).has_point(marker)))
+	climbable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return a.storeys > b.storeys or (a.storeys == b.storeys and _middle(a).length() < _middle(b).length()))
+	_relic("RelicHighRoof", _roof_spot(climbable[0]) + Vector3.UP * RELIC_HOVER, true)
+
+	_relic("RelicSubway", Vector3(0, RELIC_HOVER, _block_rect(Vector2i(0, 0)).position.y + 2.0))
+
+
+func _relic(name: String, at: Vector3, on_roof := false, data := "13_relic") -> void:
+	if on_roof:
+		_marker_spots.append(Vector2(at.x, at.z))
+	_out.append("\n[node name=\"%s\" parent=\"Relics\" instance=ExtResource(\"12_item\")]\ntransform = %s\nitem = ExtResource(\"%s\")" % [
+			name, _at(at.x, at.y, at.z), data])
+
+
+func _flat_middle(rail: Array) -> Vector2:
+	var middle: Vector3 = (rail[0] + rail[1]) / 2.0
+	return Vector2(middle.x, middle.z)
 
 
 func _nearest(buildings: Array, to: Vector2) -> Dictionary:
