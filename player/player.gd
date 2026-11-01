@@ -216,6 +216,8 @@ const LEAP_SQUASH := 0.28
 const DUST_LANDING_SPEED := 20.0
 ## Landing faster than this (m/s) from a standstill plays the landing animation.
 const HARD_LANDING_SPEED := 12.0
+## Seen moving faster than this (m/s), it was a teleport (a respawn), not a run.
+const TELEPORT_SPEED := 60.0
 ## How far the body tips forward while gliding (radians).
 const GLIDE_PITCH := deg_to_rad(-35.0) # (Negative tips forward.)
 ## A bat swing: how long it takes and the arc it sweeps (radians, around
@@ -363,6 +365,8 @@ func _follow_network(delta: float) -> void:
 func _pose_visual(shown_state: StringName, lean_angle: float, leap_charge: float, delta: float) -> void:
 	_watch_for_landing(shown_state, delta)
 	var moved := (global_position - _last_position).slide(Vector3.UP).length() / maxf(delta, 0.001)
+	if moved > TELEPORT_SPEED:
+		moved = 0.0
 	_last_position = global_position
 	_ground_speed = lerpf(_ground_speed, moved, 1.0 - exp(-12.0 * delta))
 	model.animate(shown_state, _ground_speed, _rising, lean_angle, not sync_tossed_by.is_empty(), hands_busy(), delta)

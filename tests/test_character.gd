@@ -117,6 +117,11 @@ func test_every_cosmetic_has_a_fit() -> void:
 	for slot in Cosmetics.SLOTS:
 		for item in Cosmetics.available(slot):
 			expect(fits.has_section("%s/%s" % [slot, item]), "%s/%s should be fitted in %s" % [slot, item, Cosmetics.FITS])
+	for item in Cosmetics.available(&"trail"):
+		for key in ["along", "up", "length"]:
+			expect(fits.has_section_key("trail/" + item, key), "trail/%s should say its %s" % [item, key])
+		if item.begins_with("scarf/") and ResourceLoader.exists("res://cosmetics/trail/%s_neck.glb" % item):
+			expect(fits.has_section("trail/%s_neck" % item), "%s's neck should be fitted" % item)
 
 
 func test_cosmetics_sit_on_their_bones_with_pairs_mirrored() -> void:
@@ -127,7 +132,7 @@ func test_cosmetics_sit_on_their_bones_with_pairs_mirrored() -> void:
 	await ticks(2)
 	# How far each item's middle may be from its bone (the waist bone is low in the belly).
 	var reach := {&"head": 0.45, &"hands": 0.3, &"waist": 0.35, &"feet": 0.3}
-	for slot in Cosmetics.SLOTS:
+	for slot: StringName in Cosmetics.BONES:
 		var bones: Array = Cosmetics.BONES[slot]
 		for i in bones.size():
 			var attachment := skeleton.get_node_or_null("%s%s_%d" % [Cosmetics.PREFIX, slot, i]) as BoneAttachment3D

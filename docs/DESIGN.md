@@ -42,8 +42,15 @@ built and the details the code relies on.
   which renders every outfit; `tools/inspect_cosmetics.gd` and `tools/cosmetics_sheet.gd` help
   fit a new one) and hung from a bone with a BoneAttachment3D, so it follows the animations. Pairs
   are fitted on the left and mirrored for the right. `Player.sync_outfit` (sent to everyone) says
-  what you wear; O cycles outfits until the mall exists. Trails come next. When exporting, add
-  `*.cfg` to the export filter so the fits file goes along.
+  what you wear; O cycles outfits until the mall exists. When exporting, add `*.cfg` to the
+  export filter so the fits file goes along.
+- **Trails** (`player/trail.gd`): a banner or streamer flies from a pole on your back, a scarf's
+  two tails from the back of your neck. The straight model is skinned onto a 10-link chain built
+  at runtime; the chain lags behind you (Verlet), sags, catches a breeze out behind, ripples more
+  the faster you go, and stays out of a capsule round your body. Links keep their length with
+  "dynamic follow the leader" (Müller), so the free end doesn't curl. It steps with physics and
+  is drawn between steps like the body (physics interpolation), and each screen runs its own.
+  Per-kind feel is `Trail.KINDS`; `tools/trail_preview.gd` renders each trail standing and running.
   On top, `Player._pose_visual()` squashes, stretches and tilts the whole model: squashed while
   readying a leap, stretched by a jump, squashed by a landing, tipped forward and banking while
   gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.
