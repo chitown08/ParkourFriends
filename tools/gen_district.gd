@@ -107,6 +107,15 @@ const RELIC_HOVER := 1.0
 ## How far in from the roof's edge the far-corner relic sits.
 const CORNER_RELIC_IN := 6.0
 
+# Ways back up: every flat-roofed building without a fire escape (towers
+# aside) gets a yellow drainpipe or a column of window sills up one wall, and
+# every block an orange air vent on the pavement that blows you up to a roof.
+const PIPE_CHANCE := 0.6 ## (The rest get sills.)
+const WAY_UP_CORNER := 3.0 ## Kept at least this far from a wall's corners.
+const SILL := Vector3(2.5, 0.3, 0.5) ## (Along the wall, thick, out from it.)
+const VENT_OUT := 1.5 ## The vent's middle is this far out from the wall...
+const VENT_LIFT := 1.0 ## ...and it blows you this far above the roof.
+
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
 ## Places clutter mustn't go: rail paths as [from, to] (seen from above), the
@@ -147,6 +156,13 @@ func _init() -> void:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			staircases += 1 if _write_staircase(buildings, Vector2i(bx, bz)) else 0
+	var ways_up := 0
+	for b in buildings:
+		ways_up += 1 if _write_way_up(b) else 0
+	var vents := 0
+	for bx in BLOCKS:
+		for bz in BLOCKS:
+			vents += 1 if _write_air_vent(buildings, Vector2i(bx, bz)) else 0
 	var rails := 0
 	for i in BLOCKS:
 		rails += 1 if _write_rail(buildings, i, true) else 0
@@ -165,9 +181,9 @@ func _init() -> void:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d rails, %d roof things, %d street things (seed %d)" % [
+	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, rails, roof_things, street_things, SEED])
+			staircases, ways_up, vents, rails, roof_things, street_things, SEED])
 	quit()
 
 
@@ -199,7 +215,7 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 				else dice.randi_range(MIN_STOREYS, MAX_STOREYS)
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
-				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat"})
+				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false})
 	_limit_alley_steps(buildings)
 	var lowest := buildings[0]
 	for b in buildings:
@@ -285,6 +301,7 @@ func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 		var out: Vector2 = wall[2]
 		var far_corner := start + along * steps * run + out * STEP_DEPTH
 		_fire_escapes.append(Rect2(start, Vector2.ZERO).expand(far_corner))
+		b.fire_escape = true
 		for k in range(1, steps + 1):
 			var middle := start + along * (k - 0.5) * run + out * STEP_DEPTH / 2.0
 			var size := along.abs() * run + out.abs() * STEP_DEPTH
@@ -292,6 +309,70 @@ func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 					size.x, k * STOREY, size.y, "7_climb")
 		return true
 	return false
+
+
+## A drainpipe or a column of window sills up one wall of `b` (flat roofs
+## without a fire escape only, towers aside). Returns false if it gets none.
+func _write_way_up(b: Dictionary) -> bool:
+	if b.tower or b.roof != "flat" or b.fire_escape:
+		return false
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, b.name, "way up"])
+	var walls := _walls(b)
+	var wall: Array = walls[dice.randi() % walls.size()]
+	var at: Vector2 = wall[0] + wall[1] * dice.randf_range(WAY_UP_CORNER, wall[3] - WAY_UP_CORNER)
+	var out: Vector2 = wall[2]
+	var height: float = b.storeys * STOREY
+	if dice.randf() < PIPE_CHANCE:
+		# Its +Z points out of the wall.
+		_out.append("\n[node name=\"%s_Pipe\" type=\"Node3D\" parent=\"WaysUp\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, 0, %s)\nscript = ExtResource(\"16_pipe\")\nheight = %s" % [
+				b.name, _num(out.y), _num(out.x), _num(-out.x), _num(out.y), _num(at.x), _num(at.y), _num(height)])
+		return true
+	# A sill under each storey's window, up to the one below the roof (a
+	# storey apart: a ledge leap reaches each from the one below).
+	var middle := at + out * SILL.z / 2.0
+	var size := (wall[1] as Vector2).abs() * SILL.x + out.abs() * SILL.z
+	for k in range(1, b.storeys):
+		_box("%s_Sill%d" % [b.name, k], "WaysUp", middle.x, k * STOREY - SILL.y / 2.0, middle.y,
+				size.x, SILL.y, size.y, "7_climb")
+	return true
+
+
+## An air vent on the pavement beside one of the block's flat-roofed buildings
+## (towers aside), blowing you up to its roof. Returns false if none fits.
+func _write_air_vent(buildings: Array[Dictionary], block: Vector2i) -> bool:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, block.x, block.y, "vent"])
+	var area := _block_rect(block)
+	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.block == block and b.roof == "flat" and not b.tower)
+	for attempt in 10:
+		if candidates.is_empty():
+			return false
+		var b: Dictionary = candidates[dice.randi() % candidates.size()]
+		# Street-facing walls only (the pavement).
+		var walls := _walls(b).filter(func(w: Array) -> bool:
+				var outside: Vector2 = w[0] + w[1] * w[3] / 2.0 + w[2]
+				return not area.has_point(outside))
+		if walls.is_empty():
+			continue
+		var wall: Array = walls[dice.randi() % walls.size()]
+		var at: Vector2 = wall[0] + wall[1] * dice.randf_range(WAY_UP_CORNER, wall[3] - WAY_UP_CORNER) + wall[2] * VENT_OUT
+		var footprint := Rect2(at - Vector2.ONE * AirVent.SIZE / 2.0, Vector2.ONE * AirVent.SIZE)
+		if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(2.0).intersects(footprint)):
+			continue
+		_fire_escapes.append(footprint) # Keeps the pavement clutter clear of it.
+		_out.append("\n[node name=\"Block%d%d_Vent\" type=\"Node3D\" parent=\"AirVents\"]\ntransform = %s\nscript = ExtResource(\"17_vent\")\nrise = %s" % [
+				block.x, block.y, _at(at.x, 0.0, at.y), _num(b.storeys * STOREY + VENT_LIFT)])
+		return true
+	return false
+
+
+## The four walls of `b`: [a corner, the way along it, the way out of the building, its length].
+func _walls(b: Dictionary) -> Array:
+	return [[Vector2(b.x, b.z), Vector2.RIGHT, Vector2.UP, b.w],
+			[Vector2(b.x, b.z + b.d), Vector2.RIGHT, Vector2.DOWN, b.w],
+			[Vector2(b.x, b.z), Vector2.DOWN, Vector2.LEFT, b.d],
+			[Vector2(b.x + b.w, b.z), Vector2.DOWN, Vector2.RIGHT, b.d]]
 
 
 ## Adds a grind rail across one of the avenues, at row (or column) `i`, from the
@@ -539,6 +620,8 @@ func _write_header() -> void:
 [ext_resource type="Resource" path="res://items/data/relic.tres" id="13_relic"]
 [ext_resource type="PackedScene" path="res://levels/drop_off.tscn" id="14_dropoff"]
 [ext_resource type="Resource" path="res://items/data/relic_sky.tres" id="15_relic_sky"]
+[ext_resource type="Script" path="res://levels/drainpipe.gd" id="16_pipe"]
+[ext_resource type="Script" path="res://levels/air_vent.gd" id="17_vent"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.32, 0.5, 0.78, 1)
@@ -579,6 +662,10 @@ directional_shadow_max_distance = 250.0
 [node name="Roofs" type="Node3D" parent="."]
 
 [node name="FireEscapes" type="Node3D" parent="."]
+
+[node name="WaysUp" type="Node3D" parent="."]
+
+[node name="AirVents" type="Node3D" parent="."]
 
 [node name="GrindRails" type="Node3D" parent="."]
 

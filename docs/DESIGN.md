@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Grind (riding a grind rail). Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
@@ -31,6 +31,9 @@ built and the details the code relies on.
   it, then drops you down the far side still running. Anything taller or deeper is jumped as
   before; a readied leap still leaps. Numbers: the "Flow vault" group in the movement profile.
   It plays the `vault` animation for now; a lower, quicker one would suit it better.
+- **Free-run at too-tall walls**: head-on at speed (over half run speed), free-run jumps anyway and
+  you scramble up, grabbing any ledge or window sill that comes into reach (steer onto one as you come
+  in). Nothing to grab: you slide back down and stop, and it doesn't try again without a run-up.
 - **Free-run leap**: in free-run your jump button readies a leap while held (0.3 s for a full
   one) and takes off when you let go, or at the next edge or obstacle free-run would jump. A full
   leap is 4.5 m high (a jump is 3) and adds 3 m/s forward: enough to clear the 10 m gap without
@@ -130,7 +133,7 @@ built and the details the code relies on.
 
 | World | Purpose |
 |---|---|
-| `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Five relics come back to a drop-off in the middle of the plaza: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Towers have no way up yet. R takes you back to a roof checkpoint |
+| `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Five relics come back to a drop-off in the middle of the plaza: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up), and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
 | `free_run_line.tscn` | One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Human-scale lab the move tests rely on |
 
@@ -141,9 +144,6 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 ## Ideas not yet in the master doc
 
-- **Street-level launchers** (bounce pads, air vents) to get back up to rooftops; air vents pair
-  with a glider.
-- **Climbable surfaces** (drainpipes, ivy, scaffolding) you can climb at speed.
-- **Free-run at walls too tall to climb head-on**: it stops today; options are an automatic
-  wall-jump or turning to run along the wall. The manual moment there feels a bit clunky.
+- **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
+  ivy, bounce pads; air vents could pair with a glider. Something for the towers.
 - Hold-to-aim toss, players colliding / standing on each other's heads.

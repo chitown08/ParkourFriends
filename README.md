@@ -28,6 +28,8 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall run | Run fast, jump alongside a tall wall, hold forward | |
 | Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
 | Ledge leap | While hanging from a narrow sill, jump | A |
+| Climb a drainpipe (yellow) | Run or jump into it, push toward the wall to climb, pull away to slide down; pulls you onto the roof at the top; jump kicks off, C lets go | |
+| Air vent (orange grate on the pavement) | Step on it: it blows you up beside the building; push toward the wall at the top to grab the roof edge | |
 | Grind rail | Land on it (from above) and it slides you down; push up it to climb (slower), jump to hop along or leave, C to step off | Hands stay free |
 | Launch roof (orange, round the plaza) | Climb on from behind, then run or slide down it fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
@@ -68,6 +70,7 @@ player/states/                    – one script per movement "mode" (state mach
             ground.gd, air.gd     – running; jumping/falling (+ starts ledge grabs)
             hang.gd, climb.gd     – hanging/shimmying; pulling up / vaulting
             vault.gd              – the flow vault: free-run skimming over something low
+            pipe_climb.gd         – climbing a drainpipe (levels/drainpipe.gd)
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
             wall_scramble.gd      – running up a too-tall wall
@@ -83,6 +86,8 @@ levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two c
             drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
             grind_rail.tscn/.gd   – a grind rail (set its end_point)
             ramp.gd               – a launch roof: slide down it fast and its lip launches you
+            drainpipe.gd          – a yellow drainpipe up a wall (climb it: PipeClimb)
+            air_vent.gd           – an orange pavement vent that blows you up to a roof
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands

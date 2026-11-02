@@ -87,9 +87,11 @@ func test_the_slope_gap_needs_a_slide() -> void:
 	expect(respawns == 0 and player.global_position.z < -446.0, "a slide should carry you over the gap, at %s" % player.global_position)
 
 
-func test_free_run_stops_at_the_tall_wall() -> void:
+func test_free_run_has_one_go_at_the_tall_wall_then_stops() -> void:
 	await place(Vector3(0, -14.95, -460), FACE_NORTH)
-	await _free_run_for(120)
+	states_entered.clear()
+	await _free_run_for(240)
+	expect(states_entered.count(&"WallScramble") == 1, "should scramble up it once, went through %s" % [states_entered])
 	expect_state(&"Ground")
 	expect(player.global_position.z > -477.0 and player.global_position.y < -14.0,
 			"free-run shouldn't get over the 12 m wall by itself, at %s" % player.global_position)
@@ -156,6 +158,42 @@ func test_ledge_leaps_up_the_sills() -> void:
 	# ...and from the roof edge (room to stand) it pulls you up.
 	await tap(&"jump")
 	expect(await wait_until_on_top(0.9, 60), "should climb onto the tower roof, at %s" % player.global_position)
+
+
+func test_free_run_scrambles_up_to_a_sill_and_leaps_up_the_tower() -> void:
+	# Lined up with the sills: scramble, grab the first, leap up the rest, climb on.
+	await place(Vector3(0, -14.95, -525), FACE_NORTH)
+	states_entered.clear()
+	Input.action_press(&"free_run")
+	for i in 60 * 6:
+		await ticks(1)
+		if player.global_position.y > 0.9 and player.is_on_floor():
+			break
+	release_all()
+	expect(&"WallScramble" in states_entered and &"Hang" in states_entered, "should scramble and catch a sill, went through %s" % [states_entered])
+	expect(player.global_position.y > 0.9 and player.global_position.z < -540.0, "should end up on the tower roof, at %s" % player.global_position)
+
+
+func test_free_run_at_a_bare_tall_wall_scrambles_once_and_stops() -> void:
+	# Off to the side of the sills: nothing to grab.
+	await place(Vector3(4, -14.95, -525), FACE_NORTH)
+	states_entered.clear()
+	Input.action_press(&"free_run")
+	await ticks(60 * 4)
+	release_all()
+	expect(states_entered.count(&"WallScramble") == 1, "should have one go at scrambling up it, went through %s" % [states_entered])
+	expect(player.global_position.y < -14.0 and player.state.name == &"Ground", "and end up stopped at the foot of it, at %s in %s" % [player.global_position, player.state.name])
+
+
+func test_steer_onto_the_sills_as_you_come_in() -> void:
+	# Heading for the bare wall, but nudging left lines you up with the sills.
+	await place(Vector3(4, -14.95, -525), FACE_NORTH)
+	states_entered.clear()
+	Input.action_press(&"free_run")
+	await hold(&"move_left", 30)
+	await _wait_for(&"Hang", 120)
+	release_all()
+	expect_state(&"Hang")
 
 
 func test_running_off_the_roof_lands_you_on_the_rail() -> void:

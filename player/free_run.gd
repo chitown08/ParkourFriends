@@ -12,6 +12,9 @@ extends Node
 ##   Running down a slope (a roof)        -> crouch (you slide down it, speeding up)
 ##   Wall you can get on top of         -> jump (you vault, climb or scramble up it)
 ##   Wall with a ledge in reach          -> jump (you grab it; jump again to leap up)
+##   Drainpipe ahead                     -> jump (you grab it on the way; free-run climbs it)
+##   Wall too tall, head-on              -> jump (you scramble up it, grabbing any ledge
+##                                          or sill on the way; line one up as you come in)
 ##   Wall at an angle                   -> jump (you wall-run along it)
 ##   Bar at head height, room below     -> crouch (you slide under it)
 ##   Gap with a landing in jumping range -> jump it
@@ -41,6 +44,9 @@ const HEAD_HEIGHT := 1.5
 const MAX_LANDING_DROP := 3.0
 ## A drop this short with ground right below isn't jumped: you just run off it.
 const MAX_STEP_DOWN := 1.5
+## Free-run scrambles up a too-tall wall only when running at it at least this
+## fast (fraction of run speed): after a failed one you're stopped, so it doesn't retry.
+const SCRAMBLE_MIN_SPEED := 0.5
 ## Minimum time between automatic jumps.
 const JUMP_COOLDOWN := 0.3
 ## How far to the side a wall can be for free-run to steer to it and wall-run a gap.
@@ -141,7 +147,12 @@ func _look_ahead() -> void:
 		if _can_get_on_top(low, direction, feet) or _ledge_in_reach(low, direction, feet) \
 				or _is_glancing(low, direction):
 			_press_jump()
-		return # A wall too tall and too head-on: free-run won't help (your call).
+		elif player.get_horizontal_speed() >= player.run_speed * SCRAMBLE_MIN_SPEED:
+			# Too tall and too head-on: jump and scramble up it anyway, grabbing any
+			# ledge or sill that comes into reach. Line up with one on the way in;
+			# miss and you slide back down and stop (no second go without a run-up).
+			_press_jump()
+		return
 
 	if not _wall_ahead(feet + Vector3.UP * HEAD_HEIGHT, direction, reach).is_empty():
 		input.crouch_held = true # Something at head height with room below: slide under.

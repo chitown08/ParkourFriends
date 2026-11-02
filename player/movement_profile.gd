@@ -82,6 +82,11 @@ extends Resource
 @export var wall_scramble_speed := 7.0 ## Running straight up a too-tall wall: how fast (m/s)...
 @export var wall_scramble_time := 0.5 ## ...and for how long (seconds). 7 x 0.5 = 3.5 m.
 
+@export_group("Drainpipes")
+@export var pipe_climb_speed := 5.0 ## Climbing a drainpipe (m/s): slow but sure.
+@export var pipe_slide_speed := 8.0 ## Sliding back down one (pull away from the wall).
+@export var pipe_grab_reach := 0.5 ## How far from a pipe (beyond your body) you can grab it.
+
 @export_group("Grind rails")
 @export var grind_gravity := 25.0 ## How quickly you speed up going down (scaled by how steep the rail is).
 @export var grind_min_speed := 4.0 ## Slowest you ride (e.g. after dropping onto it from a standstill).

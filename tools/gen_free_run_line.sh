@@ -173,13 +173,13 @@ floor SlopeLanding -446 -560 -15
 label LabelSlope 0 5 -375 "SLIDE DOWN (hold C)\\nthen a 14 m gap"
 checkpoint Checkpoint6 0 -15 -452
 
-# --- 9. A 12 m wall head-on: too tall for free-run, climb it by hand ---
+# --- 9. A 12 m wall head-on: free-run scrambles once; steer onto the ledges or climb it by hand ---
 block TallWall -480 6 -15 -3 8 0 5_wall
 # Ledge blocks on its south face (x = -4..4, face at z = -477), zig-zagging up.
 block TallWallLedge1 -476 2 -13 -10 2 -3
 block TallWallLedge2 -476 2 -8 -5 2 -0.5
 relic RelicTallWall 0 -1.4 -480
-label LabelTallWall 0 1 -470 "TOO TALL FOR FREE-RUN:\\nclimb it yourself"
+label LabelTallWall 0 1 -470 "TOO TALL TO SCRAMBLE:\\nsteer onto the ledges or climb"
 
 checkpoint Checkpoint7 0 -15 -495
 

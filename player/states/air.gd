@@ -1,6 +1,7 @@
 extends PlayerState
 ## Jumping or falling. From here you can:
 ## - grab a ledge (push toward a wall near its top),
+## - grab a drainpipe (push toward it),
 ## - wall jump (press jump next to a wall),
 ## - start a wall run (move fast alongside a tall wall).
 ## - scramble up a wall too tall to grab (push straight into it),
@@ -50,9 +51,19 @@ func physics_update(delta: float) -> void:
 	if _try_land_on_rail():
 		return
 	# Ledges and scrambles need your hands free of bulky items.
-	if not player.hands_busy() and (_try_grab_ledge() or _try_wall_scramble()):
+	if not player.hands_busy() and (_try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
 		return
 	_try_wall_run()
+
+
+func _try_grab_pipe() -> bool:
+	if _regrab_timer > 0.0:
+		return false
+	var pipe := player.find_drainpipe()
+	if pipe == null:
+		return false
+	player.change_state(&"PipeClimb", {"pipe": pipe})
+	return true
 
 
 func _try_wall_jump() -> bool:

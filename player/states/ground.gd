@@ -24,7 +24,10 @@ func physics_update(delta: float) -> void:
 	player.move_and_slide()
 	player.face_direction(input.move_direction, delta)
 
-	if jumped:
+	var pipe: Drainpipe = null if jumped or player.hands_busy() else player.find_drainpipe()
+	if pipe:
+		player.change_state(&"PipeClimb", {"pipe": pipe}) # Ran into a drainpipe: climb it.
+	elif jumped:
 		player.change_state(&"Air", {"jumped": true})
 	elif not player.is_on_floor():
 		# Ran off an edge: allow a late "coyote" jump for a moment.

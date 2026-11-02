@@ -42,5 +42,7 @@ ledge_leap_height = 3.2
 ledge_leap_speed = 10.0
 wall_scramble_speed = 4.0
 wall_scramble_time = 0.3
+pipe_climb_speed = 2.5
+pipe_slide_speed = 5.0
 grind_gravity = 20.0
 grind_max_speed = 18.0

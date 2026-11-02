@@ -150,6 +150,9 @@ var wall_run_lean_degrees: float
 var wall_run_runway: float
 var wall_scramble_speed: float
 var wall_scramble_time: float
+var pipe_climb_speed: float
+var pipe_slide_speed: float
+var pipe_grab_reach: float
 var grind_gravity: float
 var grind_min_speed: float
 var grind_max_speed: float
@@ -259,7 +262,7 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb"]
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
 const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
@@ -625,8 +628,8 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind"]:
-		return # A vault, a pull-up or a rail grind doesn't break your flow.
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb"]:
+		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * minf(pack_pace, 1.0) * 0.9:
@@ -859,6 +862,25 @@ func can_stand() -> bool:
 ## and head (so blocks and low ledges don't count). Returns
 ## {"normal": flat direction out of the wall, "point": where it was hit},
 ## or an empty dictionary if there's no wall.
+## The drainpipe you're close enough to grab, pushing toward it (or `toward`,
+## looking `extra` metres further ahead), or null. Only below its top, and only
+## from in front of its wall.
+func find_drainpipe(toward := Vector3.ZERO, extra := 0.0) -> Drainpipe:
+	var push := toward if toward != Vector3.ZERO else input.move_direction
+	push = Vector3(push.x, 0.0, push.z)
+	if push.length() < 0.3:
+		return null
+	for pipe: Drainpipe in get_tree().get_nodes_in_group(&"drainpipes"):
+		var out := pipe.out_of_wall()
+		var offset := global_position - pipe.point_at(global_position.y)
+		if global_position.y < pipe.global_position.y - 0.5 or global_position.y > pipe.top() - 1.0 \
+				or offset.dot(out) < 0.0 or push.normalized().dot(-out) < 0.5:
+			continue
+		if offset.length() <= body_radius + Drainpipe.RADIUS + pipe_grab_reach + extra:
+			return pipe
+	return null
+
+
 func find_wall(tall_only: bool = false) -> Dictionary:
 	var reach := body_radius + wall_detect_distance
 	var best := {}
