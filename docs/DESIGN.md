@@ -154,4 +154,16 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 - **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
   ivy, bounce pads; air vents could pair with a glider. Something for the towers.
+- **Co-op moves that scale with player count** (Nov 2026, the user's favourites):
+  - **Hanging chain**: hanging off a ledge, a friend grabs your feet and hangs from you, and so on;
+    the last one climbs the chain and everyone pulls up after. Each player adds about 2 m of reach.
+  - **Leg-up**: stand at a wall and a friend running at you gets boosted up it, higher than a
+    scramble; two or three of you make a stack to run up.
+  - **Crack the whip**: pack-runners link up in a line; the leader swings round and the line pivots,
+    flinging the last one off fast. A longer line flings harder.
+  - **Drafting**: running in a pack builds flow faster; a bigger pack nudges top speed up.
+  - **Catch**: a friend near an edge catches someone falling short of a jump.
+  - **Human pyramid**: stand on each other's heads (needs players to collide with each other).
+- Hands: only bulky items block hand moves today; zip lines, swing poles and the like could follow
+  the same rule (undecided).
 - Hold-to-aim toss, players colliding / standing on each other's heads.
