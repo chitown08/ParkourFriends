@@ -1,7 +1,8 @@
 extends PlayerState
 ## Running straight up a wall that's too tall to grab from a jump. Starts from
 ## the air (see air.gd) when you push head-on into a tall wall. Lasts
-## wall_scramble_time; grabs the top as soon as it's in reach. Once per wall
+## wall_scramble_time; grabs the top as soon as it's in reach. (Or a hanging
+## friend's feet: a hanging chain.) Once per wall
 ## until you land (like wall jumps).
 ##   Jump       -> kick off the wall
 ##   Let go     -> drop off
@@ -27,6 +28,10 @@ func physics_update(delta: float) -> void:
 	player.move_and_slide()
 	player.face_direction(-_wall_normal, delta)
 
+	var friend := player.find_friend_to_hang_from()
+	if friend:
+		player.change_state(&"ChainHang", {"anchor": friend, "toward_wall": -_wall_normal})
+		return
 	var ledge := player.find_ledge(player.global_position, -_wall_normal)
 	if ledge and ledge.height >= player.hang_min_height:
 		player.change_state(&"Hang", {"ledge": ledge})

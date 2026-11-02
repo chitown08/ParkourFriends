@@ -28,12 +28,15 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Wall run | Run fast, jump alongside a tall wall, hold forward | |
 | Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
 | Ledge leap | While hanging from a narrow sill, jump | A |
+| Lower yourself over an edge (hang from it) | Crouch-walk off it | |
+| Hanging chain (co-op): hang from a hanging friend's feet, then climb everyone onto the top; when the one above pulls up, you move up into their place | Jump or scramble up to their feet; Space to climb the chain; C to let go | A |
 | Climb a drainpipe (yellow) | Run or jump into it, push toward the wall to climb, pull away to slide down; pulls you onto the roof at the top; jump kicks off, C lets go | |
 | Air vent (orange grate on the pavement) | Step on it: it blows you up beside the building; push toward the wall at the top to grab the roof edge | |
 | Grind rail (straight or curved) | Land on it (from above) and its slope slides you downhill (on a curved one: faster down the dips, slower up the rises); push along it to climb or cross a flat stretch (slower), jump to hop along or leave, C to step off | Hands stay free |
 | Launch roof (orange, round the plaza) | Climb on from behind, then run or slide down it fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
+| Solo practice: G while hanging from a ledge makes the buddy hang there too (drop down and climb it) | G | D-pad down |
 | Solo practice: ghost runner on/off (the buddy free-runs with you, to try pack-running) | H | D-pad up |
 | Try on the next outfit (until the mall opens) | O | |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
@@ -71,6 +74,8 @@ player/states/                    – one script per movement "mode" (state mach
             hang.gd, climb.gd     – hanging/shimmying; pulling up / vaulting
             vault.gd              – the flow vault: free-run skimming over something low
             pipe_climb.gd         – climbing a drainpipe (levels/drainpipe.gd)
+            chain_hang.gd         – hanging from a friend's feet (a hanging chain)
+            chain_climb.gd        – climbing up a hanging chain onto the top
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
             wall_scramble.gd      – running up a too-tall wall

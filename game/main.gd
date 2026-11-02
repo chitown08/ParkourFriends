@@ -158,6 +158,7 @@ func set_paused(paused: bool) -> void:
 
 ## Solo only: brings the practice buddy (creating it the first time) to stand
 ## 1.5 m in front of you (within toss reach), facing you. It respawns here if it falls.
+## If you're hanging from a ledge, it hangs there too instead.
 func call_buddy() -> void:
 	if network.is_online() or local_player == null:
 		return
@@ -172,6 +173,13 @@ func call_buddy() -> void:
 	buddy.set_profile(local_player.profile) # The buddy moves the way you do.
 	buddy.respawn()
 	buddy.face_direction(-forward, 1.0)
+	if local_player.state.name == &"Hang":
+		# Hanging: the buddy hangs from the same ledge, for you to drop down and
+		# climb (practising a hanging chain).
+		var ledge: Ledge = local_player.state.ledge()
+		buddy.global_position = buddy.hang_position(ledge)
+		buddy.reset_physics_interpolation()
+		buddy.change_state(&"Hang", {"ledge": ledge})
 
 
 ## Solo only: turns the ghost runner on or off: the practice buddy (called

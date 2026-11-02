@@ -2,6 +2,7 @@ extends PlayerState
 ## Jumping or falling. From here you can:
 ## - grab a ledge (push toward a wall near its top),
 ## - grab a drainpipe (push toward it),
+## - grab a hanging friend's feet (a hanging chain),
 ## - wall jump (press jump next to a wall),
 ## - start a wall run (move fast alongside a tall wall).
 ## - scramble up a wall too tall to grab (push straight into it),
@@ -51,9 +52,21 @@ func physics_update(delta: float) -> void:
 	if _try_land_on_rail():
 		return
 	# Ledges and scrambles need your hands free of bulky items.
-	if not player.hands_busy() and (_try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
+	if not player.hands_busy() and (_try_grab_friend() or _try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
 		return
 	_try_wall_run()
+
+
+## Grabs the feet of a friend hanging just above you (a hanging chain), near
+## the top of a jump or coming down.
+func _try_grab_friend() -> bool:
+	if _regrab_timer > 0.0 or player.velocity.y > player.ledge_grab_max_rise_speed:
+		return false
+	var friend := player.find_friend_to_hang_from()
+	if friend == null:
+		return false
+	player.change_state(&"ChainHang", {"anchor": friend, "toward_wall": friend.facing_direction()})
+	return true
 
 
 func _try_grab_pipe() -> bool:

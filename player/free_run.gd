@@ -21,7 +21,7 @@ extends Node
 ##   Gap with no landing, wall alongside -> jump toward the wall (you wall-run across)
 ##   Gap with nothing to land on        -> keep running (you drop off)
 ##   Ramp                               -> keep running (its lip launches you)
-##   Hanging from a ledge               -> pull up (or leap to the next ledge up)
+##   Hanging from a ledge or a friend   -> pull up (or leap to the next ledge up, or climb the chain)
 ##
 ## Pack-running: friends free-running near you, the way you are heading, pull
 ## you gently along with them (see _run_with_pack()): your heading bends a
@@ -124,7 +124,7 @@ func assist(delta: float) -> void:
 	match player.state.name:
 		&"Ground", &"Slide":
 			_look_ahead()
-		&"Hang":
+		&"Hang", &"ChainHang":
 			_press_jump() # Pull yourself up straight away.
 
 

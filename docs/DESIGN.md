@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault). Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault), ChainHang and ChainClimb (the hanging chain). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
@@ -74,6 +74,13 @@ built and the details the code relies on.
   Sounds are made from code (`game/sfx.gd`) and bursts of bits (dust, the bat's "pop") by
   `game/effects.gd`. One-off effects reach everyone through `Player.show_effect()`.
 
+- **Hanging chain** (co-op): crouch-walk off an edge to hang from it. A friend who jumps or scrambles
+  up to a hanging player's feet (hands within 0.8 m) hangs from them, one per pair of feet, and so on
+  down: each adds about 1.7 m of reach, so a scramble reaches a 10 m top with one friend hanging and
+  11.5 m with two (alone it's about 9). Jump to climb the chain (8 m/s) onto the top; when the one above
+  pulls up or climbs past, you move up into their place; if they let go, you drop. Each player sends
+  `sync_hanging_on` (who they hang from) and hangs from where they see their friend, so it works
+  online. Free-run climbs a chain for you. Solo, G while hanging makes the buddy hang there too.
 - **Grind rails** (`levels/grind_rail.gd`) are straight (`end_point`) or any shape (a `curve`, a Curve3D:
   bends, coaster dips and rises, flat wires). Places on a rail are metres from its start. The Grind state
   works in those: the slope where you are pulls you downhill (`grind_gravity`), pushing along the rail
@@ -155,8 +162,7 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 - **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
   ivy, bounce pads; air vents could pair with a glider. Something for the towers.
 - **Co-op moves that scale with player count** (Nov 2026, the user's favourites):
-  - **Hanging chain**: hanging off a ledge, a friend grabs your feet and hangs from you, and so on;
-    the last one climbs the chain and everyone pulls up after. Each player adds about 2 m of reach.
+  - **Hanging chain**: built (see "How movement is built").
   - **Leg-up**: stand at a wall and a friend running at you gets boosted up it, higher than a
     scramble; two or three of you make a stack to run up.
   - **Crack the whip**: pack-runners link up in a line; the leader swings round and the line pivots,

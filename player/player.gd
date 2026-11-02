@@ -73,6 +73,8 @@ var sync_leap_charge := 0.0
 ## Our velocity across the ground while free-running (zero otherwise), so
 ## friends free-running nearby can run with us as a pack (FreeRun._run_with_pack()).
 var sync_free_run_velocity := Vector3.ZERO
+## The name of the friend we're hanging from (a hanging chain), or "".
+var sync_hanging_on := ""
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
 ## What this player wears: an item name (or "" for nothing) for each slot in
@@ -262,7 +264,11 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb"]
+## Hanging, from a ledge or from a friend: someone can hang from your feet.
+const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang"]
+## How far from a hanging friend's feet your hands can be to grab them.
+const CHAIN_GRAB_REACH := 0.8
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
 const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
@@ -628,7 +634,7 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb"]:
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
@@ -862,6 +868,26 @@ func can_stand() -> bool:
 ## and head (so blocks and low ledges don't count). Returns
 ## {"normal": flat direction out of the wall, "point": where it was hit},
 ## or an empty dictionary if there's no wall.
+## The player (or practice buddy) in this game called `player_name`, or null.
+func find_player(player_name: String) -> Player:
+	return get_parent().get_node_or_null(NodePath(player_name)) as Player if player_name != "" else null
+
+
+## A friend hanging (from a ledge or another friend) whose feet are within
+## reach of your hands, with nobody hanging from them yet, or null.
+func find_friend_to_hang_from() -> Player:
+	var hands := global_position + Vector3.UP * hang_height
+	var taken := {}
+	for other in get_parent().get_children():
+		if other is Player:
+			taken[other.sync_hanging_on] = true
+	for other in get_parent().get_children():
+		if other != self and other is Player and other.sync_state in CHAIN_STATES \
+				and not taken.has(str(other.name)) and other.global_position.distance_to(hands) <= CHAIN_GRAB_REACH:
+			return other
+	return null
+
+
 ## The drainpipe you're close enough to grab, pushing toward it (or `toward`,
 ## looking `extra` metres further ahead), or null. Only below its top, and only
 ## from in front of its wall.

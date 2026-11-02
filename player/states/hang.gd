@@ -17,6 +17,11 @@ func enter(data: Dictionary) -> void:
 	player.refresh_air_moves()
 
 
+## The ledge you're hanging from.
+func ledge() -> Ledge:
+	return _ledge
+
+
 func physics_update(delta: float) -> void:
 	# Move smoothly into the hanging spot (it's usually a little off at first).
 	var target := player.hang_position(_ledge)

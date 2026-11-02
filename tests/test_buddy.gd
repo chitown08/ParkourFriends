@@ -89,3 +89,18 @@ func test_buddy_ignores_checkpoints() -> void:
 	await ticks(20)
 	expect(main.buddy.respawn_position == buddy_respawn, "a checkpoint shouldn't move the buddy's return point")
 	expect(player.respawn_position != Vector3(0, 1.5, -24), "the buddy shouldn't set *your* checkpoint")
+
+
+func test_call_the_buddy_while_hanging_and_it_hangs_there_too() -> void:
+	# Hanging from a ledge (a made-up one in mid-air: only its spot matters here).
+	player.set_profile(SUPERHUMAN)
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	var ledge := Ledge.new()
+	ledge.position = player.global_position + Vector3.UP * 3.0
+	ledge.normal = Vector3.BACK
+	player.global_position = player.hang_position(ledge)
+	player.change_state(&"Hang", {"ledge": ledge})
+	await press_event(&"call_buddy")
+	await ticks(10)
+	expect(main.buddy.state.name == &"Hang", "the buddy should hang from your ledge, in %s" % main.buddy.state.name)
+	expect(main.buddy.global_position.distance_to(player.global_position) < 0.3, "right where you are")

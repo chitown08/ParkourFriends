@@ -18,6 +18,8 @@
 [ext_resource type="PackedScene" path="res://characters/blob/blob_model.tscn" id="16_model"]
 [ext_resource type="Script" path="res://player/states/vault.gd" id="17_vault"]
 [ext_resource type="Script" path="res://player/states/pipe_climb.gd" id="18_pipe"]
+[ext_resource type="Script" path="res://player/states/chain_hang.gd" id="19_chain_hang"]
+[ext_resource type="Script" path="res://player/states/chain_climb.gd" id="20_chain_climb"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -48,6 +50,9 @@ properties/6/replication_mode = 2
 properties/7/path = NodePath(".:sync_free_run_velocity")
 properties/7/spawn = false
 properties/7/replication_mode = 1
+properties/8/path = NodePath(".:sync_hanging_on")
+properties/8/spawn = false
+properties/8/replication_mode = 2
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")
@@ -94,6 +99,12 @@ script = ExtResource("17_vault")
 
 [node name="PipeClimb" type="Node" parent="States"]
 script = ExtResource("18_pipe")
+
+[node name="ChainHang" type="Node" parent="States"]
+script = ExtResource("19_chain_hang")
+
+[node name="ChainClimb" type="Node" parent="States"]
+script = ExtResource("20_chain_climb")
 
 [node name="Crouch" type="Node" parent="States"]
 script = ExtResource("8_crouch")

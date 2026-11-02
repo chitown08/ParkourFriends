@@ -31,7 +31,7 @@ class ErrorCatcher:
 		return taken
 
 
-const TIME_LIMIT_SECONDS := 600.0
+const TIME_LIMIT_SECONDS := 1200.0
 
 
 func _initialize() -> void:

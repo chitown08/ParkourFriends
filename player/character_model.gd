@@ -95,7 +95,7 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 				_play(&"tossed")
 			else:
 				_play(&"jump" if rising else &"fall")
-		&"Hang":
+		&"Hang", &"ChainHang":
 			_play(&"hang")
 		&"Climb":
 			var time := climb_up_time if _climb_animation == &"climb_up" else mantle_time
@@ -106,7 +106,7 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 			_play(&"wall_run_right" if lean > 0.0 else &"wall_run_left", speed / RUN_ANIM_SPEED)
 		&"WallScramble":
 			_play(&"wall_scramble")
-		&"PipeClimb":
+		&"PipeClimb", &"ChainClimb":
 			_play(&"wall_scramble") # Stand-in until there's a climbing animation.
 		&"Grind":
 			_play(&"grind")

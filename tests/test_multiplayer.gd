@@ -152,3 +152,49 @@ func test_friends_free_running_together_are_a_pack() -> void:
 	var puppet := _find(host_main, client_self.name.to_int())
 	expect(puppet.sync_free_run_velocity.length() > 1.0, "the host should know the client is free-running")
 	expect(host_packed and client_packed, "each should run as a pack with the other (host %s, client %s, %.1f m apart)" % [host_packed, client_packed, host_self.global_position.distance_to(client_self.global_position)])
+
+
+func test_climb_a_friend_hanging_from_a_wall() -> void:
+	# A 10 m wall well away from the course (both copies share one physics world).
+	for at_size: Array in [[Vector3(100, -0.5, -10), Vector3(40, 1, 40)], [Vector3(100, 5, -30), Vector3(30, 10, 20)]]:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		shape.shape = BoxShape3D.new()
+		shape.shape.size = at_size[1]
+		body.add_child(shape)
+		host_main.level.add_child(body)
+		body.global_position = at_size[0]
+	await ticks(2)
+	var host_self: Player = host_main.local_player
+	var client_self: Player = client_main.local_player
+	host_main.local_player.set_controls_enabled(false) # Buttons are shared: only the client moves.
+	for who: Player in [host_self, client_self]:
+		who.set_profile(SUPERHUMAN)
+	# The host hangs from the top edge.
+	var feet := Vector3(100, 10 - host_self.hang_height, -20 + host_self.body_radius + 0.05)
+	host_self.global_position = feet
+	host_self.reset_physics_interpolation()
+	host_self.change_state(&"Hang", {"ledge": host_self.find_ledge(feet, Vector3.FORWARD)})
+	# The client runs at the wall, scrambles up to the host's feet and climbs them.
+	client_self.global_position = Vector3(100, 0.05, -10)
+	client_self.reset_physics_interpolation()
+	client_self.camera_rig.yaw = FACE_NORTH
+	await ticks(30)
+	Input.action_press(&"move_forward")
+	for i in 120:
+		await ticks(1)
+		if client_self.global_position.z < -17.5:
+			Input.action_press(&"jump")
+		if client_self.state.name == &"ChainHang":
+			break
+	release_all()
+	expect(client_self.state.name == &"ChainHang" and client_self.sync_hanging_on == str(host_self.name), "the client should hang from the host's feet, %s on %s" % [client_self.state.name, client_self.sync_hanging_on])
+	await ticks(10)
+	var puppet := _find(host_main, client_self.name.to_int())
+	expect(puppet.sync_hanging_on == str(host_self.name), "the host should see the client hanging from them")
+	await tap(&"jump")
+	for i in 90:
+		await ticks(1)
+		if client_self.is_on_floor():
+			break
+	expect(client_self.is_on_floor() and client_self.global_position.y > 9.9, "the client should climb the host onto the top, at %s in %s" % [client_self.global_position, client_self.state.name])
