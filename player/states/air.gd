@@ -125,9 +125,10 @@ func _try_land_on_rail() -> bool:
 		return false # (Going up: you'd pass through it from below.)
 	var feet := player.global_position
 	for rail: GrindRail in player.get_tree().get_nodes_in_group(&"grind_rails"):
-		var t := rail.closest_t(feet)
-		var spot := rail.point_at(t)
-		if t < 0.98 and feet.y > spot.y - 0.3 and spot.distance_to(feet) <= player.grind_land_radius:
+		var along := rail.closest_distance(feet)
+		var spot := rail.point_at_distance(along)
+		# (Not right at an end: you'd only be flung straight off.)
+		if along > 0.3 and along < rail.length() - 0.8 and feet.y > spot.y - 0.3 and spot.distance_to(feet) <= player.grind_land_radius:
 			player.change_state(&"Grind", {"rail": rail})
 			return true
 	return false

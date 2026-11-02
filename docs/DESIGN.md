@@ -74,6 +74,14 @@ built and the details the code relies on.
   Sounds are made from code (`game/sfx.gd`) and bursts of bits (dust, the bat's "pop") by
   `game/effects.gd`. One-off effects reach everyone through `Player.show_effect()`.
 
+- **Grind rails** (`levels/grind_rail.gd`) are straight (`end_point`) or any shape (a `curve`, a Curve3D:
+  bends, coaster dips and rises, flat wires). Places on a rail are metres from its start. The Grind state
+  works in those: the slope where you are pulls you downhill (`grind_gravity`), pushing along the rail
+  works you up to `grind_climb_speed` that way (up a slope or along a flat), and either end flings you
+  off along it. You're placed on the rail each tick, so a moving rail (a trolley, a coaster car's track)
+  carries you. Landing anywhere along one (not right at an end) grabs it. Ideas this opens up: roller
+  coaster tracks, trolley lines, sign edges, wires between buildings.
+
 | Rule the levels depend on (superhuman profile) | Value |
 |---|---|
 | Run speed / top speed with full flow | 10 / 15 m/s |

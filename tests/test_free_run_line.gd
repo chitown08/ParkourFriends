@@ -255,7 +255,7 @@ func test_push_up_a_rail_to_climb_it_slowly() -> void:
 	release_all()
 	await ticks(90)
 	expect_state(&"Grind")
-	expect(player.velocity.dot(rail.down_direction()) > 1.0, "let go and you slide back down, at %.1f m/s" % player.velocity.dot(rail.down_direction()))
+	expect(player.velocity.dot((rail.bottom() - rail.top()).normalized()) > 1.0, "let go and you slide back down, at %.1f m/s" % player.velocity.dot((rail.bottom() - rail.top()).normalized()))
 
 
 func test_hop_up_a_rail_faster_than_climbing_it() -> void:

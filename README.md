@@ -30,7 +30,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Ledge leap | While hanging from a narrow sill, jump | A |
 | Climb a drainpipe (yellow) | Run or jump into it, push toward the wall to climb, pull away to slide down; pulls you onto the roof at the top; jump kicks off, C lets go | |
 | Air vent (orange grate on the pavement) | Step on it: it blows you up beside the building; push toward the wall at the top to grab the roof edge | |
-| Grind rail | Land on it (from above) and it slides you down; push up it to climb (slower), jump to hop along or leave, C to step off | Hands stay free |
+| Grind rail (straight or curved) | Land on it (from above) and its slope slides you downhill (on a curved one: faster down the dips, slower up the rises); push along it to climb or cross a flat stretch (slower), jump to hop along or leave, C to step off | Hands stay free |
 | Launch roof (orange, round the plaza) | Climb on from behind, then run or slide down it fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
@@ -84,7 +84,7 @@ levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two c
             level.gd              – base level script (spawn points)
             checkpoint.tscn/.gd   – drop-in respawn checkpoint
             drop_off.tscn/.gd     – where relics are delivered (team-shared count in game/main.gd)
-            grind_rail.tscn/.gd   – a grind rail (set its end_point)
+            grind_rail.tscn/.gd   – a grind rail: straight (set end_point) or any shape (give it a Curve3D)
             ramp.gd               – a launch roof: slide down it fast and its lip launches you
             drainpipe.gd          – a yellow drainpipe up a wall (climb it: PipeClimb)
             air_vent.gd           – an orange pavement vent that blows you up to a roof
