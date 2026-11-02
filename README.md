@@ -21,6 +21,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Flow (momentum) | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it | |
 | Free-run (auto-parkour: skims low things, slides down sloped roofs; let go for manual control) | Hold Shift | Hold right trigger |
 | Free-run leap: tap jump = normal jump; hold jump to ready a leap, let go (or reach an edge) to take off | Space (hold) | A / Cross (hold) |
+| Pack-running: free-run near friends heading the same way and you're pulled gently along together (pace and heading); steer away or let go to break off | Hold Shift near friends | Hold right trigger |
 | Crouch / slide (crouch while running) | C or Ctrl (hold) | B / Circle |
 | Slide-jump (keeps your speed) | Space during a slide | A |
 | Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
@@ -31,6 +32,7 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Launch roof (orange, round the plaza) | Climb on from behind, then run or slide down it fast; hold free-run jump for a leap at the lip; steer in the air | |
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
+| Solo practice: ghost runner on/off (the buddy free-runs with you, to try pack-running) | H | D-pad up |
 | Try on the next outfit (until the mall opens) | O | |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
 | Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
@@ -147,7 +149,10 @@ click **Host a Game** in one and **Join** (address `127.0.0.1`) in the other.
   sends their owner a `receive_toss` RPC; the owner checks the thrower is nearby and applies the launch. Once
   per air time each player can toss once and be tossed once (`limit_tosses_per_air` turns that off).
 - **Practice buddy** (solo only, `call_buddy` / `buddy_toss_me` in `main.gd`): a grey `Player` with `is_bot` set,
-  run by this computer with no camera or controls, for practising tosses alone.
+  run by this computer with no camera or controls, for practising tosses alone. `ghost_run` makes it a ghost
+  runner (`ghost_of`, `_steer_ghost` in `player.gd`): it free-runs whenever you do, roughly your way.
+- **Pack-running** (`_run_with_pack` in `free_run.gd`): each player sends `sync_free_run_velocity` (zero unless
+  free-running), so everyone's computer can see who is free-running near them and nudge their own heading and pace.
 - **Each player gets their own colour**, chosen by the host and sent to everyone by the `HostSync` node
   (the one synchronizer the host controls, rather than the character's owner).
 - **Not done yet:** playing over the internet (needs port forwarding, a relay, or Steam).

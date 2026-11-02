@@ -133,3 +133,22 @@ func test_a_readied_leap_shows_up_on_the_other_screen() -> void:
 		lowest = minf(lowest, puppet_visual.scale.y)
 	release_all()
 	expect(lowest < 0.85, "host should see the client squash down to leap, lowest scale %.2f" % lowest)
+
+
+func test_friends_free_running_together_are_a_pack() -> void:
+	# Buttons are shared by both copies here, so both free-run the same way.
+	var host_self: Player = host_main.local_player
+	var client_self: Player = client_main.local_player
+	for who: Player in [host_self, client_self]:
+		who.camera_rig.yaw = PI / 2 # West, along the start area.
+	Input.action_press(&"free_run")
+	var host_packed := false
+	var client_packed := false
+	for i in 30:
+		await ticks(1)
+		host_packed = host_packed or host_self.pack_size() == 1
+		client_packed = client_packed or client_self.pack_size() == 1
+	Input.action_release(&"free_run")
+	var puppet := _find(host_main, client_self.name.to_int())
+	expect(puppet.sync_free_run_velocity.length() > 1.0, "the host should know the client is free-running")
+	expect(host_packed and client_packed, "each should run as a pack with the other (host %s, client %s, %.1f m apart)" % [host_packed, client_packed, host_self.global_position.distance_to(client_self.global_position)])

@@ -20,6 +20,12 @@ extends Node
 ##   Ramp                               -> keep running (its lip launches you)
 ##   Hanging from a ledge               -> pull up (or leap to the next ledge up)
 ##
+## Pack-running: friends free-running near you, the way you are heading, pull
+## you gently along with them (see _run_with_pack()): your heading bends a
+## little toward theirs and toward them, and your pace eases up or down so you
+## keep alongside. Nobody leads; it never jumps for you, and steering away
+## (or letting go of free-run) breaks it.
+##
 ## Your own jump button becomes a leap: tap it for a normal jump, or hold it to
 ## ready a leap (higher and longer) and let go to take off. Still holding it
 ## when free-run would jump (an edge, a wall), you take off right there.
@@ -57,6 +63,23 @@ const SLIDE_SLOPE_DEGREES := 10.0
 ## ...when you're heading this squarely down them (1 = straight down).
 const SLIDE_HEADING := 0.5
 
+## Friends within this distance (metres, across) can be your pack...
+const PACK_RADIUS := 8.0
+## ...and this far above or below you.
+const PACK_HEIGHT := 3.0
+## ...if they head within this angle of where you steer (degrees).
+const PACK_HEADING_DEGREES := 45.0
+## How much your heading bends toward the pack's (1 = as much as your own).
+const PACK_STEER := 0.25
+## How much it bends toward the pack sideways, at the edge of PACK_RADIUS.
+const PACK_GATHER := 0.3
+## Your pace eases up to this much faster or slower to keep alongside (0.2 = 20%).
+const PACK_PACE := 0.2
+## How quickly the pace eases (fraction of full change per second).
+const PACK_PACE_RATE := 1.0
+## A gap this long (metres, ahead or behind) gets the full pace change.
+const PACK_CLOSE_UP := 4.0
+
 ## What _try_vault() decided: not one to vault, one to vault in a moment, vaulting.
 enum Vault { NO, SOON, STARTED }
 
@@ -70,12 +93,15 @@ var _jump_hold_timer := 0.0
 var _cooldown_timer := 0.0
 var _seek_direction := Vector3.ZERO
 var _seek_timer := 0.0
+## How many friends are running with you right now (see _run_with_pack()).
+var pack_size := 0
 
 
 ## Called by the Player each tick while free-run is held, after the real
 ## controls have been read and before the movement states run.
 func assist(delta: float) -> void:
 	_cooldown_timer -= delta
+	_run_with_pack(delta)
 	_update_leap(delta)
 	if _jump_hold_timer > 0.0:
 		_jump_hold_timer -= delta
@@ -332,3 +358,42 @@ func _ledge_in_reach(wall: Dictionary, direction: Vector3, feet: Vector3) -> boo
 	var at_the_wall: Vector3 = wall.position + (wall.normal as Vector3) * (player.body_radius + 0.6)
 	var jump_top := Vector3(at_the_wall.x, feet.y + player.jump_height * 0.9, at_the_wall.z)
 	return player.find_ledge(jump_top, direction) != null
+
+
+## Friends free-running close by, heading roughly where you steer, nudge your
+## heading toward theirs (and toward them, sideways) and ease your pace to
+## stay alongside: a little faster if they're ahead or quicker, slower if
+## they're behind. Sets player.pack_pace and pack_size.
+func _run_with_pack(delta: float) -> void:
+	var heading := Vector3(input.move_direction.x, 0.0, input.move_direction.z)
+	var steering := heading.length()
+	pack_size = 0
+	var pack_velocity := Vector3.ZERO
+	var centre := Vector3.ZERO
+	if steering > 0.1:
+		heading /= steering
+		for other: Player in player.get_parent().get_children(): # Everyone in this game.
+			var running := other.sync_free_run_velocity
+			var offset := other.global_position - player.global_position
+			if other == player or running.length() < 1.0 or absf(offset.y) > PACK_HEIGHT \
+					or Vector2(offset.x, offset.z).length() > PACK_RADIUS \
+					or running.normalized().dot(heading) < cos(deg_to_rad(PACK_HEADING_DEGREES)):
+				continue
+			pack_size += 1
+			pack_velocity += running
+			centre += other.global_position
+	var target_pace := 1.0
+	if pack_size > 0:
+		pack_velocity /= pack_size
+		centre /= pack_size
+		var pack_heading := pack_velocity.normalized()
+		var offset := centre - player.global_position
+		offset.y = 0.0
+		var ahead := offset.dot(pack_heading)
+		var sideways := offset - pack_heading * ahead
+		var bent := heading + pack_heading * PACK_STEER + sideways / PACK_RADIUS * PACK_GATHER
+		input.move_direction = Vector3(bent.x, 0.0, bent.z).normalized() * steering
+		# Their speed, plus a bit to close the gap (or minus, if you're ahead).
+		var wanted := pack_velocity.length() * (1.0 + clampf(ahead / PACK_CLOSE_UP, -1.0, 1.0) * PACK_PACE)
+		target_pace = clampf(wanted / player.top_speed(false), 1.0 - PACK_PACE, 1.0 + PACK_PACE)
+	player.pack_pace = move_toward(player.pack_pace, target_pace, PACK_PACE_RATE * delta)

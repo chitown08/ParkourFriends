@@ -90,6 +90,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		call_buddy()
 	elif event.is_action_pressed("buddy_toss_me"):
 		buddy_toss_me()
+	elif event.is_action_pressed("ghost_run"):
+		ghost_run()
 	elif event.is_action_pressed("cycle_outfit") and local_player:
 		local_player.next_outfit()
 
@@ -170,6 +172,22 @@ func call_buddy() -> void:
 	buddy.set_profile(local_player.profile) # The buddy moves the way you do.
 	buddy.respawn()
 	buddy.face_direction(-forward, 1.0)
+
+
+## Solo only: turns the ghost runner on or off: the practice buddy (called
+## beside you if it isn't about) free-runs with you whenever you free-run, so
+## you can try pack-running alone.
+func ghost_run() -> void:
+	if network.is_online() or local_player == null:
+		return
+	if is_instance_valid(buddy) and buddy.ghost_of != null:
+		buddy.ghost_of = null
+		hud.show_message("Ghost runner off")
+		return
+	if not is_instance_valid(buddy) or buddy.global_position.distance_to(local_player.global_position) > Player.GHOST_CATCH_UP:
+		call_buddy()
+	buddy.ghost_of = local_player
+	hud.show_message("Ghost runner on: free-run and it runs with you")
 
 
 ## Solo only: the practice buddy tosses you the way your camera faces, if

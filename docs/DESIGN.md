@@ -35,6 +35,13 @@ built and the details the code relies on.
   one) and takes off when you let go, or at the next edge or obstacle free-run would jump. A full
   leap is 4.5 m high (a jump is 3) and adds 3 m/s forward: enough to clear the 10 m gap without
   full flow. A tap (under 0.1 s) is a normal jump. Numbers: the "Leap" group in the movement profile.
+- **Pack-running**: friends free-running within 8 m (and 3 m up or down), heading within 45° of where
+  you steer, are your pack. Your heading bends a little toward theirs and toward them sideways, and your
+  top speed eases up to 20% faster or slower to keep alongside (their speed, plus a bit to close a gap).
+  No leader: everyone does the same. It never jumps for you, and steering away or letting go of
+  free-run breaks it. The HUD shows "pack of N". Solo, H makes the practice buddy a **ghost runner**
+  that free-runs with you (wandering 15° either side of your heading; it reappears beside you if it
+  falls 20 m behind). Numbers: the PACK_ constants in `player/free_run.gd`.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
 - **The character** is a Meshy model rigged and animated in Mixamo (`characters/blob/`, see

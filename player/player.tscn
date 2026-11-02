@@ -44,6 +44,9 @@ properties/5/replication_mode = 1
 properties/6/path = NodePath(".:sync_outfit")
 properties/6/spawn = false
 properties/6/replication_mode = 2
+properties/7/path = NodePath(".:sync_free_run_velocity")
+properties/7/spawn = false
+properties/7/replication_mode = 1
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")

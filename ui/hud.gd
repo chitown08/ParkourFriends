@@ -33,10 +33,11 @@ func _process(_delta: float) -> void:
 	_items.visible = player != null
 	if player == null:
 		return
-	_stats.text = "State: %s\nSpeed: %.1f m/s  (flow %d%%)\nHeight: %.1f m\n%s - %d player(s)\nFPS: %d" % [
+	_stats.text = "State: %s\nSpeed: %.1f m/s  (flow %d%%)%s\nHeight: %.1f m\n%s - %d player(s)\nFPS: %d" % [
 		player.state.name,
 		player.get_horizontal_speed(),
 		roundi(player.flow * 100.0),
+		"  - pack of %d" % (player.pack_size() + 1) if player.pack_size() > 0 else "",
 		player.global_position.y,
 		network.describe(),
 		_count_people(),

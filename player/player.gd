@@ -58,6 +58,9 @@ var is_local := true
 ## True for the solo practice buddy: run by this computer, but with no
 ## camera and no controls. Set before adding it to the scene.
 var is_bot := false
+## For the practice buddy: the player it ghost-runs with (free-running
+## alongside them whenever they free-run, see _steer_ghost()), or null.
+var ghost_of: Player
 var respawn_position := Vector3.ZERO
 
 # Sent from the controlling player's computer to everyone else (NetworkSync node).
@@ -67,6 +70,9 @@ var sync_state := &"Air"
 var sync_lean := 0.0
 ## How readied a free-run leap is, 0..1 (the body squashes down).
 var sync_leap_charge := 0.0
+## Our velocity across the ground while free-running (zero otherwise), so
+## friends free-running nearby can run with us as a pack (FreeRun._run_with_pack()).
+var sync_free_run_velocity := Vector3.ZERO
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
 ## What this player wears: an item name (or "" for nothing) for each slot in
@@ -106,6 +112,8 @@ var vault_takeoff_time: float
 ## How readied the next jump's leap is (0 = a normal jump, 1 = a full leap).
 ## Set by free-run just before it takes off; used up by start_jump().
 var pending_leap := 0.0
+## Pack-running eases your top speed by this factor (1 = your own pace); set by free-run.
+var pack_pace := 1.0
 var max_fall_speed: float
 var ledge_max_height: float
 var hang_min_height: float
@@ -313,12 +321,15 @@ func _physics_process(delta: float) -> void:
 
 	if is_bot:
 		input.clear()
+		_steer_ghost(delta)
 	else:
 		input.gather(camera_rig.yaw)
-		if input.free_run_held:
-			_free_run.assist(delta)
-		else:
-			_free_run.readying_leap = false
+	if input.free_run_held:
+		_free_run.assist(delta)
+	else:
+		_free_run.readying_leap = false
+		_free_run.pack_size = 0
+		pack_pace = 1.0
 	if input.jump_just_pressed:
 		_jump_buffer_timer = jump_buffer_time
 	else:
@@ -348,6 +359,42 @@ func _physics_process(delta: float) -> void:
 	sync_state = state.name
 	sync_lean = lean
 	sync_tossed_by = tossed_by
+	sync_free_run_velocity = Vector3(velocity.x, 0.0, velocity.z) if input.free_run_held else Vector3.ZERO
+
+
+## The ghost runner wanders this far either side of your heading (degrees)...
+var ghost_wander_degrees := 15.0
+## ...once every this many seconds, so you feel the pack pull you.
+const GHOST_WANDER_PERIOD := 12.0
+## It also heads this far off your heading besides (degrees, + is left).
+var ghost_turn_degrees := 0.0
+## Further than this from you (metres), it catches up: it appears beside you.
+const GHOST_CATCH_UP := 20.0
+## How far beside you it appears.
+const GHOST_SIDE := 2.0
+var _ghost_time := 0.0
+
+
+## The practice buddy as a ghost runner: it free-runs whenever the player it
+## runs with (ghost_of) does, heading roughly their way but wandering a
+## little, so it's a pack of two. Fall far behind (or off a roof) and it
+## appears beside them again.
+func _steer_ghost(delta: float) -> void:
+	if not is_instance_valid(ghost_of) or not ghost_of.input.free_run_held:
+		return
+	_ghost_time += delta
+	var wander := ghost_wander_degrees * sin(TAU * _ghost_time / GHOST_WANDER_PERIOD)
+	input.free_run_held = true
+	input.move_direction = Vector3.FORWARD.rotated(Vector3.UP, ghost_of.camera_rig.yaw + deg_to_rad(wander + ghost_turn_degrees))
+	if global_position.distance_to(ghost_of.global_position) > GHOST_CATCH_UP and ghost_of.is_on_floor():
+		var right := Vector3.RIGHT.rotated(Vector3.UP, ghost_of.camera_rig.yaw)
+		for side: Vector3 in [right, -right]:
+			var spot := ghost_of.global_position + side * GHOST_SIDE + Vector3.UP * 0.05
+			if body_fits(spot) and not raycast(spot, spot + Vector3.DOWN).is_empty():
+				set_checkpoint(spot)
+				respawn()
+				velocity = ghost_of.velocity
+				return
 
 
 ## Moves this puppet toward where its owner says it is.
@@ -503,6 +550,11 @@ func get_horizontal_speed() -> float:
 
 
 ## True while a bulky item (e.g. a glider) is in your hands: no climbing.
+## How many friends are pack-running with you right now.
+func pack_size() -> int:
+	return _free_run.pack_size
+
+
 func hands_busy() -> bool:
 	return not is_bot and items.hands_busy()
 
@@ -561,9 +613,10 @@ func apply_profile() -> void:
 		model.mantle_time = mantle_time
 
 
-## How fast you run right now: normal speed, rising to top speed with flow.
-func top_speed() -> float:
-	return lerpf(run_speed, flow_speed, flow)
+## How fast you run right now: normal speed, rising to top speed with flow,
+## eased by pack-running (unless `paced` is false).
+func top_speed(paced := true) -> float:
+	return lerpf(run_speed, flow_speed, flow) * (pack_pace if paced else 1.0)
 
 
 ## Flow builds while you keep moving at speed, and drains when you stop,
@@ -576,7 +629,7 @@ func _update_flow(delta: float) -> void:
 		return # A vault, a pull-up or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
-	if pushing and speed >= run_speed * 0.9:
+	if pushing and speed >= run_speed * minf(pack_pace, 1.0) * 0.9:
 		flow = minf(flow + delta / flow_build_time, 1.0)
 	elif is_on_floor() and (not pushing or speed < run_speed * 0.5):
 		# Only drains on the ground: bumping into a ledge mid-jump on your way
