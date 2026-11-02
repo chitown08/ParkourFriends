@@ -3,7 +3,8 @@ extends GameTest
 ## yourself over an edge, friends hang from each other's feet, the bottom one
 ## climbs the chain, everyone moves up after. The practice buddy plays the
 ## friend. On a 10 m wall built over a floor high above the test course: too
-## tall to scramble up alone, in reach with one friend hanging from the top.
+## tall for a plain jump and scramble alone (a well-timed readied leap just
+## makes it: see test_reach.gd), in reach with one friend hanging from the top.
 
 const FLOOR_Y := 200.0
 const WALL_HEIGHT := 10.0
@@ -40,10 +41,25 @@ func test_lower_yourself_over_an_edge() -> void:
 	expect(player.facing_direction().dot(Vector3.FORWARD) > 0.9, "facing back toward the wall, facing %s" % player.facing_direction())
 
 
-func test_too_tall_to_scramble_alone() -> void:
+func test_lower_yourself_down_a_friend_to_lengthen_the_chain() -> void:
+	await _hang_at_top(buddy, 0.0)
+	await place(Vector3(0, FLOOR_Y + WALL_HEIGHT + 0.05, WALL_FACE_Z - 2.0), PI) # On top, above them.
+	Input.action_press(&"crouch")
+	Input.action_press(&"move_forward")
+	for i in 120:
+		await ticks(1)
+		if player.state.name == &"ChainHang":
+			break
+	release_all()
+	await ticks(30)
+	expect(player.state.name == &"ChainHang" and player.sync_hanging_on == "Buddy", "you should climb down your friend and hang from their feet, %s on %s" % [player.state.name, player.sync_hanging_on])
+	expect_near(player.global_position.y, buddy.global_position.y - player.hang_height, 0.1, "below them")
+
+
+func test_too_tall_for_a_plain_scramble_alone() -> void:
 	buddy.global_position = Vector3(20, FLOOR_Y + 0.05, 0) # Out of the way.
 	await _run_and_scramble()
-	expect(player.global_position.y < FLOOR_Y + 1.0, "alone, the 10 m wall should be out of reach, at %s" % player.global_position)
+	expect(player.global_position.y < FLOOR_Y + 1.0, "with a plain jump and scramble, the 10 m wall should be out of reach alone, at %s" % player.global_position)
 
 
 func test_scramble_up_to_a_hanging_friend_and_climb_the_chain() -> void:

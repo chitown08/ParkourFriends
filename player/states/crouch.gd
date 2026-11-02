@@ -2,7 +2,8 @@ extends PlayerState
 ## Crouched down, walking slowly. Hold crouch to stay down; you only stand
 ## back up once there's room above you.
 ## Crouch-walk off an edge and you lower yourself over it and hang from it
-## (then a friend can hang from you: a hanging chain).
+## (then a friend can hang from you: a hanging chain). Where a friend already
+## hangs, you climb down them and hang from the bottom of their chain.
 
 
 func enter(_data: Dictionary) -> void:
@@ -44,5 +45,11 @@ func _hang_off_edge() -> bool:
 	if ledge == null or ledge.height < player.hang_min_height:
 		return false
 	player.set_crouched(false)
-	player.change_state(&"Hang", {"ledge": ledge})
+	# A friend already hangs here: climb down them (and anyone below) and hang
+	# from the bottom of the chain, so it reaches further down.
+	var bottom := player.chain_bottom_at(player.hang_position(ledge))
+	if bottom:
+		player.change_state(&"ChainHang", {"anchor": bottom, "toward_wall": -ledge.normal})
+	else:
+		player.change_state(&"Hang", {"ledge": ledge})
 	return true

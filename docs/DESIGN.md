@@ -95,6 +95,7 @@ built and the details the code relies on.
 | Full jump | ~3 m |
 | Highest ledge you can grab from a jump | ~5.6 m |
 | Wall scramble | ~3.5 m up, once per wall until you land |
+| Highest wall you can get up alone (scramble, then grab) | ~8.7 m from a jump, ~10.2 m from a readied leap |
 | Ledge leap (from a hang-only sill) | up to 4.5 m |
 | Toss | ~8 m up, ~8 m/s in the camera's direction |
 | Grind rail top speed (sliding down) / climbing up | 26 / 5 m/s |
@@ -151,6 +152,28 @@ built and the details the code relies on.
 | `rooftop_district.tscn` | Default. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Five relics come back to a drop-off in the middle of the plaza: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up), and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
 | `free_run_line.tscn` | One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Human-scale lab the move tests rely on |
+
+## Reachability (`game/reach/`)
+
+`ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
+and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
+(and drop, and leap, and full-flow jumps), scramble, hanging chain, toss, drainpipe, window sills,
+air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
+or items (`flow`, `glider`), friends who stay behind (a toss), friends already there (a chain).
+`solve()` spreads a group out from the start and gives the most players who can get to each spot;
+`players_needed()` the fewest for one to get there. Numbers come from the movement profile, so
+changing a move changes the answers.
+
+- **A new move or item** = a new rule script, plus a calibration test in `tests/test_reach.gd` that
+  plays the real move just inside and just outside its limit and checks the checker agrees.
+- **Intent tests** (same file) lock in what a level should be: today, every roof but the towers is
+  reachable alone (from the start and from the street), each drainpipe, sill column and vent is a
+  way up, the sky relic needs two players and the others one, and the towers have no way up.
+- **See it:** `tools/reach_view.gd` draws a world from above, each place coloured by the players it
+  needs (green 1, yellow 2, orange 3, red 4+, grey nobody).
+- What it has taught us: a hanging chain brings the rest of a group up after someone gets there
+  another way (a toss, a fire escape...); on its own it can't get the first one up. A readied leap
+  scrambles about 1.5 m higher than a jump (10 m walls are just soloable with one).
 
 ## Testing
 

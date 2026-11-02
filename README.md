@@ -59,6 +59,8 @@ Folders are organized by *feature*: each scene (`.tscn`) sits next to its script
 ```
 game/       main.tscn + main.gd   – menu → solo/host/join, loads the level, spawns players
             network.gd            – hosting, joining and leaving online games
+            reach/reach_map.gd    – the reachability checker: where players can get to, and what it takes
+            reach/rules/          – one script per way of getting around (add one for a new move or item)
 player/     player.tscn           – the character
             character_model.gd    – the model you see: picks and blends its animations
             player.gd             – shared movement helpers, flow, ledge detection, tossing

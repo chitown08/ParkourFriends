@@ -873,6 +873,26 @@ func find_player(player_name: String) -> Player:
 	return get_parent().get_node_or_null(NodePath(player_name)) as Player if player_name != "" else null
 
 
+## The bottom of the hanging chain whose top friend hangs from a ledge at
+## `spot` (their feet there), or null if nobody hangs there.
+func chain_bottom_at(spot: Vector3) -> Player:
+	var at: Player = null
+	for other in get_parent().get_children():
+		if other != self and other is Player and other.sync_state == &"Hang" and other.global_position.distance_to(spot) < CHAIN_GRAB_REACH:
+			at = other
+	var steps := 0
+	while at and steps < 16:
+		var below: Player = null
+		for other in get_parent().get_children():
+			if other != self and other is Player and other.sync_state == &"ChainHang" and other.sync_hanging_on == str(at.name):
+				below = other
+		if below == null:
+			break
+		at = below
+		steps += 1
+	return at
+
+
 ## A friend hanging (from a ledge or another friend) whose feet are within
 ## reach of your hands, with nobody hanging from them yet, or null.
 func find_friend_to_hang_from() -> Player:
