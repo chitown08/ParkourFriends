@@ -401,7 +401,8 @@ func test_you_can_steer_in_the_air_after_a_launch() -> void:
 func test_thirty_relics_and_a_drop_off_in_the_plaza() -> void:
 	var relics: Array[Node] = main.level.get_node("Relics").get_children()
 	expect(relics.size() == 30, "thirty relics, %d" % relics.size())
-	expect(main.hud.get_node("Relics").text == "Relics 0 / 30", "the counter should show them: %s" % main.hud.get_node("Relics").text)
+	# (And 3 from the group run.)
+	expect(main.hud.get_node("Relics").text == "Relics 0 / 33", "the counter should show them: %s" % main.hud.get_node("Relics").text)
 	var drop_off: DropOff = main.level.get_node("DropOff")
 	expect(_flat(drop_off.global_position).length() < 0.1 and absf(drop_off.global_position.y) < 0.1,
 			"the drop-off should be in the middle of the plaza, on the street")

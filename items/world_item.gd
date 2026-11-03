@@ -8,7 +8,7 @@ extends RigidBody3D
 ## and the ItemSync node shares the result with everyone. To make a new kind of
 ## item, make an ItemData (see item_data.gd) and set it as `item`.
 
-enum State { IN_WORLD, HELD, RETURNING, DELIVERED }
+enum State { IN_WORLD, HELD, RETURNING, DELIVERED, LOCKED }
 
 ## How close (metres from your chest) a thrown item must pass to be caught.
 const CATCH_DISTANCE := 1.3
@@ -25,6 +25,9 @@ const MAX_HIT_SPEED := 40.0
 ## works it out when the district is generated), shown as that many rings
 ## round it. 0 shows none.
 @export_range(0, 4) var players_needed := 0
+## Not there yet: a reward still to be earned (e.g. by a group run, see
+## GroupRun), hidden until the host unlocks it (host_unlock()).
+@export var locked := false
 
 ## The rings round a relic: how big, how thick, and how they glow.
 const RING_RADIUS := 0.6
@@ -64,6 +67,8 @@ func _ready() -> void:
 	_build_looks()
 	if item:
 		mass = item.mass
+	if locked:
+		state = State.LOCKED
 	_apply_state()
 
 
@@ -187,6 +192,17 @@ func host_deliver() -> void:
 	state = State.DELIVERED
 	holder_name = ""
 	_thrown_by = ""
+	_apply_state()
+
+
+## A locked reward appears at home, earned (runs on the host).
+func host_unlock() -> void:
+	if state != State.LOCKED:
+		return
+	state = State.IN_WORLD
+	_at_home = true
+	global_transform = _home
+	sync_transform = _home
 	_apply_state()
 
 

@@ -21,6 +21,8 @@
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="20_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
+[ext_resource type="Script" path="res://levels/group_run.gd" id="23_run"]
+[ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -86,6 +88,8 @@ directional_shadow_max_distance = 250.0
 [node name="Relics" type="Node3D" parent="."]
 
 [node name="Items" type="Node3D" parent="."]
+
+[node name="Runs" type="Node3D" parent="."]
 
 [node name="Ground" type="CSGBox3D" parent="Street"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.0, -1.0, -35.0)
@@ -1867,6 +1871,60 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -128.65, 21.0, 58.34)
 [node name="CheckpointSE" parent="Checkpoints" instance=ExtResource("2_checkpoint")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42.0, 21.0, 56.56)
 
+[node name="Run1" type="Node3D" parent="Runs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.07, 17.5, 42.0)
+script = ExtResource("23_run")
+title = "Warm-up"
+
+[node name="Gates" type="Node3D" parent="Runs/Run1"]
+
+[node name="Gate1" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(-0.94, 0, 0.34, 0, 1, 0, -0.34, 0, -0.94, 16.05, -1.7, 44.0)
+script = ExtResource("24_gate")
+
+[node name="Gate2" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(-0.67, 0, -0.74, 0, 1, 0, 0.74, 0, -0.67, 3.05, 5.3, 55.83)
+script = ExtResource("24_gate")
+
+[node name="Gate3" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(-0.5, 0, -0.87, 0, 1, 0, 0.87, 0, -0.5, -31.93, 5.3, 75.86)
+script = ExtResource("24_gate")
+
+[node name="Gate4" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(0.45, 0, -0.89, 0, 1, 0, 0.89, 0, 0.45, -57.93, -1.7, 62.86)
+script = ExtResource("24_gate")
+
+[node name="Gate5" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(0.98, 0, -0.19, 0, 1, 0, 0.19, 0, 0.98, -65.23, 5.3, 26.0)
+script = ExtResource("24_gate")
+
+[node name="Gold1" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 27.06, 6.0, 55.83)
+script = ExtResource("24_gate")
+gold = true
+
+[node name="Gold2" type="Node3D" parent="Runs/Run1/Gates"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -57.93, 13.0, 85.93)
+script = ExtResource("24_gate")
+gold = true
+
+[node name="Rewards" type="Node3D" parent="Runs/Run1"]
+
+[node name="Finish" parent="Runs/Run1/Rewards" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -66.73, 4.5, 26.0)
+item = ExtResource("13_relic")
+locked = true
+
+[node name="Gold1" parent="Runs/Run1/Rewards" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -65.23, 4.5, 26.0)
+item = ExtResource("13_relic")
+locked = true
+
+[node name="Gold2" parent="Runs/Run1/Rewards" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -63.73, 4.5, 26.0)
+item = ExtResource("13_relic")
+locked = true
+
 [node name="DropOff" parent="." instance=ExtResource("14_dropoff")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.0, 0.0)
 
@@ -1895,11 +1953,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 1.0, -210.0)
 item = ExtResource("13_relic")
 players_needed = 1
 
-[node name="RelicBlock24_0" parent="Relics" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -59.95, 22.0, 98.24)
-item = ExtResource("13_relic")
-players_needed = 1
-
 [node name="PillarBlock32_1" type="CSGBox3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.82, 24.5, -28.44)
 use_collision = true
@@ -1910,22 +1963,6 @@ material = ExtResource("4_building")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27.82, 32.5, -28.44)
 item = ExtResource("13_relic")
 players_needed = 4
-
-[node name="PillarBlock23_0" type="CSGBox3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55.03, 23.75, 43.93)
-use_collision = true
-size = Vector3(2.5, 12.5, 2.5)
-material = ExtResource("4_building")
-
-[node name="RelicBlock23_0" parent="Relics" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55.03, 31.0, 43.93)
-item = ExtResource("13_relic")
-players_needed = 3
-
-[node name="RelicBlock24_2" parent="Relics" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.04, 23.5, 99.09)
-item = ExtResource("13_relic")
-players_needed = 2
 
 [node name="PillarBlock00_2" type="CSGBox3D" parent="Pillars"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -162.69, 26.5, -163.55)
@@ -2031,6 +2068,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -195.14, 18.5, -43.38)
 item = ExtResource("13_relic")
 players_needed = 1
 
+[node name="PillarBlock32_0" type="CSGBox3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.09, 30.75, -60.7)
+use_collision = true
+size = Vector3(2.5, 12.5, 2.5)
+material = ExtResource("4_building")
+
+[node name="RelicBlock32_0" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.09, 38.0, -60.7)
+item = ExtResource("13_relic")
+players_needed = 3
+
 [node name="RelicBlock10_0" parent="Relics" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -130.24, 30.5, -200.49)
 item = ExtResource("13_relic")
@@ -2046,17 +2094,6 @@ material = ExtResource("4_building")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110.17, 33.0, -129.73)
 item = ExtResource("13_relic")
 players_needed = 2
-
-[node name="PillarBlock14_1" type="CSGBox3D" parent="Pillars"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -111.88, 24.5, 128.7)
-use_collision = true
-size = Vector3(2.5, 7.0, 2.5)
-material = ExtResource("4_building")
-
-[node name="RelicBlock14_1" parent="Relics" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -111.88, 29.0, 128.7)
-item = ExtResource("13_relic")
-players_needed = 1
 
 [node name="RelicBlock12_3" parent="Relics" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -99.82, 22.0, -28.68)
@@ -2111,8 +2148,29 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 127.95, 18.5, -22.26)
 item = ExtResource("13_relic")
 players_needed = 1
 
+[node name="PillarBlock03_1" type="CSGBox3D" parent="Pillars"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -183.95, 30.0, 58.78)
+use_collision = true
+size = Vector3(2.5, 11.0, 2.5)
+material = ExtResource("4_building")
+
+[node name="RelicBlock03_1" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -183.95, 36.5, 58.78)
+item = ExtResource("13_relic")
+players_needed = 2
+
 [node name="RelicStreet0" parent="Relics" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77.0, 1.0, -96.88)
+item = ExtResource("13_relic")
+players_needed = 1
+
+[node name="RelicStreet1" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -77.0, 1.0, 56.55)
+item = ExtResource("13_relic")
+players_needed = 1
+
+[node name="RelicStreet2" parent="Relics" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77.0, 1.0, 126.88)
 item = ExtResource("13_relic")
 players_needed = 1
 
@@ -2133,27 +2191,27 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, 0.5, 6.0)
 item = ExtResource("22_balloon")
 
 [node name="Glider1" parent="Items" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -179.0, 25.0, 60.34)
-item = ExtResource("18_glider")
-
-[node name="Glider2" parent="Items" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.21, 25.0, -58.07)
-item = ExtResource("18_glider")
-
-[node name="Glider3" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.09, 21.5, -196.68)
 item = ExtResource("18_glider")
 
-[node name="Balloon1" parent="Items" instance=ExtResource("12_item")]
+[node name="Glider2" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.59, 21.5, -160.15)
+item = ExtResource("18_glider")
+
+[node name="Glider3" parent="Items" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 61.71, 21.5, -56.08)
+item = ExtResource("18_glider")
+
+[node name="Balloon1" parent="Items" instance=ExtResource("12_item")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.41, 21.5, 115.0)
 item = ExtResource("22_balloon")
 
 [node name="Balloon2" parent="Items" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 61.71, 21.5, -56.08)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 18.0, -179.0)
 item = ExtResource("22_balloon")
 
 [node name="Balloon3" parent="Items" instance=ExtResource("12_item")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24.41, 21.5, 115.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -39.0, 18.0, -109.0)
 item = ExtResource("22_balloon")
 
 [node name="Crate1" parent="Items" instance=ExtResource("12_item")]
@@ -2384,11 +2442,11 @@ use_collision = true
 size = Vector3(2.4, 1.04, 1.51)
 material = ExtResource("9_vault")
 
-[node name="Block14_1_Vault4" type="CSGBox3D" parent="RoofClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -99.24, 21.59, 132.12)
+[node name="Block14_1_Hut4" type="CSGBox3D" parent="RoofClutter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -103.53, 22.28, 130.84)
 use_collision = true
-size = Vector3(2.62, 1.18, 1.54)
-material = ExtResource("9_vault")
+size = Vector3(3.82, 2.55, 3.84)
+material = ExtResource("4_building")
 
 [node name="Block20_0_Hut1" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.23, 19.03, -169.09)
@@ -2498,34 +2556,34 @@ use_collision = true
 size = Vector3(4.19, 2.78, 2.91)
 material = ExtResource("4_building")
 
-[node name="Block23_0_Vault1" type="CSGBox3D" parent="RoofClutter"]
+[node name="Block23_0_Hut1" type="CSGBox3D" parent="RoofClutter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47.04, 18.78, 36.58)
+use_collision = true
+size = Vector3(3.52, 2.56, 3.47)
+material = ExtResource("4_building")
+
+[node name="Block23_0_Vault2" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44.31, 18.01, 46.34)
 use_collision = true
 size = Vector3(1.68, 1.02, 2.66)
 material = ExtResource("9_vault")
 
-[node name="Block23_0_Hut2" type="CSGBox3D" parent="RoofClutter"]
+[node name="Block23_0_Hut3" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -55.23, 18.96, 55.14)
 use_collision = true
 size = Vector3(3.3, 2.92, 3.39)
 material = ExtResource("4_building")
 
-[node name="Block23_0_Vault3" type="CSGBox3D" parent="RoofClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50.69, 18.05, 31.19)
+[node name="Block23_0_Hut4" type="CSGBox3D" parent="RoofClutter"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60.03, 18.87, 46.52)
 use_collision = true
-size = Vector3(1.45, 1.11, 2.56)
-material = ExtResource("9_vault")
+size = Vector3(3.49, 2.75, 4.18)
+material = ExtResource("4_building")
 
-[node name="Block23_0_Vault4" type="CSGBox3D" parent="RoofClutter"]
+[node name="Block23_0_Vault5" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -47.43, 18.05, 53.5)
 use_collision = true
 size = Vector3(1.53, 1.1, 2.06)
-material = ExtResource("9_vault")
-
-[node name="Block23_0_Vault5" type="CSGBox3D" parent="RoofClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -53.36, 18.05, 24.84)
-use_collision = true
-size = Vector3(2.25, 1.11, 1.65)
 material = ExtResource("9_vault")
 
 [node name="Block23_1_Vault1" type="CSGBox3D" parent="RoofClutter"]
@@ -2541,9 +2599,9 @@ size = Vector3(2.74, 0.99, 1.38)
 material = ExtResource("9_vault")
 
 [node name="Block24_0_Vault1" type="CSGBox3D" parent="RoofClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.5, 21.54, 89.15)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64.51, 21.54, 98.74)
 use_collision = true
-size = Vector3(2.8, 1.09, 1.55)
+size = Vector3(2.59, 1.09, 1.2)
 material = ExtResource("9_vault")
 
 [node name="Block24_2_Vault1" type="CSGBox3D" parent="RoofClutter"]

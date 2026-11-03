@@ -220,6 +220,23 @@ editor or a debug build, not the build friends play.
   a long way), pogo stick (clumsy). Dropped: backpack, parachute, running shoes, roller skates,
   suction-cup hands (for now). Tools are always used by hand: free-run never uses them.
 
+## Group runs (`levels/group_run.gd`, `run_gate.gd`, Nov 2026)
+
+Never a race: no clock, and the route waits for the crew. A run's start is a glowing ring with a
+sign (name, "Relics: 2 of 4", who it's waiting for); with the whole crew (everyone in the game, not
+the practice buddy) in the ring, a 3 s countdown and it's on. Only then do the gates show. White
+gates are the route: each of you goes through the lit one (it becomes your checkpoint), and the next
+only lights once the whole crew is through ("Waiting for Bo" over it). Gold gates are extras put
+somewhere hard: one of you through is enough. When the crew is all through the last white gate, the
+run's relics appear there (locked `WorldItem`s, `locked = true`, until then): one for finishing the
+first time, and one for each gold gate got this run that hadn't been before. Only finishing pays;
+runs can be done again. Someone joining or leaving mid-run ends it (start again together). The host
+decides; each computer reports its own player going through gates. The reachability checker treats
+gates as targets: white gates must take one player, gold gates more (`tests/test_group_run.gd`). The
+district has one so far, "Warm-up" (`gen_district.gd _write_runs()`): ring on the free roof nearest
+the spawn, five white gates hopping roof to roof, two gold gates floating 9.5 m up (a toss).
+Ideas for later: follow the leader, night runs, reversed routes.
+
 ## Worlds
 
 | World | Purpose |
@@ -286,6 +303,8 @@ new rule is checked by breaking it on purpose to make sure a test notices.
   it in with (speed through the drop-off, how many of you are pack-running, how high you come in from).
 - **More ramp shapes**: thin tall ramps built into a building's side, curved launches like a
   section of half-pipe.
+- **Full pipes**: a few round tunnels to run round the walls of at speed (a sewer, a road tunnel,
+  a glass observation tube between skyscrapers). Interiors in general: bridges, building floors.
 - **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
   ivy, bounce pads; air vents could pair with a glider. Something for the towers.
 - **Co-op moves that scale with player count** (Nov 2026, the user's favourites):

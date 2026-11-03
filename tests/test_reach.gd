@@ -251,6 +251,8 @@ func test_what_each_relic_takes() -> void:
 	await _load_district()
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	for target in map.targets:
+		if not target.node is WorldItem or (target.node as WorldItem).locked:
+			continue # (Group runs' gates and rewards: see test_group_run.gd.)
 		var needed := map.players_needed(target, _spawn(map))
 		var rings: int = (target.node as WorldItem).players_needed
 		expect(needed == rings, "%s has %d ring(s), the checker says it takes %d" % [target.name, rings, needed])

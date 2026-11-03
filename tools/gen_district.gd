@@ -119,6 +119,13 @@ const PILLAR_HEIGHTS := {1: 7.0, 2: 11.0, 3: 12.5, 4: 14.0}
 const PILLAR_CLEAR := 7.0
 ## Some relics float this high over a roof (a toss gets you there).
 const FLOAT_HEIGHT := 9.5
+## Group runs (see levels/group_run.gd): white gates this many, this high over
+## the roof you land on and this far in from its edge; gold gates float this high
+## over a roof on the route (a toss gets one of you through).
+const RUN_GATES := 5
+const GATE_HEIGHT := 1.8
+const GATE_IN := 4.0
+const GOLD_GATE_HEIGHT := 9.5
 
 # Ways back up: every flat-roofed building without a fire escape (towers
 # aside) gets a yellow drainpipe or a column of window sills up one wall, and
@@ -171,6 +178,8 @@ func _generate() -> void:
 	var summary := _write_scene()
 	var tiers := {}
 	for relic_name: String in _needed:
+		if not relic_name.begins_with("Relic"):
+			continue # (Group runs' gates and rewards.)
 		tiers[_needed[relic_name]] = tiers.get(_needed[relic_name], 0) + 1
 	print("%s\nRelics by players they take: %s (wanted %s)" % [summary, tiers, RELICS_WANTED])
 	quit()
@@ -223,6 +232,7 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	_write_ramps()
 	_write_markers(buildings)
+	var runs := _write_runs(buildings) # (Before the relics: a run takes its roofs first.)
 	_write_relics(buildings)
 	var relics := 5 + _write_extra_relics(buildings)
 	var items := _write_items(buildings)
@@ -237,9 +247,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d relics, %d items, %d roof things, %d street things (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, relics, items, roof_things, street_things, SEED]
+			staircases, ways_up, vents, rails, relics, items, runs, roof_things, street_things, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -699,6 +709,8 @@ func _write_header() -> void:
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="20_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
+[ext_resource type="Script" path="res://levels/group_run.gd" id="23_run"]
+[ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -763,7 +775,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Relics" type="Node3D" parent="."]
 
-[node name="Items" type="Node3D" parent="."]""")
+[node name="Items" type="Node3D" parent="."]
+
+[node name="Runs" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -986,3 +1000,84 @@ func _at(x: float, y: float, z: float) -> String:
 ## Rounds to the centimetre so the scene file stays tidy.
 func _num(value: float) -> String:
 	return str(snappedf(value, 0.01))
+
+
+## The group runs (see levels/group_run.gd). For now one, "Warm-up": its start
+## ring on the free roof nearest the spawn; then a white gate on each of the
+## next RUN_GATES roofs, hopping across alleys and streets (up two storeys at
+## most: a readied leap), each just in from the edge you land on; two gold gates floating
+## high over roofs on the way; and its relics at the finish. Returns how many.
+func _write_runs(buildings: Array[Dictionary]) -> int:
+	var flat := buildings.filter(func(b: Dictionary) -> bool:
+			return b.roof == "flat" and not b.tower and b.w >= 12.0 and b.d >= 12.0)
+	var free := flat.filter(func(b: Dictionary) -> bool:
+			return not _marker_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).grow(2.0).has_point(spot)) \
+				and not _pillar_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))
+	var spawn_roof := _nearest(flat, _marker_spots[0]) # (The spawn is the first marker.)
+	var start: Dictionary = _nearest(free.filter(func(b: Dictionary) -> bool: return b != spawn_roof), _marker_spots[0])
+	var route: Array[Dictionary] = [start]
+	var gates: Array[Vector3] = []
+	for i in RUN_GATES:
+		var here: Dictionary = route.back()
+		var best: Dictionary = {}
+		var best_score := -INF
+		for b: Dictionary in flat:
+			if b in route or b.storeys - here.storeys > MAX_ALLEY_STEP or here.storeys - b.storeys > 3:
+				continue
+			var across := _gap_between(here, b)
+			if across < 3.0 or across > STREET + 0.5:
+				continue
+			var score: float = _middle(b).distance_to(_middle(start)) - across # On and away, by short hops.
+			if score > best_score:
+				best_score = score
+				best = b
+		if best.is_empty():
+			break
+		route.append(best)
+		# Just in from the edge you land on, over the roof.
+		var r := Rect2(best.x, best.z, best.w, best.d).grow(-GATE_IN)
+		var spot := Vector2(clampf(_middle(here).x, r.position.x, r.end.x), clampf(_middle(here).y, r.position.y, r.end.y))
+		gates.append(Vector3(spot.x, best.storeys * STOREY + GATE_HEIGHT, spot.y))
+	var origin := Vector3(_middle(start).x, start.storeys * STOREY, _middle(start).y)
+	_marker_spots.append(Vector2(origin.x, origin.z))
+	_out.append("\n[node name=\"Run1\" type=\"Node3D\" parent=\"Runs\"]\ntransform = %s\nscript = ExtResource(\"23_run\")\ntitle = \"Warm-up\"" % _at(origin.x, origin.y, origin.z))
+	_out.append("\n[node name=\"Gates\" type=\"Node3D\" parent=\"Runs/Run1\"]")
+	var from := origin
+	for i in gates.size():
+		_gate("Gate%d" % (i + 1), gates[i] - origin, gates[i] - from, false)
+		from = gates[i]
+	var golds := []
+	for i in [1, 3]:
+		if i < route.size():
+			var b: Dictionary = route[i]
+			golds.append(Vector3(_middle(b).x, b.storeys * STOREY + GOLD_GATE_HEIGHT, _middle(b).y))
+	for i in golds.size():
+		_gate("Gold%d" % (i + 1), golds[i] - origin, Vector3.FORWARD, true)
+	_out.append("\n[node name=\"Rewards\" type=\"Node3D\" parent=\"Runs/Run1\"]")
+	var finish: Vector3 = gates.back() if not gates.is_empty() else origin
+	var rewards := ["Finish"]
+	for i in golds.size():
+		rewards.append("Gold%d" % (i + 1))
+	for i in rewards.size():
+		var at := finish - origin + Vector3((i - (rewards.size() - 1) / 2.0) * 1.5, RELIC_HOVER - GATE_HEIGHT, 0.0)
+		_out.append("\n[node name=\"%s\" parent=\"Runs/Run1/Rewards\" instance=ExtResource(\"12_item\")]\ntransform = %s\nitem = ExtResource(\"13_relic\")\nlocked = true" % [
+				rewards[i], _at(at.x, at.y, at.z)])
+	for gate: Vector3 in gates + golds:
+		_marker_spots.append(Vector2(gate.x, gate.z))
+	return 1
+
+
+## A gate at `at` (from its run's start), facing along `along`.
+func _gate(name: String, at: Vector3, along: Vector3, gold: bool) -> void:
+	var yaw := atan2(-along.x, -along.z) # (A gate faces -Z: turned to face along.)
+	var c := cos(yaw)
+	var s := sin(yaw)
+	_out.append("\n[node name=\"%s\" type=\"Node3D\" parent=\"Runs/Run1/Gates\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"24_gate\")%s" % [
+			name, _num(c), _num(-s), _num(s), _num(c), _num(at.x), _num(at.y), _num(at.z), "\ngold = true" if gold else ""])
+
+
+## How far apart two buildings are, seen from above (0 if they touch).
+func _gap_between(a: Dictionary, b: Dictionary) -> float:
+	var dx := maxf(0.0, maxf(a.x - (b.x + b.w), b.x - (a.x + a.w)))
+	var dz := maxf(0.0, maxf(a.z - (b.z + b.d), b.z - (a.z + a.d)))
+	return Vector2(dx, dz).length()

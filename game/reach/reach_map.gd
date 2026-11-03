@@ -28,6 +28,9 @@ const MIN_PLACE_AREA := 4.0
 const JUMP_MARGIN := 1.0
 ## A scramble starts this far below the top of the jump into it (see scramble_height()).
 const SCRAMBLE_LOSS := 0.4
+## Moves at full flow (a flow jump, cracking the whip...) need a run-up: a place
+## at least this long one way (a pillar top won't do).
+const FLOW_RUN_UP := 10.0
 
 
 ## A place (a walkable surface) or a target (a relic) players can get to.
@@ -93,6 +96,8 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0, together := 0) -> void:
 	if from == null or to == null or from == to:
 		return
+	if &"flow" in needs and maxf(from.area.size.x, from.area.size.y) < FLOW_RUN_UP:
+		return # No room to get up to speed.
 	var link := Link.new()
 	link.from = from
 	link.to = to
@@ -210,4 +215,15 @@ func _find_targets(root: Node) -> void:
 		spot.y = item.global_position.y
 		spot.reach = ItemCarrier.touch_range_of(item.item)
 		spot.node = item
+		targets.append(spot)
+	# Group runs' gates too ("RunName/GateName"): you go through them like touching a relic.
+	for node in root.find_children("*", "RunGate", true, false):
+		var gate := node as RunGate
+		var spot := Spot.new()
+		spot.name = "%s/%s" % [gate.get_parent().get_parent().name, gate.name]
+		spot.is_target = true
+		spot.area = Rect2(gate.global_position.x, gate.global_position.z, 0.0, 0.0)
+		spot.y = gate.global_position.y
+		spot.reach = RunGate.RADIUS
+		spot.node = gate
 		targets.append(spot)
