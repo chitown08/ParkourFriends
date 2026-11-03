@@ -1,5 +1,5 @@
 extends ItemAbility
-## The baseball bat: press "use item" (right mouse / left trigger) to swing.
+## The baseball bat: press "use item" (left mouse / left trigger) to swing.
 ## Hits the friend in front of you (sending them a long way, the way your
 ## camera faces) or, if no friend is in reach, the item in front of you.
 ## A hit friend counts as a throw-chain link, like a toss.
@@ -54,3 +54,7 @@ func _item_in_front(player: Player, forward: Vector3) -> WorldItem:
 			best_distance = distance
 			best = other
 	return best
+
+
+func use_hint(player: Player) -> String:
+	return "Swing" if player.state.name in Player.TOSS_STATES else ""

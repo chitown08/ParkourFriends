@@ -5,9 +5,10 @@ extends Node
 ##   F / X       -> pick up the nearest item (if you have room);
 ##                  otherwise drop the item in your hands, or hand it to the
 ##                  friend you're facing; with empty hands, take off your backpack
-##   T / Y       -> throw the item in your hands where the camera points
-##   Tab / D-pad -> swap your hands and your backpack
-##   Right mouse / left trigger -> use the item in your hands
+##   Hold F / X  -> throw the item in your hands where the camera points
+##                  (with empty hands, it's like a quick press)
+##   Right mouse / D-pad right -> swap your hands and your backpack
+##   Left mouse / left trigger -> use the item in your hands
 ## Some items (collectibles) are picked up just by touching them, while they
 ## sit at their home spot.
 ## The host decides what actually happens (see WorldItem); this only asks.
@@ -37,6 +38,8 @@ func physics_update(delta: float) -> void:
 		if in_hands:
 			in_hands.request_throw.rpc_id(1, player.aim_direction())
 			player.show_effect(&"show_action", [&"throw"])
+		else:
+			_interact()
 	if input.switch_item_just_pressed:
 		request_swap.rpc_id(1)
 	_pick_up_touched(delta)
@@ -98,20 +101,21 @@ func friend_in_front() -> Player:
 	return null
 
 
-## What the HUD should prompt, e.g. "F - pick up Crate" (or "" for nothing).
-func prompt_text() -> String:
+## What the item controls would do right now, for the on-screen hint (see
+## Player.control_hints()): [action, words] pairs.
+func control_hints() -> Array:
 	var nearby := nearest_item()
 	if nearby:
-		return "F - pick up %s" % nearby.display_name()
-	var friend := friend_in_front()
+		return [[&"interact", "Pick up %s" % nearby.display_name()]]
 	var in_hands := hands_item()
-	if in_hands:
-		var action := "give %s to your friend" % in_hands.display_name() if friend else "drop %s" % in_hands.display_name()
-		return "F - %s    T - throw it" % action
-	var worn := backpack()
-	if worn:
-		return "F - %s" % ("give your %s to your friend" if friend else "take off your %s") % worn.display_name()
-	return ""
+	var friend := friend_in_front()
+	if in_hands and friend:
+		return [[&"interact", "Give %s" % in_hands.display_name()]]
+	if _ability and _ability_item == in_hands:
+		var use := _ability.use_hint(player)
+		if use:
+			return [[&"use_item", use]]
+	return []
 
 
 ## Swap the items in your hands and your backpack (runs on the host).

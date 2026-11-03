@@ -1028,8 +1028,22 @@ static func whip_boost(place: int) -> float:
 ## joining the end of their line. (The practice buddy takes yours instead.)
 ## Returns true if you did.
 func try_link() -> bool:
-	if state.name not in [&"Ground", &"Slide"] or pack_size() == 0 or hands_busy():
+	var best := link_candidate()
+	if best == null:
 		return false
+	var mine := line()
+	var theirs := best.line()
+	if best.is_bot and best.is_multiplayer_authority() and theirs.size() == 1:
+		best.join_line(mine.back()) # Practice: the buddy takes your hand.
+	else:
+		join_line(theirs.back())
+	return true
+
+
+## The friend whose hand the toss button would take right now (see try_link()), or null.
+func link_candidate() -> Player:
+	if state.name not in [&"Ground", &"Slide"] or pack_size() == 0 or hands_busy():
+		return null
 	var mine := line()
 	var best: Player = null
 	var best_distance := INF
@@ -1045,17 +1059,13 @@ func try_link() -> bool:
 			best = friend
 			best_distance = across
 	if best == null:
-		return false
+		return null
 	var theirs := best.line()
 	if best.is_bot and best.is_multiplayer_authority() and theirs.size() == 1:
-		if mine.size() >= MOST_IN_LINE:
-			return false
-		best.join_line(mine.back()) # Practice: the buddy takes your hand.
-		return true
+		return best if mine.size() < MOST_IN_LINE else null
 	if mine.size() > 1 or theirs.size() >= MOST_IN_LINE:
-		return false # You lead a line already, or theirs is full.
-	join_line(theirs.back())
-	return true
+		return null # You lead a line already, or theirs is full.
+	return best
 
 
 ## Takes `inside`'s hand: you run beside them, on the far side from the leader
@@ -1185,6 +1195,68 @@ func _try_catch() -> void:
 ## The top of a hanging chain: hanging from a ledge, or caught by a friend at it.
 func is_chain_top() -> bool:
 	return sync_state in [&"Hang", &"Caught"]
+
+
+# --- On-screen hints ---------------------------------------------------------------
+
+## A friend this close (metres) counts as "about", for hints about moves together.
+const HINT_FRIEND_NEAR := 15.0
+
+
+## What the controls would do right now, for the on-screen hint: up to two
+## [action, words] pairs, most useful first. (An action of "" is something you
+## do by steering.) Moves first, then items.
+func control_hints() -> Array:
+	var hints := []
+	match state.name:
+		&"Hang":
+			var ledge: Ledge = state.ledge()
+			if ledge.can_stand:
+				hints.append([&"jump", "Climb up"])
+			elif find_ledge_above(ledge):
+				hints.append([&"jump", "Leap up"])
+			hints.append([&"crouch", "Let go"])
+		&"ChainHang", &"Caught":
+			hints.append([&"jump", "Climb up"])
+			hints.append([&"crouch", "Let go"])
+		&"Brace":
+			hints.append([&"toss", "Stop bracing"])
+		&"Linked":
+			hints.append([&"toss", "Let go"])
+		&"Catch", &"PipeClimb":
+			hints.append([&"crouch", "Let go"])
+		&"Grind":
+			hints.append([&"crouch", "Step off"])
+		_:
+			_friend_hints(hints)
+	hints.append_array(items.control_hints())
+	return hints.slice(0, 2)
+
+
+func _friend_hints(hints: Array) -> void:
+	if sync_linked_to == "" and linked_outside() != null:
+		hints.append([&"", "Turn hard away from your line to crack the whip"])
+		return
+	var braced := _find_braced_friend(LEG_UP_REACH) if state.name in LEG_UP_STATES else null
+	if braced:
+		hints.append([&"jump", "Leg-up"])
+		if state.name in [&"Ground", &"Crouch"] and braced.brace_stack().size() < MOST_BRACED:
+			hints.append([&"toss", "Climb on their shoulders"])
+		return
+	if link_candidate():
+		hints.append([&"toss", "Hold hands"])
+	elif state.name in TOSS_STATES and _toss_cooldown_timer <= 0.0 and find_toss_target():
+		hints.append([&"toss", "Toss your friend"])
+	elif state.name in [&"Ground", &"Crouch"] and not hands_busy() and _friend_about() and not find_wall(true).is_empty():
+		hints.append([&"toss", "Brace for a leg-up"])
+
+
+## True if a friend (not just the practice buddy) is within HINT_FRIEND_NEAR.
+func _friend_about() -> bool:
+	for other in get_parent().get_children():
+		if other != self and other is Player and other.global_position.distance_to(global_position) < HINT_FRIEND_NEAR:
+			return true
+	return false
 
 
 # --- Helpers shared by the states --------------------------------------------

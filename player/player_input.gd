@@ -9,6 +9,9 @@ extends Node
 
 ## How much left/right steers you sideways while free-running.
 const FREE_RUN_STEER := 0.6
+## Hold the item button (F / X) this long (seconds) to throw what you hold;
+## a quicker press picks up, drops or hands over.
+const THROW_HOLD := 0.3
 
 ## Which way the player wants to move, in world space, already turned to match
 ## the camera. Flat (y = 0) with a length between 0 and 1.
@@ -24,6 +27,8 @@ var switch_item_just_pressed := false
 var use_item_just_pressed := false
 var use_item_held := false
 var respawn_just_pressed := false
+## How long the item button has been held (seconds), or -1 when it isn't.
+var _item_held := -1.0
 ## Holding the free-run button (Shift / right trigger) with free-run switched on.
 var free_run_held := false
 ## False while a menu is open: gather() then reports "no buttons pressed".
@@ -48,8 +53,7 @@ func gather(camera_yaw: float) -> void:
 	crouch_just_pressed = Input.is_action_just_pressed("crouch")
 	crouch_held = Input.is_action_pressed("crouch")
 	toss_just_pressed = Input.is_action_just_pressed("toss")
-	interact_just_pressed = Input.is_action_just_pressed("interact")
-	throw_item_just_pressed = Input.is_action_just_pressed("throw_item")
+	_gather_item_button()
 	switch_item_just_pressed = Input.is_action_just_pressed("switch_item")
 	use_item_just_pressed = Input.is_action_just_pressed("use_item")
 	use_item_held = Input.is_action_pressed("use_item")
@@ -71,3 +75,18 @@ func clear() -> void:
 	use_item_held = false
 	respawn_just_pressed = false
 	free_run_held = false
+	_item_held = -1.0
+
+
+## The item button: a quick press (on letting go) picks up, drops or hands
+## over; held for THROW_HOLD it throws instead (as soon as it's been held that long).
+func _gather_item_button() -> void:
+	interact_just_pressed = false
+	throw_item_just_pressed = false
+	if Input.is_action_pressed("interact"):
+		var before := maxf(_item_held, 0.0)
+		_item_held = before + 1.0 / Engine.physics_ticks_per_second
+		throw_item_just_pressed = before < THROW_HOLD and _item_held >= THROW_HOLD
+	elif _item_held >= 0.0 or Input.is_action_just_pressed("interact"):
+		interact_just_pressed = _item_held < THROW_HOLD
+		_item_held = -1.0

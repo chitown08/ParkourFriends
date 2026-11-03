@@ -13,7 +13,7 @@ const SUPERHUMAN := preload("res://player/profiles/superhuman.tres")
 const ACTIONS: Array[StringName] = [
 	&"move_forward", &"move_back", &"move_left", &"move_right",
 	&"jump", &"crouch", &"respawn", &"free_run",
-	&"interact", &"throw_item", &"switch_item", &"use_item",
+	&"interact", &"switch_item", &"use_item",
 ]
 
 ## Camera angles: which way "forward" points.
@@ -64,6 +64,8 @@ func hold(action: StringName, tick_count: int) -> void:
 ## Quick press and release.
 func tap(action: StringName) -> void:
 	await hold(action, 3)
+	if action == &"interact":
+		await ticks(1) # (The item button acts when you let go of it.)
 
 
 ## Sends a one-off button press through the game's normal input handling

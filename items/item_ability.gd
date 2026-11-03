@@ -23,6 +23,12 @@ func physics_update(_player: Player, _delta: float) -> void:
 	pass
 
 
-## The player pressed "use item" (right mouse / left trigger).
+## The player pressed "use item" (left mouse / left trigger).
 func use(_player: Player) -> void:
 	pass
+
+
+## What "use item" would do right now, for the on-screen hint (e.g. "Swing"),
+## or "" to say nothing.
+func use_hint(_player: Player) -> String:
+	return ""

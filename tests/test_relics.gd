@@ -59,7 +59,7 @@ func test_throwing_a_relic_into_the_drop_off_delivers_it() -> void:
 	_relic("RelicPillarTop").host_give_to(player)
 	await place(BY_DROP_OFF, FACE_WEST)
 	player.camera_rig.pitch = 0.0
-	await tap(&"throw_item")
+	await hold(&"interact", 20) # Hold F: throw.
 	await ticks(30)
 	expect(main.delivered_relics.has("RelicPillarTop"), "a relic thrown through the drop-off should count")
 

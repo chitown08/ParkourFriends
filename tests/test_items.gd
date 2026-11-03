@@ -126,7 +126,7 @@ func test_throw_sends_it_flying() -> void:
 	await place(BY_CRATE, FACE_NORTH)
 	await tap(&"interact")
 	await place(OPEN_GROUND, FACE_NORTH)
-	await tap(&"throw_item")
+	await hold(&"interact", 20) # Hold F: throw.
 	await ticks(60)
 	expect(crate.state == WorldItem.State.IN_WORLD, "a thrown item is back in the world")
 	expect(crate.global_position.z < OPEN_GROUND.z - 6.0, "it should fly well ahead of you, at %s" % crate.global_position)

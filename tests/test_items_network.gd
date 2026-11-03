@@ -58,7 +58,7 @@ func test_throw_an_item_to_a_friend_who_catches_it() -> void:
 	await _move(host_player, SPOT + Vector3(0, 0, -3))
 	client_player.camera_rig.yaw = 0.0
 	client_player.camera_rig.pitch = 0.0
-	await tap(&"throw_item")
+	await hold(&"interact", 20) # Hold F: throw.
 	await ticks(40)
 	expect(_crate(host_main).holder_name == "1", "the host should catch the crate, holder '%s'" % _crate(host_main).holder_name)
 

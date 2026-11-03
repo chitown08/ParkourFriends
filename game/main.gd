@@ -88,6 +88,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		Settings.music_on = not Settings.music_on
 		Settings.save_to_disk()
 		update_music_volume()
+	elif not Settings.dev_tools:
+		return
 	elif event.is_action_pressed("call_buddy"):
 		call_buddy()
 	elif event.is_action_pressed("buddy_toss_me"):

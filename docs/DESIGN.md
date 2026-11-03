@@ -138,6 +138,19 @@ built and the details the code relies on.
 | Catch (a friend at the edge) | your hands within 1.5 m out, 2 m below the edge: ~1 m lower and ~2 m further than grabbing it yourself |
 | Grind rail top speed (sliding down) / climbing up | 26 / 5 m/s |
 
+## Controls (Nov 2026)
+
+Kept to a handful of buttons, each doing whatever fits where you are: E is everything with a
+friend (toss, brace, shoulders, take a hand), F everything with items (tap: pick up / drop / hand
+over; hold 0.3 s: throw, `PlayerInput.THROW_HOLD`), C crouches, slides and lets go. Many moves have
+no button at all (catch, crack the whip, ledge grabs, wall moves, drainpipes). Free-run stays a
+held button, so you only join a pack when you mean to. On screen: a short card in a corner (F1
+hides it) and one prompt for what a button would do right now, from `Player.control_hints()` (moves)
+and `ItemCarrier.control_hints()` (items, with each ability's `use_hint()`); both name the keyboard
+or gamepad control, whichever was used last (`ui/control_names.gd`). Developer tools (practice
+buddy G / Q / H, outfits O, readout F3) only work when `Settings.dev_tools` is on: running from the
+editor or a debug build, not the build friends play.
+
 ## Multiplayer
 
 - Host and join (ENet, port 7777, up to 4 players). Each player's computer runs their own
@@ -153,7 +166,7 @@ built and the details the code relies on.
 - Items are real physics objects (`WorldItem`, a RigidBody3D). Each kind is an `ItemData`
   resource plus an optional `ItemAbility` script, so new items need no changes to shared code.
 - One slot for everyone: your **hands** (the item's ability runs there). A **backpack** is
-  worn, not held, and adds a second slot to stow an item in (Tab swaps). A new item goes in your
+  worn, not held, and adds a second slot to stow an item in (right click swaps; F held throws). A new item goes in your
   hands and pushes the current one into the backpack; with no room, F drops instead. F with
   empty hands takes the backpack off (what was in it comes out into your hands).
 - **Bulky** items (the crate now, the glider later) need both hands: no ledge grabs, climbs,

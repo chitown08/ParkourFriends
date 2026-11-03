@@ -15,50 +15,50 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 ## Controls
 
-| Action | Keyboard / mouse | Gamepad |
+A short version of this sits in the bottom-left corner while you play (F1 hides it), and a prompt
+at the bottom of the screen says what a button would do right now ("E  Toss your friend",
+"Space  Climb up"). Both name gamepad buttons instead once you use a gamepad.
+
+| Key | Gamepad | Does |
 |---|---|---|
-| Move | WASD | Left stick |
-| Flow (momentum) | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it | |
-| Free-run (auto-parkour: skims low things, slides down sloped roofs; let go for manual control) | Hold Shift | Hold right trigger |
-| Free-run leap: tap jump = normal jump; hold jump to ready a leap, let go (or reach an edge) to take off | Space (hold) | A / Cross (hold) |
-| Pack-running: free-run near friends heading the same way and you're pulled gently along together (pace and heading); steer away or let go to break off. Drafting: a pack builds flow faster and runs a little faster (more friends, faster) | Hold Shift near friends | Hold right trigger |
-| Crouch / slide (crouch while running) | C or Ctrl (hold) | B / Circle |
-| Slide-jump (keeps your speed) | Space during a slide | A |
-| Wall jump (not the same wall twice before landing) | Space in the air next to a wall | A |
-| Wall run | Run fast, jump alongside a tall wall, hold forward | |
-| Wall scramble (once per wall) | Jump into a too-tall wall and keep pushing | |
-| Ledge leap | While hanging from a narrow sill, jump | A |
-| Lower yourself over an edge (hang from it) | Crouch-walk off it | |
-| Hanging chain (co-op): hang from a hanging friend's feet, then climb everyone onto the top; when the one above pulls up, you move up into their place | Jump or scramble up to their feet; Space to climb the chain; C to let go | A |
-| Climb a drainpipe (yellow) | Run or jump into it, push toward the wall to climb, pull away to slide down; pulls you onto the roof at the top; jump kicks off, C lets go | |
-| Air vent (orange grate on the pavement) | Step on it: it blows you up beside the building; push toward the wall at the top to grab the roof edge | |
-| Grind rail (straight or curved) | Land on it (from above) and its slope slides you downhill (on a curved one: faster down the dips, slower up the rises); push along it to climb or cross a flat stretch (slower), jump to hop along or leave, C to step off | Hands stay free |
-| Launch roof (orange, round the plaza) | Climb on from behind, then run or slide down it fast; hold free-run jump for a leap at the lip; steer in the air | |
-| Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
-| Leg-up (co-op): brace at a wall for a friend to run at and jump into; beside a braced friend, climb onto their shoulders (higher stack); press again to stop | E with nobody to toss, next to a wall | Right bumper |
-| Take a leg-up: run at a braced friend and jump (free-run does it for you) | Space | A |
-| Crack the whip (co-op): free-running in a pack, take the nearest friend's hand (join the end of their line); press again, jump or crouch to let go | E in a pack | Right bumper |
-| Crack the whip, as the leader: turn hard your own way (away from the line) and it swings round you, flinging the end one off | Steer hard | Left stick |
-| Catch (co-op): stand at an edge looking out, and a friend falling short of it is caught; jump or crouch lets go | Automatic | |
-| Caught: you hang at the edge from their hands; jump to climb up, crouch to let go | Space / C | A / B |
-| Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
-| Solo practice: G while hanging from a ledge makes the buddy hang there too (drop down and climb it) | G | D-pad down |
-| Solo practice: G while looking at a wall makes the buddy brace at its foot (run at it and jump for a leg-up) | G | D-pad down |
-| Solo practice: G at an edge, looking out over it, makes the buddy stand there beside you (fall short of it and it catches you) | G | D-pad down |
-| Solo practice: ghost runner on/off (the buddy free-runs with you, to try pack-running; E then has it take your hand, to crack the whip) | H | D-pad up |
-| Try on the next outfit (until the mall opens) | O | |
-| Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
-| Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
-| Item: swap your hands and backpack (once you wear one) | Tab | D-pad right |
-| Item: use the one in your hands (glider: hold in the air to glide; bat: swing) | Right mouse | Left trigger |
-| Jump (hold for higher) | Space | A / Cross |
-| Grab a ledge | Jump at a wall while pushing toward it | |
-| Climb up / shimmy / let go (while hanging) | Space / A, D / C or Ctrl | A / left stick / B |
-| Camera | Mouse or arrow keys | Right stick |
-| Respawn at checkpoint | R | Back / Select |
-| Music on/off (volume is in the pause menu) | M | |
-| Pause menu (sensitivity, invert, leave, quit) | Esc | Start |
-| Hide help | F1 | |
+| WASD / mouse | Sticks | Move / look |
+| Space (hold: leap) | A | Jump; hold while free-running to ready a leap |
+| Shift (hold) | RT (hold) | Free-run: auto-parkour, and running as a pack with friends nearby |
+| C or Ctrl | B | Crouch; slide while running; let go of whatever you hold on to |
+| E | RB | Do something with a friend: toss them, brace at a wall for a leg-up (or climb onto a braced friend's shoulders), take a hand in a pack (crack the whip); again to stop |
+| F (hold: throw) | X (hold: throw) | Items: pick up, drop or hand to the friend you face; hold to throw where the camera points |
+| Left click | LT | Use the item in your hands (glider: hold in the air; bat: swing) |
+| Right click | D-pad right | Swap your hands and your backpack (once you wear one) |
+| R | Back | Back to your checkpoint |
+| Esc | Start | Menu (settings, leave, quit) |
+
+**Moves with no button of their own** (the controls above, used in the right place):
+
+| Move | How |
+|---|---|
+| Grab a ledge, climb up, shimmy | Jump at a wall pushing toward it; Space climbs, left/right shimmies, C lets go |
+| Lower yourself over an edge | Crouch-walk off it |
+| Wall jump / wall run / wall scramble | Jump next to a wall / run fast alongside a tall one / jump into a too-tall one and keep pushing |
+| Slide-jump, ledge leap | Jump during a slide (keeps your speed) / jump while hanging from a narrow sill |
+| Drainpipes (yellow), air vents (orange grates), grind rails | Run or jump into a pipe and push to climb / step on a vent / land on a rail |
+| Launch roofs (orange) | Run or slide down them fast; a free-run leap at the lip goes furthest |
+| Flow | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it |
+| Pack-running and drafting | Free-run near friends heading the same way: you're pulled along together, and a bigger pack runs faster |
+| Hanging chain | Jump or scramble up to a hanging friend's feet; Space climbs everyone |
+| Leg-up | Run at a braced friend and jump |
+| Crack the whip | Leading a line of friends holding hands: turn hard away from them |
+| Catch | Stand at an edge looking out: a friend falling short of it is caught |
+
+**Developer keys** (only when running from the editor; off in the build friends play):
+
+| Key | Gamepad | Does |
+|---|---|---|
+| G | D-pad down | Call the practice buddy (at an edge, at a wall or while hanging it sets up a catch, a leg-up or a hanging chain) |
+| Q | LB | The buddy tosses you |
+| H | D-pad up | Ghost runner: the buddy free-runs with you (E then has it take your hand) |
+| O | | Try on the next outfit |
+| M | | Music on/off |
+| F3 | | State, speed, height, network readout |
 
 ## Project layout
 
@@ -117,7 +117,8 @@ items/      world_item.tscn/.gd   – a physical item in the world (the host dec
             models/               – item models (relic_gem.tscn)
             abilities/            – ability scripts (glide.gd, bat_swing.gd, slow_fall.gd, …)
 player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
-ui/         hud.tscn/.gd          – debug overlay (state, speed, height, network, controls)
+ui/         hud.tscn/.gd          – on screen while playing: controls card, button prompt, messages, relics, items (F3: debug readout)
+            control_names.gd      – what each control is called (keyboard or gamepad, whichever you last used)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it, orange grid_ramp = launch off it)
 audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)

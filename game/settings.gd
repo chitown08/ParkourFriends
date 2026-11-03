@@ -21,6 +21,10 @@ static var invert_y := false
 static var music_volume := 0.5
 ## M switches the music off and on.
 static var music_on := true
+## Developer tools: the practice buddy (G, Q, H), trying on outfits (O) and the
+## stats readout (F3). On when running from the editor (or a debug build), off
+## in the build friends play.
+static var dev_tools := OS.is_debug_build()
 
 
 static func load_from_disk() -> void:

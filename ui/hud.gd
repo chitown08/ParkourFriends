@@ -1,5 +1,24 @@
 extends CanvasLayer
-## Debug overlay: shows state/speed/height, network status, and a controls cheat-sheet.
+## What's on screen while playing: a small controls card in a corner, a
+## prompt for what a button would do right now ("E  Toss your friend"),
+## messages, relics found and what you carry. Developers also get a readout of
+## state, speed and so on (F3).
+
+## The controls card: [action, what it does], one line each.
+const CARD := [
+	[&"move", "Move"],
+	[&"look", "Look"],
+	[&"jump", "Jump (hold: leap)"],
+	[&"free_run", "Free-run (hold)"],
+	[&"crouch", "Crouch, slide, let go"],
+	[&"toss", "Friend: toss, brace, hold hands"],
+	[&"interact", "Item: pick up, drop (hold: throw)"],
+	[&"use_item", "Use item"],
+	[&"switch_item", "Swap with backpack"],
+	[&"respawn", "Back to checkpoint"],
+	[&"pause", "Menu"],
+	[&"toggle_help", "Hide this"],
+]
 
 var network: Network
 
@@ -18,21 +37,26 @@ var player: Player:
 			player.tossed_someone.connect(_on_tossed_someone)
 			player.got_tossed.connect(_on_got_tossed)
 
-var _show_help := true
+var _show_card := true
+var _show_stats := false
 
 @onready var _stats: Label = $Stats
-@onready var _help: Label = $Help
+@onready var _card: RichTextLabel = $Card
+@onready var _prompt: Label = $Prompt
 @onready var _message: Label = $Message
 @onready var _relics: Label = $Relics
 @onready var _items: Label = $Items
 
 
 func _process(_delta: float) -> void:
-	_stats.visible = player != null
-	_help.visible = _show_help and player != null
+	_stats.visible = _show_stats and Settings.dev_tools and player != null
+	_card.visible = _show_card and player != null
+	_prompt.visible = player != null
 	_items.visible = player != null
 	if player == null:
 		return
+	_show_card_text()
+	_prompt.text = hint_text(player.control_hints())
 	_stats.text = "State: %s\nSpeed: %.1f m/s  (flow %d%%)%s\nHeight: %.1f m\n%s - %d player(s)\nFPS: %d" % [
 		player.state.name,
 		player.get_horizontal_speed(),
@@ -46,9 +70,36 @@ func _process(_delta: float) -> void:
 	_show_items()
 
 
+func _input(event: InputEvent) -> void:
+	ControlNames.note(event)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_help"):
-		_show_help = not _show_help
+		_show_card = not _show_card
+	elif event.is_action_pressed("toggle_stats") and Settings.dev_tools:
+		_show_stats = not _show_stats
+
+
+## The words for a list of [action, words] hints, e.g. "E  Toss your friend".
+static func hint_text(hints: Array) -> String:
+	var parts := []
+	for hint: Array in hints:
+		var key := ControlNames.key(hint[0])
+		parts.append(("%s  %s" % [key, hint[1]]) if key else hint[1])
+	return "      ".join(parts)
+
+
+func _show_card_text() -> void:
+	var text := "[table=2]"
+	for line: Array in CARD:
+		var key := ControlNames.key(line[0])
+		if key == "" or (line[0] == &"switch_item" and player.items.backpack() == null):
+			continue # (No backpack on: nothing to swap.)
+		text += "[cell][b]%s[/b]   [/cell][cell]%s[/cell]" % [key, line[1]]
+	text += "[/table]"
+	if _card.text != text:
+		_card.text = text
 
 
 ## Shows a short message in the middle of the screen.
@@ -91,15 +142,17 @@ func set_relic_count(found: int, total: int) -> void:
 	_relics.text = "Relics %d / %d" % [found, total]
 
 
-## Shows what you're carrying and what F would do right now.
+## Shows what you're carrying (nothing when your hands are empty).
 func _show_items() -> void:
 	var carrier := player.items
 	var in_hands := carrier.hands_item()
+	if in_hands == null and carrier.backpack() == null:
+		_items.text = ""
+		return
 	var slots := "Hands: %s" % (in_hands.display_name() if in_hands else "-")
 	if in_hands and in_hands.is_bulky():
 		slots += " (both hands: no climbing)"
 	if carrier.backpack():
 		var stowed := carrier.back_item()
 		slots += "    Backpack: %s" % (stowed.display_name() if stowed else "-")
-	var prompt := carrier.prompt_text()
-	_items.text = slots + ("\n" + prompt if prompt else "")
+	_items.text = slots
