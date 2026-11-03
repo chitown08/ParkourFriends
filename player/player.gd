@@ -403,6 +403,10 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_timer -= delta
 
 	_toss_cooldown_timer -= delta
+	_rally_cooldown -= delta
+	if input.rally_just_pressed and _rally_cooldown <= 0.0:
+		_rally_cooldown = RALLY_COOLDOWN
+		show_effect(&"show_rally", [])
 	_leg_up_cooldown_timer -= delta
 	catch_cooldown -= delta
 	grind_cooldown -= delta
@@ -495,6 +499,7 @@ func _follow_network(delta: float) -> void:
 ## landing, leaning sideways on a wall run or a glide's turns, tipped forward
 ## while gliding. Runs on everyone's computer, from what they know of us.
 func _pose_visual(shown_state: StringName, lean_angle: float, leap_charge: float, delta: float) -> void:
+	_show_rally_beam(delta)
 	_watch_for_landing(shown_state, delta)
 	var moved := (global_position - _last_position).slide(Vector3.UP).length() / maxf(delta, 0.001)
 	if moved > TELEPORT_SPEED:
@@ -1244,6 +1249,63 @@ func _try_catch() -> void:
 ## The top of a hanging chain: hanging from a ledge, or caught by a friend at it.
 func is_chain_top() -> bool:
 	return sync_state in [&"Hang", &"Caught"]
+
+
+# --- Rally call ----------------------------------------------------------------------
+# Q / LB: you whistle "over here!" and for a while friends can see where you
+# are, wherever they are: a beam of light in your colour rising from you
+# (seen through buildings), and an arrow at the edge of their screen (the HUD).
+
+## How long a rally call shows (seconds), and how soon you can call again.
+const RALLY_TIME := 6.0
+const RALLY_COOLDOWN := 2.0
+## The beam: this tall, this wide.
+const RALLY_BEAM_HEIGHT := 60.0
+const RALLY_BEAM_RADIUS := 0.25
+
+## Time left on your rally call (on every computer: see show_rally()).
+var rally_timer := 0.0
+var _rally_cooldown := 0.0
+var _rally_beam: MeshInstance3D
+
+
+## Plays a rally call on everyone's screen.
+@rpc("authority", "call_local", "reliable")
+func show_rally() -> void:
+	rally_timer = RALLY_TIME
+	Sfx.play(self, global_position + Vector3.UP * 1.6, &"rally", 4.0)
+	if model.has_move(&"wave"):
+		model.play_action(&"wave")
+
+
+func _show_rally_beam(delta: float) -> void:
+	rally_timer = maxf(rally_timer - delta, 0.0)
+	if rally_timer <= 0.0:
+		if _rally_beam:
+			_rally_beam.visible = false
+		return
+	if _rally_beam == null:
+		var material := StandardMaterial3D.new()
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		material.no_depth_test = true
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = RALLY_BEAM_RADIUS
+		cylinder.bottom_radius = RALLY_BEAM_RADIUS
+		cylinder.height = RALLY_BEAM_HEIGHT
+		cylinder.material = material
+		_rally_beam = MeshInstance3D.new()
+		_rally_beam.name = "RallyBeam"
+		_rally_beam.mesh = cylinder
+		_rally_beam.position = Vector3.UP * (RALLY_BEAM_HEIGHT / 2.0 + 2.2)
+		_rally_beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_rally_beam)
+	_rally_beam.visible = true
+	var colour := BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
+	colour.a = 0.6 * minf(rally_timer, 1.0) # Fades out over the last second.
+	(_rally_beam.mesh.surface_get_material(0) as StandardMaterial3D).albedo_color = colour
 
 
 # --- On-screen hints ---------------------------------------------------------------

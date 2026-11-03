@@ -33,9 +33,9 @@ func after_each() -> void:
 func test_the_controls_card_is_short() -> void:
 	await ticks(2)
 	var card: String = hud.get_node("Card").get_parsed_text()
-	for key in ["WASD", "Space", "Shift", "C", "E", "F", "Click", "R", "Esc"]:
+	for key in ["WASD", "Space", "Shift", "C", "E", "F", "Click", "Q", "R", "Esc"]:
 		expect(card.contains(key), "the card should show %s:\n%s" % [key, card])
-	for gone in ["Tab", "T ", "G ", "H ", "Q ", "F3"]:
+	for gone in ["Tab", "T ", "G ", "H ", "J ", "F3"]:
 		expect(not card.contains(gone), "no %s on the card any more" % gone)
 	expect(not card.contains("Right-click"), "no backpack to swap with: one thing at a time, in your hands")
 	expect(hud.CARD.size() <= 12, "a dozen lines at most")
@@ -133,3 +133,29 @@ func _box(at: Vector3, size: Vector3) -> void:
 	body.add_child(shape)
 	main.level.add_child(body)
 	body.global_position = at
+
+
+func test_q_calls_friends_over() -> void:
+	await place(Vector3(0, 0.05, -40), FACE_NORTH)
+	await tap(&"rally")
+	expect(player.rally_timer > Player.RALLY_TIME - 0.5, "Q starts a rally call, %.1f s left" % player.rally_timer)
+	var beam: MeshInstance3D = player.get_node_or_null("RallyBeam")
+	expect(beam != null and beam.visible, "a beam of light rises from you")
+	var timer := player.rally_timer
+	await tap(&"rally")
+	expect(player.rally_timer < timer, "pressing again straight away doesn't restart it (a short wait between calls)")
+	await ticks(roundi(Player.RALLY_TIME * 60) + 10)
+	expect(player.rally_timer == 0.0 and not beam.visible, "after a few seconds it's gone")
+
+
+func test_a_rally_marker_points_the_way_to_a_friend_off_screen() -> void:
+	await place(Vector3(0, 0.05, -40), FACE_NORTH)
+	var camera := get_viewport().get_camera_3d()
+	var ahead: Array = hud.rally_marker_place(camera, player.global_position + Vector3(0, 2, -30))
+	expect(ahead[1] == "▼", "a friend in view: a marker over them, got %s" % ahead[1])
+	var behind: Array = hud.rally_marker_place(camera, player.global_position + Vector3(-30, 2, 30))
+	var screen := get_viewport().get_visible_rect()
+	expect(behind[1] in ["←", "↙", "↖"] and screen.has_point(behind[0]) and behind[0].x < screen.size.x * 0.2,
+			"behind you to the left: an arrow at the left edge (turn left), %s at %s" % [behind[1], behind[0]])
+	var right: Array = hud.rally_marker_place(camera, player.global_position + Vector3(60, 2, 0))
+	expect(right[1] in ["→", "↘", "↗"] and right[0].x > screen.size.x * 0.8 and screen.has_point(right[0]), "off to your right: an arrow at the right edge, %s at %s" % [right[1], right[0]])

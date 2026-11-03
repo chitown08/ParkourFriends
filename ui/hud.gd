@@ -14,6 +14,7 @@ const CARD := [
 	[&"toss", "Friend: toss, brace, hold hands"],
 	[&"interact", "Item: pick up, drop (hold: throw)"],
 	[&"use_item", "Use item"],
+	[&"rally", "Call friends over"],
 	[&"respawn", "Back to checkpoint"],
 	[&"pause", "Menu"],
 	[&"toggle_help", "Hide this"],
@@ -45,10 +46,20 @@ var _show_stats := false
 @onready var _message: Label = $Message
 @onready var _relics: Label = $Relics
 @onready var _items: Label = $Items
+## Friends' rally calls: a label for each, by their node name.
+var _rallies: Control
+var _rally_labels := {}
+## Rally markers keep this far in from the screen's edges (pixels).
+const RALLY_INSET := 60.0
 
 
 func _ready() -> void:
 	$Version.text = Settings.version()
+	_rallies = Control.new()
+	_rallies.name = "Rallies"
+	_rallies.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_rallies.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_rallies)
 
 
 func _process(_delta: float) -> void:
@@ -72,6 +83,7 @@ func _process(_delta: float) -> void:
 		Engine.get_frames_per_second(),
 	]
 	_show_items()
+	_show_rallies()
 
 
 func _input(event: InputEvent) -> void:
@@ -157,3 +169,58 @@ func _show_items() -> void:
 	if in_hands and in_hands.is_bulky():
 		slots += " (both hands: no climbing)"
 	_items.text = slots
+
+
+## A marker for each friend calling you over (see Player.show_rally()): their
+## name and how far, over their head if you can see them, otherwise at the edge
+## of the screen, pointing their way.
+func _show_rallies() -> void:
+	var camera := get_viewport().get_camera_3d()
+	var seen := {}
+	for other in player.get_parent().get_children():
+		if other == player or not other is Player or other.rally_timer <= 0.0 or camera == null:
+			continue
+		var friend := other as Player
+		var label: Label = _rally_labels.get(friend.name)
+		if label == null:
+			label = Label.new()
+			label.add_theme_font_size_override(&"font_size", 22)
+			label.add_theme_constant_override(&"outline_size", 8)
+			label.add_theme_color_override(&"font_outline_color", Color.BLACK)
+			_rallies.add_child(label)
+			_rally_labels[friend.name] = label
+		seen[friend.name] = true
+		var at := friend.global_position + Vector3.UP * 2.6
+		var place := rally_marker_place(camera, at)
+		var name_text: String = friend.sync_player_name if friend.sync_player_name else "Friend"
+		label.text = "%s %s  %d m" % [place[1], name_text, roundi(player.global_position.distance_to(friend.global_position))]
+		label.modulate = Color(Color.WHITE, minf(friend.rally_timer, 1.0))
+		label.reset_size()
+		label.position = (place[0] as Vector2) - label.size / 2.0
+		label.visible = true
+	for friend_name: StringName in _rally_labels:
+		if not seen.has(friend_name):
+			_rally_labels[friend_name].visible = false
+
+
+## Where on screen a rally marker for a point `at` goes, and its arrow:
+## [position, arrow]. On screen: over the point ("▼"); off screen or behind
+## you: at the edge, pointing the way to turn.
+func rally_marker_place(camera: Camera3D, at: Vector3) -> Array:
+	var screen := get_viewport().get_visible_rect().size
+	var middle := screen / 2.0
+	var area := Rect2(Vector2.ZERO, screen).grow(-RALLY_INSET)
+	var behind := camera.is_position_behind(at)
+	var spot := camera.unproject_position(at)
+	if not behind and area.has_point(spot):
+		return [spot, "▼"]
+	var way := spot - middle
+	if behind:
+		way = -way # (Behind you, the projection comes out mirrored.)
+	if way.length() < 1.0:
+		way = Vector2.DOWN
+	var half := area.size / 2.0
+	var fit := minf(half.x / maxf(absf(way.x), 0.001), half.y / maxf(absf(way.y), 0.001))
+	var arrows := ["→", "↘", "↓", "↙", "←", "↖", "↑", "↗"]
+	var arrow: String = arrows[posmod(roundi(way.angle() / (PI / 4.0)), 8)]
+	return [middle + way * fit, arrow]

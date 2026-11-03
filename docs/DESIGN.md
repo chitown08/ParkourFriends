@@ -144,6 +144,11 @@ built and the details the code relies on.
 
 ## Controls (Nov 2026)
 
+**Rally call** (Q / LB, `Player.show_rally()`): a whistle, and for 6 s a beam of light in your colour
+rises from you (drawn through buildings); friends' HUDs show your name and distance over you, or an
+arrow at the screen's edge pointing the way to turn (`hud.gd rally_marker_place()`). 2 s between
+calls. Plays a `wave` animation if there is one.
+
 **Camera** (`player/camera_rig.gd`): 3.75 m behind you, easing back 1 m for each friend pack-running
 with you (up to three), so you see the crowd.
 
@@ -155,7 +160,7 @@ held button, so you only join a pack when you mean to. On screen: a short card i
 hides it) and one prompt for what a button would do right now, from `Player.control_hints()` (moves)
 and `ItemCarrier.control_hints()` (items, with each ability's `use_hint()`); both name the keyboard
 or gamepad control, whichever was used last (`ui/control_names.gd`). Developer tools (practice
-buddy G / Q / H, outfits O, readout F3) only work when `Settings.dev_tools` is on: running from the
+buddy G / J / H, outfits O, readout F3) only work when `Settings.dev_tools` is on: running from the
 editor or a debug build, not the build friends play.
 
 ## You, your settings, the version (Nov 2026)

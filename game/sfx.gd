@@ -68,6 +68,8 @@ static func _make(sound: StringName) -> AudioStreamWAV:
 			samples = _notes([660.0, 990.0], 0.06, 0.35)
 		&"relic":
 			samples = _notes([784.0, 988.0, 1175.0], 0.07, 0.35)
+		&"rally":
+			samples = _notes([784.0, 1047.0, 784.0, 1047.0], 0.09, 0.45) # A whistle: "over here!"
 		&"delivered":
 			samples = _notes([523.0, 659.0, 784.0, 1047.0], 0.1, 0.4)
 		_:

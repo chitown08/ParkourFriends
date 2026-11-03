@@ -57,6 +57,7 @@ animation on the same rigged character, so they all share one skeleton.
 | File | For | Status | Variant ideas |
 |---|---|---|---|
 | `toss` | boosting a friend with both hands | ✅ | |
+| `wave` | the rally call: waving "over here!" | ⬜ | `wave-whistle` (fingers in mouth) |
 | `tossed` | flying from a toss | ✅ | `tossed-spin`, `tossed-starfish` |
 | `brace` 🔁 | back to a wall, hands cupped for a leg-up | 🟡 `crouch_idle` | |
 | `leg_up` | stepping into cupped hands and being launched | 🟡 `wall_scramble` | |
@@ -88,7 +89,6 @@ These need a little wiring as well as the file (the game doesn't yet tell these 
 | `pipe_slide` | sliding down a drainpipe |
 | `skid` | stopping hard from a run |
 | `cheer` | delivering a relic at the drop-off (`cheer-jump`, `cheer-fist_pump`...) |
-| `wave` | the rally call (shouting "over here!") |
 | `emote-*` | emotes, one day |
 
 The 🟡 and ⬜ rows in the tables above only need their file: the game already plays them when

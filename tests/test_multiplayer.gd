@@ -339,3 +339,15 @@ func test_friends_see_the_same_animation_variant() -> void:
 	await ticks(20)
 	var mine: int = client_main.local_player.sync_move
 	expect(_find(host_main, client_main.multiplayer.get_unique_id()).sync_move == mine, "the host sees the same pick as the client, %d" % mine)
+
+
+func test_a_rally_call_shows_on_the_friends_screen() -> void:
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	client_main.local_player.sync_player_name = "Bo"
+	await ticks(5)
+	await tap(&"rally") # (Both press it: they share a keyboard here.)
+	await ticks(10)
+	var on_host := _find(host_main, client_id)
+	expect(on_host.rally_timer > 0.0 and on_host.get_node("RallyBeam").visible, "the host sees the client's beam")
+	var markers: Array = host_main.hud.get_node("Rallies").get_children().filter(func(label: Label) -> bool: return label.visible)
+	expect(markers.size() == 1 and markers[0].text.contains("Bo"), "and a marker with their name: %s" % [markers.map(func(label: Label) -> String: return label.text)])

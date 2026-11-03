@@ -26,6 +26,7 @@ var throw_item_just_pressed := false
 var use_item_just_pressed := false
 var use_item_held := false
 var respawn_just_pressed := false
+var rally_just_pressed := false
 ## How long the item button has been held (seconds), or -1 when it isn't.
 var _item_held := -1.0
 ## Holding the free-run button (Shift / right trigger) with free-run switched on.
@@ -56,6 +57,7 @@ func gather(camera_yaw: float) -> void:
 	use_item_just_pressed = Input.is_action_just_pressed("use_item")
 	use_item_held = Input.is_action_pressed("use_item")
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")
+	rally_just_pressed = Input.is_action_just_pressed("rally")
 
 
 ## Lets go of every button (used while controls are off, and by the practice buddy).
@@ -71,6 +73,7 @@ func clear() -> void:
 	use_item_just_pressed = false
 	use_item_held = false
 	respawn_just_pressed = false
+	rally_just_pressed = false
 	free_run_held = false
 	_item_held = -1.0
 

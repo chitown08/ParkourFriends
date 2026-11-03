@@ -39,6 +39,7 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | E | RB | Do something with a friend: toss them, brace at a wall for a leg-up (or climb onto a braced friend's shoulders), take a hand in a pack (crack the whip); again to stop |
 | F (hold: throw) | X (hold: throw) | Items: pick up, drop or hand to the friend you face; hold to throw where the camera points |
 | Left click | LT | Use the item in your hands (glider: hold in the air; bat: swing) |
+| Q | LB | Rally call: whistle "over here!" A beam of light rises from you for a few seconds, seen through buildings, and friends get an arrow pointing to you |
 | R | Back | Back to your checkpoint |
 | Esc | Start | Menu: settings, your outfit, leave, quit |
 | F11 | | Fullscreen on/off |
@@ -65,7 +66,7 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | Key | Gamepad | Does |
 |---|---|---|
 | G | D-pad down | Call the practice buddy (at an edge, at a wall or while hanging it sets up a catch, a leg-up or a hanging chain) |
-| Q | LB | The buddy tosses you |
+| J | | The buddy tosses you |
 | H | D-pad up | Ghost runner: the buddy free-runs with you (E then has it take your hand) |
 | O | | Try on the next outfit |
 | M | | Music on/off |

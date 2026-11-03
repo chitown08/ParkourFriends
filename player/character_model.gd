@@ -223,6 +223,11 @@ func pick(move: StringName) -> StringName:
 	return choices[_variant % choices.size()] if choices.size() > 1 else move
 
 
+## True if there's an animation for `move` (its own, not a stand-in).
+func has_move(move: StringName) -> bool:
+	return _variants.has(String(move))
+
+
 ## Every animation for `move` (for tests).
 static func variants_of(move: String) -> Array:
 	return _variants.get(move, [])
