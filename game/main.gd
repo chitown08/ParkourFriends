@@ -23,6 +23,12 @@ const WORLDS := {
 	"test_course": "res://levels/test_course.tscn",
 }
 const DEFAULT_WORLD := "rooftop_district"
+## What the start menu calls each world: the playground, then the training grounds.
+const WORLD_NAMES := {
+	"rooftop_district": "Rooftop District",
+	"free_run_line": "Training: Free-Run Line",
+	"test_course": "Training: Test Course",
+}
 ## Movement feels you can pick in the pause menu.
 const PROFILES := {
 	"superhuman": preload("res://player/profiles/superhuman.tres"),
@@ -59,7 +65,7 @@ func _ready() -> void:
 	players.child_entered_tree.connect(_on_player_added)
 	world.child_entered_tree.connect(_on_world_added)
 
-	menu.set_worlds(WORLDS.keys(), DEFAULT_WORLD)
+	menu.set_worlds(WORLDS.keys(), DEFAULT_WORLD, WORLD_NAMES)
 	menu.solo_pressed.connect(func() -> void: start_solo())
 	menu.host_pressed.connect(func() -> void: start_host())
 	menu.join_pressed.connect(start_join)

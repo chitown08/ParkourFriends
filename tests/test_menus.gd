@@ -41,3 +41,14 @@ func test_arrow_keys_turn_camera_and_movement_follows() -> void:
 
 func test_solo_player_is_first_colour() -> void:
 	expect(player.color_index == 0, "solo player should get colour 0")
+
+
+func test_the_playground_comes_first_then_the_training_grounds() -> void:
+	main.leave_game()
+	await ticks(5)
+	var worlds: OptionButton = main.menu.get_node("%World")
+	expect(worlds.get_item_text(worlds.selected) == "Rooftop District", "the playground is picked to start with, '%s'" % worlds.get_item_text(worlds.selected))
+	var names := []
+	for i in worlds.item_count:
+		names.append(worlds.get_item_text(i))
+	expect("Training: Free-Run Line" in names and "Training: Test Course" in names, "the other worlds are training grounds: %s" % [names])

@@ -106,6 +106,19 @@ const SKY_RELIC_HEIGHT := 18.0
 const RELIC_HOVER := 1.0
 ## How far in from the roof's edge the far-corner relic sits.
 const CORNER_RELIC_IN := 6.0
+## How many relics the district gets for each number of players they take,
+## counting the five above. The generator tries a relic on spots all over (see
+## _relic_candidates()), asks the reachability checker what each takes, and
+## keeps this many of each (the rings round a relic say which).
+const RELICS_WANTED := {1: 14, 2: 8, 3: 5, 4: 3}
+## Relics on pillars stand on roofs: this wide, and this tall for what they're
+## meant to take (the checker has the last word).
+const PILLAR := 2.5
+const PILLAR_HEIGHTS := {1: 7.0, 2: 11.0, 3: 12.5, 4: 14.0}
+## Roof clutter keeps this far from a pillar (it'd be a step up it).
+const PILLAR_CLEAR := 7.0
+## Some relics float this high over a roof (a toss gets you there).
+const FLOAT_HEIGHT := 9.5
 
 # Ways back up: every flat-roofed building without a fire escape (towers
 # aside) gets a yellow drainpipe or a column of window sills up one wall, and
@@ -127,6 +140,12 @@ var _fire_escapes: Array[Rect2] = []
 var _rails: Array = []
 ## The plaza (where the avenues cross) is the origin of the world.
 var _plaza_middle := 0.0
+## The relics beyond the five fixed ones, as dictionaries (see _relic_candidates()).
+var _extra_relics: Array = []
+## What each relic takes (players), by name, once measured: written as its rings.
+var _needed := {}
+## Where the pillars stand (clutter keeps clear).
+var _pillar_spots: Array[Vector2] = []
 var _out := PackedStringArray()
 
 
@@ -136,11 +155,46 @@ func _init() -> void:
 		_starts.append(at)
 		at += BLOCK + (AVENUE if i == AVENUE_AFTER else STREET)
 	_plaza_middle = _starts[AVENUE_AFTER] + BLOCK + AVENUE / 2.0
+	_generate.call_deferred() # (Once the scene tree is up: measuring needs it.)
 
+
+## Writes the district three times: first with a relic on every spot that might
+## hold one, to ask the reachability checker what each takes; then with just
+## the ones picked to make up RELICS_WANTED; then once more, marking each with
+## the players it takes (players_needed: its rings).
+func _generate() -> void:
+	_extra_relics = _relic_candidates(_all_buildings())
+	_write_scene()
+	_extra_relics = _pick_relics(_measure())
+	_write_scene()
+	_needed = _measure()
+	var summary := _write_scene()
+	var tiers := {}
+	for relic_name: String in _needed:
+		tiers[_needed[relic_name]] = tiers.get(_needed[relic_name], 0) + 1
+	print("%s\nRelics by players they take: %s (wanted %s)" % [summary, tiers, RELICS_WANTED])
+	quit()
+
+
+## Every building in the district (each call builds them afresh: writing the
+## scene marks them, e.g. which has a fire escape).
+func _all_buildings() -> Array[Dictionary]:
 	var buildings: Array[Dictionary] = []
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			buildings.append_array(_block(bx, bz))
+	return buildings
+
+
+## Writes the scene file (with _extra_relics), and says what's in it.
+func _write_scene() -> String:
+	_out.clear()
+	_rail_paths.clear()
+	_marker_spots.clear()
+	_fire_escapes.clear()
+	_rails.clear()
+	_pillar_spots.clear()
+	var buildings := _all_buildings()
 
 	_write_header()
 	_write_ground()
@@ -170,6 +224,8 @@ func _init() -> void:
 	_write_ramps()
 	_write_markers(buildings)
 	_write_relics(buildings)
+	var relics := 5 + _write_extra_relics(buildings)
+	var items := _write_items(buildings)
 	var roof_things := 0
 	for b in buildings:
 		roof_things += _write_roof_clutter(b)
@@ -181,10 +237,24 @@ func _init() -> void:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	print("Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d roof things, %d street things (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d relics, %d items, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, roof_things, street_things, SEED])
-	quit()
+			staircases, ways_up, vents, rails, relics, items, roof_things, street_things, SEED]
+
+
+## What the reachability checker says each relic in the scene just written
+## takes (players, from the spawn; 0 if nobody can get there), by name.
+func _measure() -> Dictionary:
+	var level := (ResourceLoader.load(OUTPUT, "", ResourceLoader.CACHE_MODE_IGNORE) as PackedScene).instantiate() as Node3D
+	root.add_child(level)
+	var map := ReachMap.build(level, load("res://player/profiles/superhuman.tres"))
+	var start := map.place_under(level.get_node("SpawnPoint").global_position + Vector3.UP)
+	var needed := {}
+	for target in map.targets:
+		needed[target.name] = map.players_needed(target, start, [&"flow"], 6)
+	root.remove_child(level)
+	level.free()
+	return needed
 
 
 ## Splits block (bx, bz) into buildings and picks their heights.
@@ -505,6 +575,9 @@ func _clear_of(footprint: Rect2, placed: Array[Rect2]) -> bool:
 	for spot in _marker_spots:
 		if footprint.grow(MARKER_CLEAR).has_point(spot):
 			return false
+	for spot in _pillar_spots:
+		if footprint.grow(PILLAR_CLEAR).has_point(spot):
+			return false
 	var middle := footprint.get_center()
 	var reach := footprint.size.length() / 2.0 + RAIL_CLEAR_WIDTH
 	for path: Array in _rail_paths:
@@ -622,12 +695,17 @@ func _write_header() -> void:
 [ext_resource type="Resource" path="res://items/data/relic_sky.tres" id="15_relic_sky"]
 [ext_resource type="Script" path="res://levels/drainpipe.gd" id="16_pipe"]
 [ext_resource type="Script" path="res://levels/air_vent.gd" id="17_vent"]
+[ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
+[ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
+[ext_resource type="Resource" path="res://items/data/crate.tres" id="20_crate"]
+[ext_resource type="Resource" path="res://items/data/backpack.tres" id="21_backpack"]
+[ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
-sky_top_color = Color(0.32, 0.5, 0.78, 1)
-sky_horizon_color = Color(0.7, 0.76, 0.84, 1)
-ground_bottom_color = Color(0.45, 0.55, 0.7, 1)
-ground_horizon_color = Color(0.7, 0.76, 0.84, 1)
+sky_top_color = Color(0.22, 0.46, 0.85, 1)
+sky_horizon_color = Color(0.78, 0.86, 0.95, 1)
+ground_bottom_color = Color(0.5, 0.52, 0.56, 1)
+ground_horizon_color = Color(0.78, 0.86, 0.95, 1)
 
 [sub_resource type="Sky" id="Sky_main"]
 sky_material = SubResource("ProceduralSkyMaterial_sky")
@@ -635,12 +713,14 @@ sky_material = SubResource("ProceduralSkyMaterial_sky")
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 2
 sky = SubResource("Sky_main")
-ambient_light_source = 3
+ambient_light_source = 2
+ambient_light_color = Color(0.85, 0.88, 0.92, 1)
+ambient_light_energy = 0.55
 tonemap_mode = 2
 ssao_enabled = true
 fog_enabled = true
-fog_light_color = Color(0.7, 0.76, 0.84, 1)
-fog_density = 0.0015
+fog_light_color = Color(0.82, 0.88, 0.95, 1)
+fog_density = 0.001
 
 [node name="RooftopDistrict" type="Node3D"]
 script = ExtResource("1_level")
@@ -652,6 +732,7 @@ environment = SubResource("Environment_main")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.383, 0.3214, 0, 0.6428, 0.766, -0.5, -0.6634, 0.5567, 0, 120, 0)
+light_energy = 1.0
 shadow_enabled = true
 directional_shadow_max_distance = 250.0
 
@@ -679,7 +760,11 @@ directional_shadow_max_distance = 250.0
 
 [node name="Labels" type="Node3D" parent="."]
 
-[node name="Relics" type="Node3D" parent="."]""")
+[node name="Pillars" type="Node3D" parent="."]
+
+[node name="Relics" type="Node3D" parent="."]
+
+[node name="Items" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -703,8 +788,6 @@ func _write_markers(buildings: Array[Dictionary]) -> void:
 	_marker_spots.append(Vector2(spawn.x, spawn.z))
 	_out.append("\n[node name=\"SpawnPoint\" type=\"Marker3D\" parent=\".\"]\ntransform = %s" % _at(spawn.x, spawn.y + 0.05, spawn.z))
 	_checkpoint("CheckpointSpawn", spawn + Vector3(0, 0, 4))
-	_label("LabelSpawn", spawn + Vector3(-3, 3, -2),
-			"ROOFTOP DISTRICT (seed %d)\\nalleys 5 m, streets 10 m, avenues 24 m\\nR = back to your last checkpoint" % SEED)
 	var quarters := {"NW": Vector2i(1, 1), "NE": Vector2i(3, 1), "SW": Vector2i(1, 3), "SE": Vector2i(3, 3)}
 	for quarter: String in quarters:
 		var in_block := buildings.filter(func(b: Dictionary) -> bool:
@@ -752,8 +835,113 @@ func _write_relics(buildings: Array[Dictionary]) -> void:
 func _relic(name: String, at: Vector3, on_roof := false, data := "13_relic") -> void:
 	if on_roof:
 		_marker_spots.append(Vector2(at.x, at.z))
-	_out.append("\n[node name=\"%s\" parent=\"Relics\" instance=ExtResource(\"12_item\")]\ntransform = %s\nitem = ExtResource(\"%s\")" % [
-			name, _at(at.x, at.y, at.z), data])
+	_out.append("\n[node name=\"%s\" parent=\"Relics\" instance=ExtResource(\"12_item\")]\ntransform = %s\nitem = ExtResource(\"%s\")\nplayers_needed = %d" % [
+			name, _at(at.x, at.y, at.z), data, _needed.get(name, 0)])
+
+
+## Every spot that might hold a relic besides the five fixed ones: on each big
+## enough flat roof one of a mix (hovering over the roof, on a pillar of each
+## height, or floating high above it), and a few down on the streets. Each is
+## {"name", "at" (the relic), "pillar" (its height, 0 for none), "on" (the building's name, or "")}.
+func _relic_candidates(buildings: Array[Dictionary]) -> Array:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "relics"])
+	var roofs := buildings.filter(func(b: Dictionary) -> bool:
+			return b.roof == "flat" and not b.tower and b.w >= 14.0 and b.d >= 14.0)
+	_shuffle(roofs, dice)
+	var kinds := ["roof", "pillar 4", "pillar 3", "float", "pillar 2", "pillar 1", "pillar 4", "pillar 3"]
+	var candidates := []
+	for i in roofs.size():
+		var b: Dictionary = roofs[i]
+		var kind: String = kinds[i % kinds.size()]
+		var roof: float = b.storeys * STOREY
+		# Off the middle a little (where a pillar won't block anything).
+		var spot := _middle(b) + Vector2(dice.randf_range(-2.0, 2.0), dice.randf_range(-2.0, 2.0))
+		var pillar: float = PILLAR_HEIGHTS[int(kind.get_slice(" ", 1))] if kind.begins_with("pillar") else 0.0
+		var height: float = pillar + RELIC_HOVER if kind != "float" else FLOAT_HEIGHT
+		candidates.append({"name": "Relic" + b.name, "at": Vector3(spot.x, roof + height, spot.y), "pillar": pillar, "on": b.name})
+	# Down in the streets between blocks.
+	for i in 6:
+		var block := Vector2i(dice.randi_range(0, BLOCKS - 2), dice.randi_range(0, BLOCKS - 1))
+		if block.x == AVENUE_AFTER:
+			continue # (That street is the avenue.)
+		var area := _block_rect(block)
+		var at := Vector3(area.end.x + STREET / 2.0, RELIC_HOVER, area.position.y + dice.randf_range(8.0, BLOCK - 8.0))
+		candidates.append({"name": "RelicStreet%d" % i, "at": at, "pillar": 0.0, "on": ""})
+	return candidates
+
+
+## The relics to keep, from the candidates measured (`needed`: players each
+## takes, by name): enough of each to make up RELICS_WANTED with the fixed five.
+func _pick_relics(needed: Dictionary) -> Array:
+	var have := {}
+	for fixed in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway"]:
+		have[needed[fixed]] = have.get(needed[fixed], 0) + 1
+	var picked := []
+	for candidate: Dictionary in _extra_relics:
+		var players: int = needed.get(candidate.name, 0)
+		if needed.has(candidate.name) and RELICS_WANTED.has(players) and have.get(players, 0) < RELICS_WANTED[players]:
+			have[players] = have.get(players, 0) + 1
+			picked.append(candidate)
+	return picked
+
+
+## Writes _extra_relics (and their pillars), skipping any on a roof that has a
+## marker or a fixed relic already. Returns how many it wrote.
+func _write_extra_relics(buildings: Array[Dictionary]) -> int:
+	var count := 0
+	for candidate: Dictionary in _extra_relics:
+		var b: Dictionary = {}
+		for building in buildings:
+			if building.name == candidate.on:
+				b = building
+		if not b.is_empty() and _marker_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)):
+			continue
+		var at: Vector3 = candidate.at
+		if candidate.pillar > 0.0:
+			var roof: float = b.storeys * STOREY
+			_box("Pillar" + b.name, "Pillars", at.x, roof + candidate.pillar / 2.0, at.z, PILLAR, candidate.pillar, PILLAR, "4_building")
+			_pillar_spots.append(Vector2(at.x, at.z))
+		_relic(candidate.name, at, not b.is_empty())
+		count += 1
+	return count
+
+
+## Items to try out, around the district (they go back home if left lying
+## about): bats and a backpack in the plaza, gliders on the tallest roofs
+## (glide across the avenues), balloons on others, crates in the streets.
+## Returns how many it wrote.
+func _write_items(buildings: Array[Dictionary]) -> int:
+	var items := [["Bat1", "19_bat", Vector3(6, 0.5, -6)], ["Bat2", "19_bat", Vector3(-6, 0.5, -6)],
+			["Backpack1", "21_backpack", Vector3(-6, 0.5, 6)], ["Backpack2", "21_backpack", Vector3(6, 0.5, 6)]]
+	var free := buildings.filter(func(b: Dictionary) -> bool:
+			return b.roof == "flat" and not b.tower and not _marker_spots.any(func(spot: Vector2) -> bool:
+				return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))
+	free.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys or (a.storeys == b.storeys and a.name < b.name))
+	for i in mini(free.size(), 6):
+		var b: Dictionary = free[i]
+		var spot := _middle(b) + Vector2(3.0, 3.0)
+		var glider := i < 3
+		items.append(["%s%d" % ["Glider" if glider else "Balloon", i % 3 + 1], "18_glider" if glider else "22_balloon",
+				Vector3(spot.x, b.storeys * STOREY + 0.5, spot.y)])
+	for i in 3:
+		var area := _block_rect(Vector2i(i + 1 if i + 1 != AVENUE_AFTER else 0, 1))
+		items.append(["Crate%d" % (i + 1), "20_crate", Vector3(area.position.x + 20.0, 0.5, area.end.y + 3.0)])
+	for item: Array in items:
+		var at: Vector3 = item[2]
+		_marker_spots.append(Vector2(at.x, at.z))
+		_out.append("\n[node name=\"%s\" parent=\"Items\" instance=ExtResource(\"12_item\")]\ntransform = %s\nitem = ExtResource(\"%s\")" % [
+				item[0], _at(at.x, at.y, at.z), item[1]])
+	return items.size()
+
+
+## Shuffles `list` with `dice` (so the same seed always gives the same order).
+func _shuffle(list: Array, dice: RandomNumberGenerator) -> void:
+	for i in range(list.size() - 1, 0, -1):
+		var j := dice.randi_range(0, i)
+		var swap: Variant = list[i]
+		list[i] = list[j]
+		list[j] = swap
 
 
 func _flat_middle(rail: Array) -> Vector2:

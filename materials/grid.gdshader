@@ -23,6 +23,8 @@ void fragment() {
 	float d = min(to_line.x, to_line.y);
 	float aa = fwidth(d);
 	float line = 1.0 - smoothstep(line_width - aa, line_width + aa, d);
+	// Far away the lines would blur into a haze: fade them out, leaving clean surfaces.
+	line *= 1.0 - smoothstep(0.02, 0.08, aa);
 	ALBEDO = mix(base_color, line_color, line);
 	ROUGHNESS = 0.85;
 }

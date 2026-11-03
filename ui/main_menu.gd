@@ -45,11 +45,12 @@ func set_busy(busy: bool, message: String = "") -> void:
 		_status.text = message
 
 
-## Fills in the world picker. `ids` are world ids like "free_run_line".
-func set_worlds(ids: Array, default_id: String) -> void:
+## Fills in the world picker. `ids` are world ids like "free_run_line"; `names`
+## what to call them (by id; otherwise the id, capitalised).
+func set_worlds(ids: Array, default_id: String, names := {}) -> void:
 	_world.clear()
 	for id: String in ids:
-		_world.add_item(id.capitalize())
+		_world.add_item(names.get(id, id.capitalize()))
 		_world.set_item_metadata(_world.item_count - 1, id)
 		if id == default_id:
 			_world.select(_world.item_count - 1)

@@ -252,8 +252,8 @@ func test_what_each_relic_takes() -> void:
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	for target in map.targets:
 		var needed := map.players_needed(target, _spawn(map))
-		var meant := 2 if target.name == "RelicSky" else 1
-		expect(needed == meant, "%s should need %d player(s), the checker says %d" % [target.name, meant, needed])
+		var rings: int = (target.node as WorldItem).players_needed
+		expect(needed == rings, "%s has %d ring(s), the checker says it takes %d" % [target.name, rings, needed])
 
 
 # --- Helpers ---------------------------------------------------------------------

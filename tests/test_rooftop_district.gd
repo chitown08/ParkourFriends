@@ -398,10 +398,10 @@ func test_you_can_steer_in_the_air_after_a_launch() -> void:
 	expect(player.global_position.x < straight_x - 2.0, "holding left in the air should carry you left, x %.1f vs %.1f" % [player.global_position.x, straight_x])
 
 
-func test_five_relics_and_a_drop_off_in_the_plaza() -> void:
+func test_thirty_relics_and_a_drop_off_in_the_plaza() -> void:
 	var relics: Array[Node] = main.level.get_node("Relics").get_children()
-	expect(relics.size() == 5, "five relics, %d" % relics.size())
-	expect(main.hud.get_node("Relics").text == "Relics 0 / 5", "the counter should show them: %s" % main.hud.get_node("Relics").text)
+	expect(relics.size() == 30, "thirty relics, %d" % relics.size())
+	expect(main.hud.get_node("Relics").text == "Relics 0 / 30", "the counter should show them: %s" % main.hud.get_node("Relics").text)
 	var drop_off: DropOff = main.level.get_node("DropOff")
 	expect(_flat(drop_off.global_position).length() < 0.1 and absf(drop_off.global_position.y) < 0.1,
 			"the drop-off should be in the middle of the plaza, on the street")
@@ -620,7 +620,8 @@ func _run_across_pair(pair: Array, leap: bool, run_up: float) -> bool:
 
 ## [from, to, direction]: the first pair across a gap of `size` where `to` is
 ## `rise` metres higher than `from` (by default the same height: no help from
-## dropping down) and they face each other along at least 12 m.
+## dropping down) and they face each other along at least 12 m, with
+## nothing in the way of a run-up to it.
 func _pair_across(size: float, rise := 0.0) -> Array:
 	var buildings := _buildings()
 	for a in buildings:
@@ -632,6 +633,8 @@ func _pair_across(size: float, rise := 0.0) -> Array:
 			var offset := b.global_position - a.global_position
 			var direction := Vector3(signf(offset.x), 0, 0) if _gap_x(a, b) > _gap_z(a, b) \
 					else Vector3(0, 0, signf(offset.z))
+			if not _lane_clear(_edge_point(a, b, direction), direction):
+				continue # A relic's pillar in the way of the run-up.
 			return [a, b, direction]
 	return []
 
@@ -727,3 +730,39 @@ func _gap_size(gap: float) -> float:
 		if absf(gap - size) < 0.05:
 			return size
 	return 0.0
+
+
+## True if no relic pillar stands within a body's reach of the 25 m run-up to `edge`.
+func _lane_clear(edge: Vector3, direction: Vector3) -> bool:
+	for pillar: CSGBox3D in main.level.get_node("Pillars").get_children():
+		var flat := Vector2(pillar.global_position.x, pillar.global_position.z)
+		var closest := Geometry2D.get_closest_point_to_segment(flat, Vector2(edge.x, edge.z),
+				Vector2(edge.x, edge.z) - Vector2(direction.x, direction.z) * 25.0)
+		if closest.distance_to(flat) < pillar.size.x / 2.0 + 1.5:
+			return false
+	return true
+
+
+func test_relics_for_every_size_of_team_with_rings_to_say_which() -> void:
+	var wanted: Dictionary = load("res://tools/gen_district.gd").RELICS_WANTED
+	var count := {}
+	for relic: WorldItem in main.level.get_node("Relics").get_children():
+		count[relic.players_needed] = count.get(relic.players_needed, 0) + 1
+		var rings := relic.find_children("Ring*", "MeshInstance3D", true, false).size()
+		expect(rings == relic.players_needed, "%s takes %d player(s), so %d ring(s), has %d" % [relic.name, relic.players_needed, relic.players_needed, rings])
+	for players: int in wanted:
+		expect(count.get(players, 0) == wanted[players], "%d relic(s) for %d player(s), got %d (the checker's word: test_reach.gd)" % [wanted[players], players, count.get(players, 0)])
+
+
+func test_items_to_try_lie_about_the_district() -> void:
+	await ticks(60) # (Let them settle.)
+	var kinds := {}
+	for item: WorldItem in main.level.get_node("Items").get_children():
+		kinds[item.item.id] = kinds.get(item.item.id, 0) + 1
+		expect(item.state == WorldItem.State.IN_WORLD and item.global_position.y > -1.0, "%s should be lying about, at %s" % [item.name, item.global_position])
+	for id: StringName in [&"glider", &"bat", &"crate", &"backpack"]:
+		expect(kinds.get(id, 0) >= 2, "a few of each kind to try, %s: %d" % [id, kinds.get(id, 0)])
+
+
+func test_no_signs_about() -> void:
+	expect(main.level.get_node("Labels").get_child_count() == 0, "no labels or tips in the playground")

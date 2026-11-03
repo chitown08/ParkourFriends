@@ -10,11 +10,13 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 
 1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
-2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Rooftop District, the Free-Run Line, or the
-   Test Course playground), type **your name** (shown over your head to friends), then **Play Solo** or **Host**.
+2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Rooftop District playground, or one of the training
+   grounds: the Free-Run Line and the Test Course), type **your name** (shown over your head to friends), then **Play Solo** or **Host**.
    Joining players get the host's world. In the game, **Esc** has the settings (mouse, fullscreen, volume for
    everything / music / sound effects) and **your outfit** (a hat, gloves, belt, shoes and a trail, or none).
    All of it is remembered for next time. The version number is in the bottom-right corner.
+3. In the Rooftop District, bring relics back to the drop-off in the middle of the plaza. The gold rings round each
+   relic say how many players it takes to reach: one ring, you can get it alone; four rings, it takes four of you.
 
 ## Controls
 

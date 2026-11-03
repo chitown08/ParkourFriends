@@ -118,8 +118,8 @@ func _build_visual() -> void:
 		_rail = MeshInstance3D.new()
 		add_child(_rail)
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.75, 0.77, 0.8)
-	material.metallic = 0.8
+	material.albedo_color = Color(0.2, 0.5, 0.95) # Blue: grind it.
+	material.metallic = 0.5
 	material.roughness = 0.3
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED # (Either way round the tube is wound.)
 	var rings := maxi(int(ceil(_path.get_baked_length() / RING_SPACING)), 1)

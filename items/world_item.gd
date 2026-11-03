@@ -27,6 +27,17 @@ const BACK := 1
 const WORN := 2
 
 @export var item: ItemData
+## For relics: how many players it takes to get to (the reachability checker
+## works it out when the district is generated), shown as that many rings
+## round it. 0 shows none.
+@export_range(0, 4) var players_needed := 0
+
+## The rings round a relic: how big, how thick, and how they glow.
+const RING_RADIUS := 0.6
+const RING_THICKNESS := 0.08
+## Each ring further down is this much lower and wider than the one above.
+const RING_STEP := 0.28
+const RING_COLOR := Color(1.0, 0.72, 0.15)
 
 # Shared with everyone by the ItemSync node (the host decides them).
 var state := State.IN_WORLD
@@ -373,7 +384,9 @@ func _build_looks() -> void:
 		return
 	if item.model:
 		_mesh.visible = false
-		add_child(item.model.instantiate())
+		var model := item.model.instantiate()
+		add_child(model)
+		_add_rings(model)
 	else:
 		var mesh := BoxMesh.new()
 		mesh.size = item.size
@@ -384,3 +397,25 @@ func _build_looks() -> void:
 	var shape := BoxShape3D.new()
 	shape.size = item.size
 	_shape.shape = shape
+
+
+## players_needed flat rings round the model, stacked down from its middle,
+## each a little wider than the one above: count them (from the side or from
+## above) to see how many of you it takes.
+func _add_rings(model: Node) -> void:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = RING_COLOR
+	material.emission_enabled = true
+	material.emission = RING_COLOR
+	material.emission_energy_multiplier = 1.5
+	for i in players_needed:
+		var torus := TorusMesh.new()
+		var radius := RING_RADIUS + RING_STEP * 0.5 * i
+		torus.inner_radius = radius - RING_THICKNESS
+		torus.outer_radius = radius
+		torus.material = material
+		var ring := MeshInstance3D.new()
+		ring.name = "Ring%d" % (i + 1)
+		ring.mesh = torus
+		ring.position.y = -RING_STEP * i
+		model.add_child(ring)
