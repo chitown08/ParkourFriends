@@ -12,7 +12,7 @@ func add_links(map: ReachMap) -> void:
 	# [what, how fast you go, how high you jump, what it needs]
 	var jumps := [
 		["jump", m.run_speed, m.jump_height, [] as Array[StringName]],
-		["leap", m.run_speed + m.leap_boost, m.leap_height, [] as Array[StringName]],
+		["leap", m.free_run_speed + m.leap_boost, m.leap_height, [] as Array[StringName]],
 		["flow jump", m.flow_speed, m.jump_height, flow],
 		["flow leap", m.flow_speed + m.leap_boost, m.leap_height, flow],
 	]

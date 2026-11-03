@@ -13,6 +13,13 @@ extends Node3D
 @export var stick_sensitivity := 3.0 ## Radians per second at full tilt (gamepad and arrow keys).
 @export_range(-89.0, 0.0) var min_pitch_degrees := -70.0
 @export_range(0.0, 89.0) var max_pitch_degrees := 30.0
+## How far behind you the camera sits (metres)...
+@export var distance := 3.75
+## ...and how much further back for each friend pack-running with you (up to
+## three), so you can see the crowd round you.
+@export var pack_pull_back := 1.0
+## How quickly it eases in and out (higher: quicker).
+@export var distance_ease := 1.5
 
 var yaw := 0.0
 var pitch := -0.25
@@ -25,6 +32,7 @@ var controls_enabled := true
 
 
 func _ready() -> void:
+	_spring_arm.spring_length = distance
 	if _target is CollisionObject3D:
 		_spring_arm.add_excluded_object((_target as CollisionObject3D).get_rid())
 	_follow_target()
@@ -58,10 +66,17 @@ func _process(delta: float) -> void:
 		yaw -= look.x * stick_sensitivity * delta
 		pitch -= look.y * stick_sensitivity * delta * _y_direction()
 	pitch = clampf(pitch, deg_to_rad(min_pitch_degrees), deg_to_rad(max_pitch_degrees))
+	_spring_arm.spring_length = lerpf(_spring_arm.spring_length, wanted_distance(), 1.0 - exp(-distance_ease * delta))
 
 	rotation = Vector3(0.0, yaw, 0.0)
 	_spring_arm.rotation = Vector3(pitch, 0.0, 0.0)
 	_follow_target()
+
+
+## How far back the camera wants to be: further while you pack-run.
+func wanted_distance() -> float:
+	var pack: int = _target.pack_size() if _target is Player else 0
+	return distance + pack_pull_back * mini(pack, Player.MOST_DRAFTING)
 
 
 func _y_direction() -> float:

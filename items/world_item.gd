@@ -20,12 +20,6 @@ const RETURN_DELAY := 2.0
 ## be (generous: the hitter's view is a moment old) and how hard it can fly.
 const MAX_HIT_DISTANCE := 6.0
 const MAX_HIT_SPEED := 40.0
-## Slots: hands (the active item), back (stowed in a backpack), and the
-## backpack itself, worn. Everyone has hands; only a backpack gives a back slot.
-const HANDS := 0
-const BACK := 1
-const WORN := 2
-
 @export var item: ItemData
 ## For relics: how many players it takes to get to (the reachability checker
 ## works it out when the district is generated), shown as that many rings
@@ -43,7 +37,6 @@ const RING_COLOR := Color(1.0, 0.72, 0.15)
 var state := State.IN_WORLD
 ## Node name of the player holding it ("" if nobody).
 var holder_name := ""
-var slot := HANDS
 var sync_transform := Transform3D.IDENTITY
 
 var _home: Transform3D
@@ -83,10 +76,6 @@ func is_bulky() -> bool:
 	return item != null and item.bulky
 
 
-func is_backpack() -> bool:
-	return item != null and item.is_backpack
-
-
 func is_deliverable() -> bool:
 	return item != null and item.deliverable
 
@@ -111,7 +100,7 @@ func _physics_process(delta: float) -> void:
 	if state == State.HELD:
 		var holder := find_player(holder_name)
 		if holder:
-			global_transform = holder.item_anchor(slot, is_bulky())
+			global_transform = holder.item_anchor(is_bulky())
 
 
 # --- Requests from players' computers (always run on the host) -----------------
@@ -139,13 +128,11 @@ func request_touch_pick_up() -> void:
 @rpc("any_peer", "call_local", "reliable")
 func request_drop(give_to: String) -> void:
 	var player := _sender()
-	if player == null or holder_name != str(player.name) or slot == BACK:
+	if player == null or holder_name != str(player.name):
 		return
 	var friend := find_player(give_to)
-	if friend and free_slot(friend) != -1 and friend.global_position.distance_to(player.global_position) < ItemCarrier.PICKUP_RANGE * 2.0:
-		var was_in := slot
+	if friend and has_room(friend) and friend.global_position.distance_to(player.global_position) < ItemCarrier.PICKUP_RANGE * 2.0:
 		host_give_to(friend)
-		_unpack(player, was_in)
 		return
 	_release(player, player.velocity * 0.5)
 
@@ -154,7 +141,7 @@ func request_drop(give_to: String) -> void:
 @rpc("any_peer", "call_local", "reliable")
 func request_throw(aim: Vector3) -> void:
 	var player := _sender()
-	if player == null or holder_name != str(player.name) or slot != HANDS:
+	if player == null or holder_name != str(player.name):
 		return
 	var throw_speed := item.throw_speed if item else 14.0
 	_release(player, aim.normalized() * throw_speed + Vector3.UP * 3.0 + player.velocity * 0.5)
@@ -182,21 +169,12 @@ func request_hit(launch: Vector3) -> void:
 
 # --- Host-side changes ---------------------------------------------------------
 
-## Gives the item to `player`: a backpack goes on their back; anything else
-## goes in their hands (what was in their hands moves into their backpack).
-## Returns false if they have no room for it.
+## Puts the item in `player`'s hands. Returns false if their hands are full.
 func host_give_to(player: Player) -> bool:
-	var free := free_slot(player)
-	if free == -1:
+	if not has_room(player):
 		return false
-	if free == BACK:
-		# Hands are full: that item goes in the backpack, the new one in the hands.
-		for other in held_by(player):
-			if other.slot == HANDS:
-				other.slot = BACK
 	state = State.HELD
 	holder_name = str(player.name)
-	slot = WORN if is_backpack() else HANDS
 	_idle_time = 0.0
 	_thrown_by = ""
 	_at_home = false
@@ -221,13 +199,11 @@ func host_return_home() -> void:
 
 
 func _release(player: Player, launch: Vector3) -> void:
-	var hand := player.item_anchor(HANDS)
-	var was_in := slot
+	var hand := player.item_anchor()
 	state = State.IN_WORLD
 	holder_name = ""
 	_idle_time = 0.0
 	_thrown_by = "" # Set again by request_throw() if this is a throw.
-	_unpack(player, was_in)
 	_apply_state()
 	global_transform = Transform3D(Basis.IDENTITY, hand.origin)
 	linear_velocity = launch
@@ -269,16 +245,6 @@ func _host_update(delta: float) -> void:
 				sync_transform = _home
 
 
-## After this item left `player`'s `was_in` slot: whatever was in their
-## backpack comes out into their (now free) hands. (A backpack can only be
-## taken off with empty hands, so this works for that too.)
-func _unpack(player: Player, was_in: int) -> void:
-	if was_in == HANDS or was_in == WORN:
-		for other in held_by(player):
-			if other.slot == BACK:
-				other.slot = HANDS
-
-
 ## A flying item lands in the hands of a player it passes close to (who has room).
 func _try_catch() -> void:
 	for player in all_players():
@@ -305,20 +271,9 @@ func _apply_state() -> void:
 	_shape.set_deferred(&"disabled", not in_world)
 
 
-## The slot this item would go in for `player`, or -1 if they have no room:
-## a backpack needs a free back (you can only wear one); anything else goes in
-## free hands, or in the backpack (if they wear one with room) when hands are full.
-func free_slot(player: Player) -> int:
-	var used := {}
-	for other in held_by(player):
-		used[other.slot] = true
-	if is_backpack():
-		return -1 if used.has(WORN) else WORN
-	if not used.has(HANDS):
-		return HANDS
-	if used.has(WORN) and not used.has(BACK):
-		return BACK
-	return -1
+## True if `player`'s hands are free for it (you carry one thing at a time).
+func has_room(player: Player) -> bool:
+	return held_by(player).is_empty()
 
 
 ## Every item held by `player` in this game.

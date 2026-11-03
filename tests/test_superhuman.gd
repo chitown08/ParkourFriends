@@ -28,11 +28,15 @@ func test_superhuman_jump_is_about_3_m() -> void:
 	expect_near(highest - start_y, 3.0, 0.15, "superhuman jump height")
 
 
-func test_flow_builds_from_run_speed_to_top_speed() -> void:
+func test_running_and_free_running_speeds() -> void:
 	await place(RUNWAY_START, FACE_NORTH)
 	Input.action_press(&"move_forward")
+	await ticks(40)
+	expect_near(player.get_horizontal_speed(), 7.0, 0.3, "running, without free-run")
+	await place(RUNWAY_START, FACE_NORTH)
+	Input.action_press(&"free_run")
 	await ticks(15)
-	expect_near(player.get_horizontal_speed(), 10.0, 1.0, "starting run speed")
+	expect_near(player.get_horizontal_speed(), 10.0, 1.0, "starting free-run speed")
 	await ticks(roundi(player.flow_build_time * 60))
 	expect_near(player.flow, 1.0, 0.01, "flow after running for 3 s")
 	expect_near(player.get_horizontal_speed(), 15.0, 0.2, "top speed")
@@ -50,7 +54,7 @@ func test_crashing_into_a_wall_drains_flow() -> void:
 func test_jumping_keeps_flow() -> void:
 	await place(RUNWAY_START, FACE_NORTH)
 	player.flow = 1.0
-	Input.action_press(&"move_forward")
+	Input.action_press(&"free_run")
 	await ticks(10)
 	await tap(&"jump")
 	await ticks(20)
@@ -68,6 +72,6 @@ func test_buddy_gets_your_profile() -> void:
 func test_switching_to_the_human_profile() -> void:
 	player.set_profile(HUMAN)
 	expect_near(player.jump_height, 1.7, 0.01, "human jump height")
-	expect_near(player.run_speed, 6.0, 0.01, "human run speed")
+	expect_near(player.run_speed, 4.5, 0.01, "human run speed")
 	player.set_profile(SUPERHUMAN)
 	expect_near(player.jump_height, 3.0, 0.01, "back to superhuman")

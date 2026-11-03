@@ -26,11 +26,8 @@ extends Resource
 
 @export_group("Carrying")
 ## Needs both hands (e.g. a glider held overhead): while it's in your hands you
-## can't grab ledges, climb, vault or scramble (grind rails are fine: feet only). Stow it in a
-## backpack to climb.
+## can't grab ledges, climb, vault or scramble (grind rails are fine: feet only). Drop it to climb.
 @export var bulky := false
-## A backpack: worn on your back instead of held, it gives you a second slot.
-@export var is_backpack := false
 ## Picked up just by touching it (if your hands are free), like a collectible.
 @export var pick_up_on_touch := false
 ## How close (metres from your middle) you must pass to pick it up by touch.

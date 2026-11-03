@@ -4,7 +4,8 @@
 
 [resource]
 script = ExtResource("1_profile")
-run_speed = 6.0
+run_speed = 4.5
+free_run_speed = 6.0
 flow_speed = 9.5
 ground_acceleration = 60.0
 ground_friction = 50.0

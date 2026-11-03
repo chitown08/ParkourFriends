@@ -760,7 +760,7 @@ func test_items_to_try_lie_about_the_district() -> void:
 	for item: WorldItem in main.level.get_node("Items").get_children():
 		kinds[item.item.id] = kinds.get(item.item.id, 0) + 1
 		expect(item.state == WorldItem.State.IN_WORLD and item.global_position.y > -1.0, "%s should be lying about, at %s" % [item.name, item.global_position])
-	for id: StringName in [&"glider", &"bat", &"crate", &"backpack"]:
+	for id: StringName in [&"glider", &"bat", &"crate", &"test_balloon"]:
 		expect(kinds.get(id, 0) >= 2, "a few of each kind to try, %s: %d" % [id, kinds.get(id, 0)])
 
 

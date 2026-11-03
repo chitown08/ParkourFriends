@@ -37,7 +37,7 @@ func test_the_controls_card_is_short() -> void:
 		expect(card.contains(key), "the card should show %s:\n%s" % [key, card])
 	for gone in ["Tab", "T ", "G ", "H ", "Q ", "F3"]:
 		expect(not card.contains(gone), "no %s on the card any more" % gone)
-	expect(not card.contains("Right-click"), "swapping with a backpack only shows when you wear one")
+	expect(not card.contains("Right-click"), "no backpack to swap with: one thing at a time, in your hands")
 	expect(hud.CARD.size() <= 12, "a dozen lines at most")
 
 

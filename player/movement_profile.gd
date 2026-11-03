@@ -8,8 +8,9 @@ extends Resource
 ## panel to tweak it in the Inspector. The defaults below are the superhuman ones.
 
 @export_group("Running")
-@export var run_speed := 10.0 ## Normal running speed.
-@export var flow_speed := 15.0 ## Top speed, reached by keeping your flow (momentum) going.
+@export var run_speed := 7.0 ## Running speed without free-run (holding Shift).
+@export var free_run_speed := 10.0 ## Free-running speed, before flow builds it up toward flow_speed.
+@export var flow_speed := 15.0 ## Top speed, reached by free-running and keeping your flow (momentum) going.
 @export var flow_build_time := 3.0 ## Seconds of uninterrupted running to reach top speed.
 @export var flow_decay_time := 0.6 ## Seconds to lose all flow once you stop or crash.
 @export var ground_acceleration := 80.0

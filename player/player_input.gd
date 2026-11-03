@@ -23,7 +23,6 @@ var crouch_held := false
 var toss_just_pressed := false
 var interact_just_pressed := false
 var throw_item_just_pressed := false
-var switch_item_just_pressed := false
 var use_item_just_pressed := false
 var use_item_held := false
 var respawn_just_pressed := false
@@ -54,7 +53,6 @@ func gather(camera_yaw: float) -> void:
 	crouch_held = Input.is_action_pressed("crouch")
 	toss_just_pressed = Input.is_action_just_pressed("toss")
 	_gather_item_button()
-	switch_item_just_pressed = Input.is_action_just_pressed("switch_item")
 	use_item_just_pressed = Input.is_action_just_pressed("use_item")
 	use_item_held = Input.is_action_pressed("use_item")
 	respawn_just_pressed = Input.is_action_just_pressed("respawn")
@@ -70,7 +68,6 @@ func clear() -> void:
 	toss_just_pressed = false
 	interact_just_pressed = false
 	throw_item_just_pressed = false
-	switch_item_just_pressed = false
 	use_item_just_pressed = false
 	use_item_held = false
 	respawn_just_pressed = false

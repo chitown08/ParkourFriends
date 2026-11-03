@@ -14,7 +14,6 @@ const CARD := [
 	[&"toss", "Friend: toss, brace, hold hands"],
 	[&"interact", "Item: pick up, drop (hold: throw)"],
 	[&"use_item", "Use item"],
-	[&"switch_item", "Swap with backpack"],
 	[&"respawn", "Back to checkpoint"],
 	[&"pause", "Menu"],
 	[&"toggle_help", "Hide this"],
@@ -99,8 +98,8 @@ func _show_card_text() -> void:
 	var text := "[table=2]"
 	for line: Array in CARD:
 		var key := ControlNames.key(line[0])
-		if key == "" or (line[0] == &"switch_item" and player.items.backpack() == null):
-			continue # (No backpack on: nothing to swap.)
+		if key == "":
+			continue
 		text += "[cell][b]%s[/b]   [/cell][cell]%s[/cell]" % [key, line[1]]
 	text += "[/table]"
 	if _card.text != text:
@@ -147,17 +146,14 @@ func set_relic_count(found: int, total: int) -> void:
 	_relics.text = "Relics %d / %d" % [found, total]
 
 
-## Shows what you're carrying (nothing when your hands are empty).
+## Shows what you're holding (nothing when your hands are empty).
 func _show_items() -> void:
 	var carrier := player.items
 	var in_hands := carrier.hands_item()
-	if in_hands == null and carrier.backpack() == null:
+	if in_hands == null:
 		_items.text = ""
 		return
-	var slots := "Hands: %s" % (in_hands.display_name() if in_hands else "-")
+	var slots := "Hands: %s" % in_hands.display_name()
 	if in_hands and in_hands.is_bulky():
 		slots += " (both hands: no climbing)"
-	if carrier.backpack():
-		var stowed := carrier.back_item()
-		slots += "    Backpack: %s" % (stowed.display_name() if stowed else "-")
 	_items.text = slots

@@ -109,8 +109,19 @@ func test_the_tall_wall_can_be_climbed_by_hand() -> void:
 
 func test_the_pillar_relic_can_be_reached_by_hand() -> void:
 	# A pillar 5 m off the lane's right edge (x = 9..12), top 5 m, beside the hurdles.
-	await place(Vector3(3.5, 0.05, -73.1), FACE_NORTH) # Just clear of the hurdle at z = -72.
-	expect(await jump_and_climb(Vector3.RIGHT, 5.0), "should jump across and climb the pillar, at %s" % player.global_position)
+	await place(Vector3(-2.5, 0.05, -73.1), FACE_NORTH) # Just clear of the hurdle at z = -72.
+	# (A 5 m gap: a free-running jump, with a run-up across the lane. Running
+	# alone, you'd fall a little short.)
+	player.camera_rig.yaw = yaw_for(Vector3.RIGHT)
+	Input.action_press(&"free_run")
+	for i in 120:
+		await ticks(1)
+		if player.state.name in [&"Hang", &"Climb"] or (player.is_on_floor() and player.global_position.y > 4.9):
+			break
+	release_all()
+	if player.state.name == &"Hang":
+		await tap(&"jump")
+	expect(await wait_until_on_top(4.9, 60), "should free-run across and climb the pillar, at %s" % player.global_position)
 	# Step over to the relic in the middle of the pillar top.
 	player.camera_rig.yaw = yaw_for(Vector3(10.5, 0, -72) - Vector3(player.global_position.x, 0, player.global_position.z))
 	await hold(&"move_forward", 6)

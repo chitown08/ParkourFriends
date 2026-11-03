@@ -8,7 +8,7 @@ func test_spawns_on_the_ground() -> void:
 	expect_near(player.global_position.y, 0.0, 0.05, "spawn height")
 
 
-func test_running_builds_flow_up_to_top_speed() -> void:
+func test_free_running_builds_flow_up_to_top_speed() -> void:
 	Input.action_press(&"move_forward")
 	await ticks(10)
 	expect_near(player.get_horizontal_speed(), player.run_speed, 0.6, "starting run speed")
@@ -16,8 +16,18 @@ func test_running_builds_flow_up_to_top_speed() -> void:
 	await place(Vector3(8, 0.05, 8.5), FACE_WEST)
 	Input.action_press(&"move_forward")
 	await ticks(roundi(player.flow_build_time * 60) + 15)
-	expect_near(player.flow, 1.0, 0.01, "flow after running for flow_build_time")
+	expect_near(player.flow, 0.0, 0.01, "just running (no free-run): no flow")
+	expect_near(player.get_horizontal_speed(), player.run_speed, 0.1, "running speed")
+	await place(Vector3(8, 0.05, 8.5), FACE_WEST)
+	Input.action_press(&"free_run")
+	await ticks(roundi(player.flow_build_time * 60) + 15)
+	expect_near(player.flow, 1.0, 0.01, "flow after free-running for flow_build_time")
 	expect_near(player.get_horizontal_speed(), player.flow_speed, 0.1, "top speed")
+	Input.action_release(&"free_run")
+	Input.action_press(&"move_forward")
+	await ticks(roundi(player.flow_decay_time * 60) + 10)
+	expect_near(player.flow, 0.0, 0.01, "let go of free-run: the flow drains")
+	expect_near(player.get_horizontal_speed(), player.run_speed, 0.3, "back to running speed")
 	release_all()
 	await ticks(roundi(player.flow_decay_time * 60) + 10)
 	expect_near(player.get_horizontal_speed(), 0.0, 0.05, "speed after letting go")

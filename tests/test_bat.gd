@@ -83,13 +83,3 @@ func test_one_swing_at_a_time() -> void:
 	await ticks(5)
 	expect(balloon.linear_velocity.length() > 5.0, "but once the bat is ready again it should")
 
-
-func test_no_swing_with_the_bat_in_your_backpack() -> void:
-	main.level.get_node("Items/Backpack").host_give_to(player)
-	bat.host_give_to(player)
-	await tap(&"switch_item")
-	await place(START, FACE_NORTH)
-	await press_event(&"call_buddy")
-	await tap(&"use_item")
-	await ticks(5)
-	expect(main.buddy.state.name == &"Ground", "a bat in your backpack doesn't swing")

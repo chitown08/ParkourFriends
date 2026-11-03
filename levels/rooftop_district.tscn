@@ -20,7 +20,6 @@
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="20_crate"]
-[ext_resource type="Resource" path="res://items/data/backpack.tres" id="21_backpack"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
@@ -2125,13 +2124,13 @@ item = ExtResource("19_bat")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.0, 0.5, -6.0)
 item = ExtResource("19_bat")
 
-[node name="Backpack1" parent="Items" instance=ExtResource("12_item")]
+[node name="Balloon4" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.0, 0.5, 6.0)
-item = ExtResource("21_backpack")
+item = ExtResource("22_balloon")
 
-[node name="Backpack2" parent="Items" instance=ExtResource("12_item")]
+[node name="Balloon5" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.0, 0.5, 6.0)
-item = ExtResource("21_backpack")
+item = ExtResource("22_balloon")
 
 [node name="Glider1" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -179.0, 25.0, 60.34)

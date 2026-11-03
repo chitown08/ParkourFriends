@@ -106,6 +106,7 @@ var sync_outfit := PackedStringArray():
 # apply_profile()). Documented in movement_profile.gd. Change them by editing a
 # profile, not here.
 var run_speed: float
+var free_run_speed: float
 var flow_speed: float
 var flow_build_time: float
 var flow_decay_time: float
@@ -297,8 +298,8 @@ const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScram
 const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang", &"Caught"]
 ## How far from a hanging friend's feet your hands can be to grab them.
 const CHAIN_GRAB_REACH := 0.8
-## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
-const ITEM_OFFSETS: Array[Vector3] = [Vector3(0.3, 1.0, -0.6), Vector3(0.0, 1.55, 0.45), Vector3(0.0, 1.1, 0.4)]
+## Where a held item sits (see item_anchor): in front of your chest, or overhead.
+const HAND_OFFSET := Vector3(0.3, 1.0, -0.6)
 const OVERHEAD_OFFSET := Vector3(0.0, 2.1, 0.0)
 
 ## States you can toss a friend from.
@@ -643,19 +644,18 @@ func hands_busy() -> bool:
 	return not is_bot and items.hands_busy()
 
 
-## Where an item you're holding sits: in front of your chest (hands; bulky
-## items like the glider are held overhead), sticking out of your backpack
-## (back), or the backpack itself. Follows the way your body faces and tilts.
-func item_anchor(slot: int, overhead := false) -> Transform3D:
+## Where an item you're holding sits: in front of your chest (bulky items like
+## the glider are held overhead). Follows the way your body faces and tilts.
+func item_anchor(overhead := false) -> Transform3D:
 	var body := _visual.global_transform.orthonormalized()
-	var offset: Vector3 = OVERHEAD_OFFSET if overhead and slot == 0 else ITEM_OFFSETS[slot]
-	if slot == 0 and not overhead and _swing_timer > 0.0:
+	var offset: Vector3 = OVERHEAD_OFFSET if overhead else HAND_OFFSET
+	if not overhead and _swing_timer > 0.0:
 		# Mid-swing: the item sweeps round in an arc, fast at first.
 		var swung := ease(1.0 - _swing_timer / SWING_TIME, 0.4)
 		var arc := Basis(Vector3.UP, lerpf(SWING_FROM, SWING_TO, swung))
 		return body * Transform3D(arc, SWING_PIVOT) * Transform3D(Basis.IDENTITY, offset - SWING_PIVOT)
 	var anchor := body * Transform3D(Basis.IDENTITY, offset)
-	if overhead and slot == 0:
+	if overhead:
 		# Keep a wing fairly level when you tip forward to glide (but bank with you).
 		anchor.basis = Basis.from_euler(Vector3(_pitch * 0.3, _visual.rotation.y, _shown_lean))
 	return anchor
@@ -697,10 +697,12 @@ func apply_profile() -> void:
 		model.mantle_time = mantle_time
 
 
-## How fast you run right now: normal speed, rising to top speed with flow,
-## eased by pack-running (unless `paced` is false).
+## How fast you run right now: running speed, or free-running (holding Shift)
+## speed rising to top speed with flow (after you let go of Shift, flow
+## drains and you ease back down), eased by pack-running (unless `paced` is false).
 func top_speed(paced := true) -> float:
-	return lerpf(run_speed, flow_speed * drafting(pack_size()), flow) * (pack_pace if paced else 1.0)
+	var base := free_run_speed if input.free_run_held else run_speed
+	return lerpf(base, flow_speed * drafting(pack_size()), flow) * (pack_pace if paced else 1.0)
 
 
 ## How much a pack with `friends` friends (besides you) raises your top speed
@@ -717,12 +719,16 @@ func _update_flow(delta: float) -> void:
 		return
 	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"Caught", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
+	if not input.free_run_held:
+		# Flow is free-running's: without it you ease back down to running speed.
+		flow = maxf(flow - delta / flow_decay_time, 0.0)
+		return
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
-	if pushing and speed >= run_speed * minf(pack_pace, 1.0) * 0.9:
+	if pushing and speed >= free_run_speed * minf(pack_pace, 1.0) * 0.9:
 		var draft := 1.0 + DRAFT_FLOW * mini(pack_size(), MOST_DRAFTING)
 		flow = minf(flow + delta / flow_build_time * draft, 1.0)
-	elif is_on_floor() and (not pushing or speed < run_speed * 0.5):
+	elif is_on_floor() and (not pushing or speed < free_run_speed * 0.5):
 		# Only drains on the ground: bumping into a ledge mid-jump on your way
 		# up onto it doesn't count as crashing.
 		flow = maxf(flow - delta / flow_decay_time, 0.0)
@@ -1131,7 +1137,7 @@ func _try_crack_whip() -> void:
 		return
 	var going := Vector3(velocity.x, 0.0, velocity.z)
 	var steer := Vector3(input.move_direction.x, 0.0, input.move_direction.z)
-	if going.length() < run_speed * WHIP_MIN_SPEED or steer.length() < 0.5:
+	if going.length() < free_run_speed * WHIP_MIN_SPEED or steer.length() < 0.5:
 		return
 	var right := going.normalized().cross(Vector3.UP)
 	var turn_to := -right * signf((follower.global_position - global_position).dot(right))

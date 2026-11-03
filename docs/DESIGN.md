@@ -130,7 +130,7 @@ built and the details the code relies on.
 
 | Rule the levels depend on (superhuman profile) | Value |
 |---|---|
-| Run speed / top speed with full flow | 10 / 15 m/s |
+| Running (no Shift) / free-running / top speed with full flow | 7 / 10 / 15 m/s (flow only builds while free-running, and drains when you let go of Shift) |
 | Full jump | ~3 m |
 | Highest ledge you can grab from a jump | ~5.6 m |
 | Wall scramble | ~3.5 m up, once per wall until you land |
@@ -143,6 +143,9 @@ built and the details the code relies on.
 | Grind rail top speed (sliding down) / climbing up | 26 / 5 m/s |
 
 ## Controls (Nov 2026)
+
+**Camera** (`player/camera_rig.gd`): 3.75 m behind you, easing back 1 m for each friend pack-running
+with you (up to three), so you see the crowd.
 
 Kept to a handful of buttons, each doing whatever fits where you are: E is everything with a
 friend (toss, brace, shoulders, take a hand), F everything with items (tap: pick up / drop / hand
@@ -182,13 +185,12 @@ editor or a debug build, not the build friends play.
 
 - Items are real physics objects (`WorldItem`, a RigidBody3D). Each kind is an `ItemData`
   resource plus an optional `ItemAbility` script, so new items need no changes to shared code.
-- One slot for everyone: your **hands** (the item's ability runs there). A **backpack** is
-  worn, not held, and adds a second slot to stow an item in (right click swaps; F held throws). A new item goes in your
-  hands and pushes the current one into the backpack; with no room, F drops instead. F with
-  empty hands takes the backpack off (what was in it comes out into your hands).
+- One thing at a time, in your **hands** (the item's ability runs there): if you aren't holding
+  it, you aren't using it. F picks up, drops or hands over; held, it throws. (The backpack and
+  its second slot were dropped in Nov 2026: it got in the way of trails, and wasn't worth a button.)
 - **Bulky** items (the crate now, the glider later) need both hands: no ledge grabs, climbs,
   vaults or scrambles while one is in your hands, and you let go if one lands in your hands
-  mid-climb. Stow it in a backpack to climb. Wall runs, wall jumps and grind rails still work
+  mid-climb. Drop it to climb. Wall runs, wall jumps and grind rails still work
   (you grind a rail on your feet, like a skateboarder, so your hands stay free).
 - **Relics** are items: they hover at home until touched (touching picks them up if your hands
   are free), and only count once carried or thrown into a drop-off (`levels/drop_off.tscn`,
@@ -208,16 +210,16 @@ editor or a debug build, not the build friends play.
   reach it hits the item in front instead (25 m/s, 30° up), which flies like a throw, so a
   friend can catch it, and knocks hovering relics loose. Numbers: `items/abilities/bat_swing.gd`.
 - Placeholders: **Crate** (bulky, no ability), **Test Balloon** (slows your fall while in your
-  hands) and a **Backpack**, at the start of the Free-Run Line.
+  hands), at the start of the Free-Run Line.
 - Item list (Oct 2026, see the master doc): glider, grappling hook, baseball bat (send a friend
-  a long way), pogo stick (clumsy), backpack. Dropped: parachute, running shoes, roller skates,
+  a long way), pogo stick (clumsy). Dropped: backpack, parachute, running shoes, roller skates,
   suction-cup hands (for now). Tools are always used by hand: free-run never uses them.
 
 ## Worlds
 
 | World | Purpose |
 |---|---|
-| `rooftop_district.tscn` | The playground (default). White and grey buildings, a grey street, everything you can use in colour (red vault, yellow climb, blue grind rails, orange ramps and vents); no signs. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Thirty relics come back to a drop-off in the middle of the plaza, for teams of every size: 14 for one player, 8 for two, 5 for three, 3 for four (`RELICS_WANTED`). Each has a stack of gold rings, one per player it takes (`WorldItem.players_needed`). The generator tries a relic on every big flat roof (hovering over it, floating 9.5 m above it, or on a white pillar 7 / 11 / 12.5 / 14 m tall: a leap, then leg-ups from one, two or three friends) and in the streets, asks the reachability checker what each takes from the spawn, keeps enough of each, and writes the checker's answer as the rings. Five are fixed: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Items lie about to try: bats and backpacks in the plaza, gliders on the three tallest free roofs, balloons on the next, crates in the streets (they go home if left lying about). Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up), and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
+| `rooftop_district.tscn` | The playground (default). White and grey buildings, a grey street, everything you can use in colour (red vault, yellow climb, blue grind rails, orange ramps and vents); no signs. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Thirty relics come back to a drop-off in the middle of the plaza, for teams of every size: 14 for one player, 8 for two, 5 for three, 3 for four (`RELICS_WANTED`). Each has a stack of gold rings, one per player it takes (`WorldItem.players_needed`). The generator tries a relic on every big flat roof (hovering over it, floating 9.5 m above it, or on a white pillar 7 / 11 / 12.5 / 14 m tall: a leap, then leg-ups from one, two or three friends) and in the streets, asks the reachability checker what each takes from the spawn, keeps enough of each, and writes the checker's answer as the rings. Five are fixed: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Items lie about to try: bats and balloons in the plaza, gliders on the three tallest free roofs, more balloons on the next, crates in the streets (they go home if left lying about). Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up), and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
 | `free_run_line.tscn` | Training ground. One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Training ground. Human-scale lab the move tests rely on |
 

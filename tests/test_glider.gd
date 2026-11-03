@@ -72,15 +72,6 @@ func test_gliders_turn_slowly() -> void:
 	expect(turned > 30.0 and turned < 60.0, "about 50 degrees of turn in a second, turned %.0f" % turned)
 
 
-func test_no_gliding_with_the_glider_in_your_backpack() -> void:
-	main.level.get_node("Items/Backpack").host_give_to(player)
-	glider.host_give_to(player)
-	await tap(&"switch_item")
-	expect(player.items.back_item() == glider, "test setup: glider in the backpack")
-	await _jump_east_off_the_roof()
-	await ticks(40)
-	expect_state(&"Air")
-
 
 func test_no_gliding_on_the_ground() -> void:
 	glider.host_give_to(player)

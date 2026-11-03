@@ -69,7 +69,7 @@ func test_a_leg_up_gets_you_up_a_wall_too_tall_alone() -> void:
 func test_jumping_into_a_braced_friend_from_further_out() -> void:
 	# Taking off well before them, you land in their hands on the way.
 	await _brace(buddy, 0.0)
-	expect(await _run_and_jump_at(0.0, 3.5), "jumping into them should work too, went through %s" % [states_entered])
+	expect(await _run_and_jump_at(0.0, 2.8), "jumping into them should work too, went through %s" % [states_entered])
 
 
 func test_free_running_into_a_braced_friend() -> void:

@@ -133,7 +133,7 @@ func _look_ahead() -> void:
 	if direction == Vector3.ZERO:
 		return
 	var feet := player.global_position
-	var speed := maxf(player.get_horizontal_speed(), player.run_speed)
+	var speed := maxf(player.get_horizontal_speed(), player.free_run_speed)
 	var reach := player.body_radius + maxf(MIN_LOOK_AHEAD, speed * LOOK_AHEAD_TIME)
 
 	if not readying_leap and _heading_downhill(direction) and (player.state.name == &"Slide" \
@@ -147,7 +147,7 @@ func _look_ahead() -> void:
 		if _can_get_on_top(low, direction, feet) or _ledge_in_reach(low, direction, feet) \
 				or _is_glancing(low, direction):
 			_press_jump()
-		elif player.get_horizontal_speed() >= player.run_speed * SCRAMBLE_MIN_SPEED:
+		elif player.get_horizontal_speed() >= player.free_run_speed * SCRAMBLE_MIN_SPEED:
 			# Too tall and too head-on: jump and scramble up it anyway, grabbing any
 			# ledge or sill that comes into reach. Line up with one on the way in;
 			# miss and you slide back down and stop (no second go without a run-up).
@@ -253,7 +253,7 @@ func _try_vault(wall: Dictionary, direction: Vector3, feet: Vector3) -> Vault:
 	if top == -INF or depth < 0.0:
 		return Vault.NO # Nothing on top (too tall to see), or too deep.
 
-	var speed := maxf(player.get_horizontal_speed(), player.run_speed)
+	var speed := maxf(player.get_horizontal_speed(), player.free_run_speed)
 	var to_wall: float = (wall.position - feet).dot(direction)
 	var risen_at := to_wall - player.body_radius - 0.05
 	if risen_at > speed * player.vault_takeoff_time:

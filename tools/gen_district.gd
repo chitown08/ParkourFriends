@@ -698,7 +698,6 @@ func _write_header() -> void:
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="20_crate"]
-[ext_resource type="Resource" path="res://items/data/backpack.tres" id="21_backpack"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
@@ -908,12 +907,12 @@ func _write_extra_relics(buildings: Array[Dictionary]) -> int:
 
 
 ## Items to try out, around the district (they go back home if left lying
-## about): bats and a backpack in the plaza, gliders on the tallest roofs
+## about): bats and balloons in the plaza, gliders on the tallest roofs
 ## (glide across the avenues), balloons on others, crates in the streets.
 ## Returns how many it wrote.
 func _write_items(buildings: Array[Dictionary]) -> int:
 	var items := [["Bat1", "19_bat", Vector3(6, 0.5, -6)], ["Bat2", "19_bat", Vector3(-6, 0.5, -6)],
-			["Backpack1", "21_backpack", Vector3(-6, 0.5, 6)], ["Backpack2", "21_backpack", Vector3(6, 0.5, 6)]]
+			["Balloon4", "22_balloon", Vector3(-6, 0.5, 6)], ["Balloon5", "22_balloon", Vector3(6, 0.5, 6)]]
 	var free := buildings.filter(func(b: Dictionary) -> bool:
 			return b.roof == "flat" and not b.tower and not _marker_spots.any(func(spot: Vector2) -> bool:
 				return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))

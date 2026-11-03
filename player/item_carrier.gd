@@ -1,13 +1,12 @@
 class_name ItemCarrier
 extends Node
-## The player's side of items. Everyone has one slot, their hands (the active
-## item); wearing a backpack adds a second slot to stow an item in.
-##   F / X       -> pick up the nearest item (if you have room);
+## The player's side of items. You carry one thing at a time, in your hands:
+## if you aren't holding it, you aren't using it.
+##   F / X       -> pick up the nearest item (if your hands are free);
 ##                  otherwise drop the item in your hands, or hand it to the
-##                  friend you're facing; with empty hands, take off your backpack
+##                  friend you're facing
 ##   Hold F / X  -> throw the item in your hands where the camera points
 ##                  (with empty hands, it's like a quick press)
-##   Right mouse / D-pad right -> swap your hands and your backpack
 ##   Left mouse / left trigger -> use the item in your hands
 ## Some items (collectibles) are picked up just by touching them, while they
 ## sit at their home spot.
@@ -40,8 +39,6 @@ func physics_update(delta: float) -> void:
 			player.show_effect(&"show_action", [&"throw"])
 		else:
 			_interact()
-	if input.switch_item_just_pressed:
-		request_swap.rpc_id(1)
 	_pick_up_touched(delta)
 
 	_update_ability()
@@ -52,17 +49,8 @@ func physics_update(delta: float) -> void:
 
 
 func hands_item() -> WorldItem:
-	return _held_in(WorldItem.HANDS)
-
-
-## The item stowed in your backpack (or null).
-func back_item() -> WorldItem:
-	return _held_in(WorldItem.BACK)
-
-
-## The backpack you're wearing (or null).
-func backpack() -> WorldItem:
-	return _held_in(WorldItem.WORN)
+	var held := _all_held()
+	return held[0] if not held.is_empty() else null
 
 
 ## True while the item in your hands needs both of them (no climbing).
@@ -72,7 +60,7 @@ func hands_busy() -> bool:
 
 
 func can_take(item: WorldItem) -> bool:
-	return item.free_slot(player) != -1
+	return item.has_room(player)
 
 
 ## The closest item lying in the world within reach that you have room for (or null).
@@ -118,26 +106,12 @@ func control_hints() -> Array:
 	return []
 
 
-## Swap the items in your hands and your backpack (runs on the host).
-@rpc("any_peer", "call_local", "reliable")
-func request_swap() -> void:
-	if not multiplayer.is_server() or backpack() == null:
-		return
-	for item in _all_held():
-		if item.slot == WorldItem.HANDS:
-			item.slot = WorldItem.BACK
-		elif item.slot == WorldItem.BACK:
-			item.slot = WorldItem.HANDS
-
-
 func _interact() -> void:
 	var nearby := nearest_item()
 	if nearby:
 		nearby.request_pick_up.rpc_id(1)
 		return
 	var to_drop := hands_item()
-	if to_drop == null:
-		to_drop = backpack()
 	if to_drop:
 		var friend := friend_in_front()
 		to_drop.request_drop.rpc_id(1, str(friend.name) if friend else "")
@@ -174,13 +148,6 @@ func _update_ability() -> void:
 		_ability = in_hands.item.ability.new() as ItemAbility
 		_ability.item = in_hands
 		_ability.equipped(player)
-
-
-func _held_in(slot: int) -> WorldItem:
-	for item in _all_held():
-		if item.slot == slot:
-			return item
-	return null
 
 
 func _all_held() -> Array[WorldItem]:

@@ -184,3 +184,18 @@ func _ghost_buddy(offset: Vector3) -> Player:
 	ghost.global_position = Vector3(0, FLOOR_Y + 0.05, 0) + offset
 	ghost.reset_physics_interpolation()
 	return ghost
+
+
+func test_the_camera_pulls_back_to_show_the_pack() -> void:
+	var arm: SpringArm3D = player.camera_rig.get_node("SpringArm3D")
+	var close := arm.spring_length
+	expect(close < 4.5, "alone, the camera sits close behind you, %.1f m" % close)
+	buddy = _ghost_buddy(Vector3(-3, 0, 0))
+	await place(Vector3(0, FLOOR_Y + 0.05, 0), FACE_NORTH)
+	Input.action_press(&"free_run")
+	await ticks(150)
+	expect(player.pack_size() == 1, "test setup: a pack of two")
+	expect(arm.spring_length > close + 0.7, "running as a pack, it eases back to show you both, %.1f m" % arm.spring_length)
+	release_all()
+	await ticks(240)
+	expect(arm.spring_length < close + 0.2, "and comes back in after, %.1f m" % arm.spring_length)

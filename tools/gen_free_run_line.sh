@@ -43,7 +43,6 @@ cat <<'EOF'
 [ext_resource type="Resource" path="res://items/data/crate.tres" id="14_crate"]
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="15_balloon"]
 [ext_resource type="Resource" path="res://items/data/relic.tres" id="16_relic"]
-[ext_resource type="Resource" path="res://items/data/backpack.tres" id="17_backpack"]
 [ext_resource type="Resource" path="res://items/data/glider.tres" id="18_glider"]
 [ext_resource type="Resource" path="res://items/data/bat.tres" id="19_bat"]
 [ext_resource type="AudioStream" path="res://audio/music/test_level.mp3" id="20_music"]
@@ -105,12 +104,11 @@ floor DropOffPad 5 -5 0 6 -7
 printf '\n[node name="DropOff" parent="." instance=ExtResource("10_dropoff")]\ntransform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)\n'
 
 # Placeholder items to try the item system (not real game items). The crate is
-# bulky (no climbing while it's in your hands); the backpack adds a second slot.
+# bulky (no climbing while it's in your hands).
 world_item Crate 2.5 0.4 -14 14_crate
 world_item TestBalloon -2.5 0.4 -14 15_balloon
-world_item Backpack 0 0.4 -18 17_backpack
 world_item Bat 2.5 0.4 -18 19_bat
-label LabelItems 0 3 -14 "ITEMS: F pick up / drop, T throw, Tab backpack"
+label LabelItems 0 3 -14 "ITEMS: F pick up / drop, hold F to throw"
 
 # --- 1. Hurdles (1, 1.5 and 2.5 m): free-run jumps them ---
 floor HurdleLane -45 -100 0
@@ -202,7 +200,7 @@ checkpoint Checkpoint8 0 1 -545
 world_item Glider -2.5 1.2 -543 18_glider
 floor GlideIsland -535 -555 -6 16 40
 relic RelicGlide 40 -4.4 -545
-label LabelGlide 3 4 -543 "GLIDER: hold right mouse / LT in the air\n(island to the east)"
+label LabelGlide 3 4 -543 "GLIDER: hold click / LT in the air\n(island to the east)"
 
 # --- 12. Grind rail from the tower top down to the final landing ---
 # Starts just past the tower's north edge (z = -550), a little below the roof

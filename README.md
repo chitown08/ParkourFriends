@@ -34,12 +34,11 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 |---|---|---|
 | WASD / mouse | Sticks | Move / look |
 | Space (hold: leap) | A | Jump; hold while free-running to ready a leap |
-| Shift (hold) | RT (hold) | Free-run: auto-parkour, and running as a pack with friends nearby |
+| Shift (hold) | RT (hold) | Free-run: faster (and faster still as your flow builds), auto-parkour, and running as a pack with friends nearby. Without it you just run |
 | C or Ctrl | B | Crouch; slide while running; let go of whatever you hold on to |
 | E | RB | Do something with a friend: toss them, brace at a wall for a leg-up (or climb onto a braced friend's shoulders), take a hand in a pack (crack the whip); again to stop |
 | F (hold: throw) | X (hold: throw) | Items: pick up, drop or hand to the friend you face; hold to throw where the camera points |
 | Left click | LT | Use the item in your hands (glider: hold in the air; bat: swing) |
-| Right click | D-pad right | Swap your hands and your backpack (once you wear one) |
 | R | Back | Back to your checkpoint |
 | Esc | Start | Menu: settings, your outfit, leave, quit |
 | F11 | | Fullscreen on/off |
@@ -125,10 +124,10 @@ levels/     rooftop_district.tscn – a 5 x 5 block grey-box district with two c
 items/      world_item.tscn/.gd   – a physical item in the world (the host decides who holds it)
             item_data.gd          – what kind of item it is: name, looks, weight, throw speed, ability
             item_ability.gd       – base class for what an item does while in your hands
-            data/                 – one .tres per kind of item (relic, backpack, glider, bat, crate, test_balloon, …)
+            data/                 – one .tres per kind of item (relic, glider, bat, crate, test_balloon, …)
             models/               – item models (relic_gem.tscn)
             abilities/            – ability scripts (glide.gd, bat_swing.gd, slow_fall.gd, …)
-player/     item_carrier.gd       – your item slots (hands, plus a backpack if you wear one) and the item buttons
+player/     item_carrier.gd       – what you hold (one thing, in your hands) and the item buttons
 ui/         hud.tscn/.gd          – on screen while playing: controls card, button prompt, messages, relics, items (F3: debug readout)
             control_names.gd      – what each control is called (keyboard or gamepad, whichever you last used)
             main_menu.tscn/.gd    – start menu
@@ -154,7 +153,7 @@ its **ItemData** file.
    pick **ItemData**, save it as e.g. `glider.tres`. In the Inspector set its name, size,
    colour, weight (mass) and throw speed. (Optional: drag a 3D model scene into **Model** to
    replace the box.) Under **Carrying**, tick what applies: **Bulky** (needs both hands, so no
-   climbing while holding it), **Is Backpack**, **Pick Up On Touch**, **Hovers At Home** and
+   climbing while holding it), **Pick Up On Touch**, **Hovers At Home** and
    **Deliverable** (counts at a drop-off, like relics).
 2. **Give it an ability (optional):** make `items/abilities/<name>.gd` that `extends ItemAbility`
    and fill in any of `equipped`, `unequipped`, `physics_update` (every tick while in your hands)
