@@ -175,6 +175,9 @@ speeds, jump height, ledge grabs, slides, wall moves, tossing, checkpoints, menu
 side by side in one program and must see each other move).
 
 - **Run them:** double-click `run_tests.cmd`, or run it from a terminal. It prints PASS/FAIL for each test.
+  The whole suite takes about half a minute: the game runs as fast as the computer allows
+  (`--fixed-fps 60` makes every frame count as 1/60 s, however quickly it really went), so a
+  test's "seconds" are game seconds, not real ones.
 - **Run just some:** `run_tests.cmd items` runs only the test files with "items" in their name.
 - **Run them after every change** to make sure nothing that used to work has broken.
 - **Add a test:** add a `func test_something() -> void:` to a `tests/test_*.gd` file (or make a new one).

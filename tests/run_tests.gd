@@ -31,6 +31,8 @@ class ErrorCatcher:
 		return taken
 
 
+## In game seconds: run_tests.cmd runs the game flat out (--fixed-fps 60), so
+## the whole suite's ~15 game minutes take about half a minute for real.
 const TIME_LIMIT_SECONDS := 1200.0
 
 
@@ -91,7 +93,9 @@ func _run_all() -> void:
 		print("\nErrors outside of tests, or no tests found.")
 	print("\n%d passed, %d failed" % [passed, failed])
 	# Give the audio server a moment to let go of the last sounds, so quitting
-	# doesn't report them as leaks.
+	# doesn't report them as leaks. (A real pause: with --fixed-fps, frames alone
+	# go by too quickly for the audio thread.)
 	for i in 10:
+		OS.delay_msec(20)
 		await process_frame
 	quit(1 if failed > 0 else 0)
