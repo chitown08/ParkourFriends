@@ -88,14 +88,24 @@ static func version() -> String:
 ## everything goes), so effects can be turned down apart from the music. (The
 ## music's own volume is set on its player: see main.gd update_music_volume().)
 const EFFECTS_BUS := &"Effects"
+## The music's channel: it has a filter that can muffle it (cut off the high
+## notes), for layered songs when you're alone (see main.gd).
+const MUSIC_BUS := &"Music"
 
 
-## Makes the Effects channel (once) and sets the overall and effects volumes.
+## Makes the Effects and Music channels (once) and sets the overall and effects volumes.
 static func apply_audio() -> void:
 	if AudioServer.get_bus_index(EFFECTS_BUS) == -1:
 		AudioServer.add_bus()
 		AudioServer.set_bus_name(AudioServer.bus_count - 1, EFFECTS_BUS)
 		AudioServer.set_bus_send(AudioServer.bus_count - 1, &"Master")
+	if AudioServer.get_bus_index(MUSIC_BUS) == -1:
+		AudioServer.add_bus()
+		AudioServer.set_bus_name(AudioServer.bus_count - 1, MUSIC_BUS)
+		AudioServer.set_bus_send(AudioServer.bus_count - 1, &"Master")
+		var muffle := AudioEffectLowPassFilter.new()
+		muffle.cutoff_hz = 20000.0
+		AudioServer.add_bus_effect(AudioServer.bus_count - 1, muffle)
 	_set_volume(&"Master", master_volume)
 	_set_volume(EFFECTS_BUS, effects_volume)
 
@@ -113,3 +123,15 @@ static func apply_display() -> void:
 	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
 	if DisplayServer.window_get_mode() != mode:
 		DisplayServer.window_set_mode(mode)
+
+
+## The music's muffle: everything above `hz` is cut off (20000: nothing is).
+static func set_music_cutoff(hz: float) -> void:
+	var bus := AudioServer.get_bus_index(MUSIC_BUS)
+	if bus != -1:
+		(AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter).cutoff_hz = hz
+
+
+static func music_cutoff() -> float:
+	var bus := AudioServer.get_bus_index(MUSIC_BUS)
+	return (AudioServer.get_bus_effect(bus, 0) as AudioEffectLowPassFilter).cutoff_hz if bus != -1 else 20000.0

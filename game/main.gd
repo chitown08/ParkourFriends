@@ -56,11 +56,20 @@ var delivered_relics := {}
 @onready var music: AudioStreamPlayer = $Music
 ## What plays next (see Playlist): worlds with music start with their own song.
 var playlist := Playlist.new()
+## The layered song playing (null for an ordinary one).
+var layered: LayeredSong
+## A layered song alone sounds a little muffled (as if from the next room): it
+## opens up when a friend runs with you. Frequencies (Hz) the music is cut off
+## above, and how quickly it changes.
+const MUFFLED_HZ := 3500.0
+const OPEN_HZ := 20000.0
+const MUFFLE_EASE := 1.5
 
 
 func _ready() -> void:
 	Settings.load_from_disk()
 	Settings.apply_audio()
+	music.bus = Settings.MUSIC_BUS
 	Settings.apply_display()
 	network.start_steam()
 	if Settings.player_name == "" and network.steam_ready:
@@ -378,7 +387,7 @@ func _on_world_added(node: Node) -> void:
 
 func _on_world_ready(new_level: Level) -> void:
 	level = new_level
-	_play_music(level.music)
+	_play_music(level.music, level.music_folder)
 	for player: Player in players.get_children():
 		player.kill_height = level.kill_height
 	for checkpoint: Checkpoint in get_tree().get_nodes_in_group(&"checkpoints"):
@@ -516,6 +525,12 @@ func check_build() -> void:
 	print("music: %d track(s)" % tracks.size())
 	if tracks.is_empty():
 		problems.append("no music")
+	for track in tracks:
+		if track.ends_with("/"):
+			var layers := LayeredSong.new(track).layers.size() if LayeredSong.is_layered(track) else 0
+			print("  layered song %s: %d layers" % [track, layers])
+			if layers == 0:
+				problems.append("no layers in " + track)
 	print("developer tools: %s" % ("ON (should be off in a release build)" if Settings.dev_tools else "off"))
 	if Settings.dev_tools and not OS.is_debug_build():
 		problems.append("developer tools on")
@@ -533,15 +548,20 @@ func update_music_volume() -> void:
 	music.volume_db = linear_to_db(Settings.music_volume) if Settings.music_on else -80.0
 
 
-## Starts the music with `song` (a world's own), then the rest of the playlist
-## shuffled; or goes quiet if the world has none.
-func _play_music(song: AudioStream) -> void:
+## Starts the music with `song` or the layered song in `folder` (a world's
+## own), then the rest of the playlist shuffled; or goes quiet if it has none.
+func _play_music(song: AudioStream, folder := "") -> void:
 	music.stop()
 	music.stream = null
-	if song == null:
-		return
-	playlist.start_with(song.resource_path)
-	_play_track(song)
+	layered = null
+	if folder:
+		if not folder.ends_with("/"):
+			folder += "/"
+		playlist.start_with(folder)
+		_play_layered(folder)
+	elif song:
+		playlist.start_with(song.resource_path)
+		_play_track(song)
 
 
 ## The track that was playing finished: on to the next.
@@ -549,12 +569,31 @@ func _play_next_track() -> void:
 	if music.stream == null:
 		return
 	var path := playlist.next()
-	if path:
+	if LayeredSong.is_layered(path):
+		_play_layered(path)
+	elif path:
 		_play_track(load(path))
 
 
 func _play_track(song: AudioStream) -> void:
+	layered = null
 	if "loop" in song:
 		song.loop = false # (The playlist moves on when it ends.)
 	music.stream = song
 	music.play()
+
+
+## Plays the layered song in `folder` (see LayeredSong): it swells with your pack.
+func _play_layered(folder: String) -> void:
+	layered = LayeredSong.new(folder)
+	music.stream = layered.stream
+	music.play()
+
+
+## The layered song swells with your pack, and alone it's a little muffled.
+func _process(delta: float) -> void:
+	var pack := local_player.pack_size() if local_player else 0
+	if layered:
+		layered.set_pack(pack, delta)
+	var cutoff := MUFFLED_HZ if layered and pack == 0 else OPEN_HZ
+	Settings.set_music_cutoff(lerpf(Settings.music_cutoff(), cutoff, 1.0 - exp(-MUFFLE_EASE * delta)))

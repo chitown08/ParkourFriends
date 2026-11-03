@@ -78,7 +78,12 @@ built and the details the code relies on.
   gliding; the bat sweeps round in an arc (`item_anchor()`), and whoever it hits flashes white.
   Background music: a world with music starts with its own song (`Level.music`, set by the level
   generators), then plays every track in `audio/music/` shuffled (`game/playlist.gd`: each once a
-  round, never the same twice running); add music by copying files there. M mutes it and the pause menu has a volume slider (both saved in Settings).
+  round, never the same twice running); add music by copying files there. **Layered songs** (`game/layered_song.gd`): a folder made by
+  `tools/mix_song.sh` from Suno stems plays all its layers in step (an `AudioStreamSynchronized`), each
+  faded (1.5 s) by how many friends are pack-running with you: base always, pack1 with one, pack2 with
+  two, all the `extra-*` with three (otherwise one or two, picked as the song starts). Alone, a
+  low-pass filter on the Music channel muffles it a little (3.5 kHz), opening as a friend joins. The
+  district starts with its layered song (`Level.music_folder`). M mutes it and the pause menu has a volume slider (both saved in Settings).
   Sounds are made from code (`game/sfx.gd`) and bursts of bits (dust, the bat's "pop") by
   `game/effects.gd`. One-off effects reach everyone through `Player.show_effect()`.
 

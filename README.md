@@ -72,6 +72,18 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | M | | Music on/off |
 | F3 | | State, speed, height, network readout |
 
+## Adding a layered song (it swells as your pack grows)
+
+1. In Suno, export the song's **stems** as WAV. Put them in a folder of their own in `audio/stems/`
+   (kept out of Git: they're huge).
+2. Run (with ffmpeg installed in `%LOCALAPPDATA%ParkourFriendsToolsfmpeg`, from gyan.dev):
+   `bash tools/mix_song.sh "audio/stems/My Song" my_song`. It mixes the stems into a few small layer files in
+   `audio/music/my_song/`: the groove (drums, bass, keyboard, percussion) always plays; the synth comes in with one
+   friend pack-running with you, brass with two, and with three everything. The other instruments are extras: a couple
+   play anyway, picked fresh each time the song starts. Alone, the song is a little muffled. Edit the list at the
+   top of the script to move instruments between layers.
+3. Open the editor once (so Godot imports them). It's in the playlist.
+
 ## Project layout
 
 Folders are organized by *feature*: each scene (`.tscn`) sits next to its script (`.gd`).
@@ -135,6 +147,8 @@ ui/         hud.tscn/.gd          – on screen while playing: controls card, bu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it, orange grid_ramp = launch off it)
 audio/music/                      – background music (made by Graham in Suno): drop .mp3 or .ogg files here and open the
                                     editor once; they're shuffled into the playlist (a world starts with its Level.music)
+            rooftop_test/         – a layered song (see below): base.ogg, pack1.ogg, pack2.ogg, extra-*.ogg
+audio/stems/                      – Suno stem WAVs, kept on your computer only (not in Git: too big)
 ```
 
 Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 = players, 3 = triggers, 4 = items.

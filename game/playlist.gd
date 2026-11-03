@@ -1,6 +1,7 @@
 class_name Playlist
 extends RefCounted
-## The background music: every track in audio/music/, shuffled. Each plays
+## The background music: every track in audio/music/ (a file, or a folder
+## holding a layered song: see LayeredSong), shuffled. Each plays
 ## once before any plays again, and a new round never starts with the track
 ## that just finished. To add music, copy the files (.mp3, .ogg or .wav) into
 ## audio/music/ and open the editor once, so Godot imports them.
@@ -25,7 +26,7 @@ func _init(paths: Array[String] = []) -> void:
 static func find_tracks() -> Array[String]:
 	var found: Array[String] = []
 	for file in ResourceLoader.list_directory(DIR):
-		if file.get_extension().to_lower() in KINDS:
+		if file.get_extension().to_lower() in KINDS or LayeredSong.is_layered(DIR + file):
 			found.append(DIR + file)
 	found.sort()
 	return found

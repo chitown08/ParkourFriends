@@ -5,8 +5,11 @@ extends Node3D
 
 ## Falling below this height respawns you at your last checkpoint.
 @export var kill_height := -15.0
-## Background music for this world (loops). Leave empty for silence.
+## The song this world starts with (then the rest of the music, shuffled).
+## Leave empty for silence...
 @export var music: AudioStream
+## ...or start with a layered song instead (a folder in audio/music/: see LayeredSong).
+@export_dir var music_folder := ""
 
 @onready var spawn_point: Marker3D = $SpawnPoint
 

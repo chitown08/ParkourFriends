@@ -739,6 +739,7 @@ fog_density = 0.001
 script = ExtResource("1_level")
 kill_height = -20.0
 music = ExtResource("6_music")
+music_folder = "res://audio/music/rooftop_test/"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")

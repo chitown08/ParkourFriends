@@ -15,3 +15,7 @@ Thumbs.db
 
 # Animations Godot pulls out of the character FBX files on import
 characters/**/anims/*.res
+
+# Music stems straight from Suno (huge WAVs): kept on your computer only.
+# tools/mix_song.sh turns them into the small layer files the game plays.
+audio/stems/
