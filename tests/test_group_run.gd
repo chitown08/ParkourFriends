@@ -26,6 +26,9 @@ func test_the_warm_up_run_has_its_gates_and_relics() -> void:
 	expect(names == ["Finish", "Gold1", "Gold2"], "a relic for finishing and one per gold gate, %s" % [names])
 	expect(run.rewards().all(func(reward: WorldItem) -> bool: return reward.state == WorldItem.State.LOCKED and not reward.visible), "all still to earn: hidden")
 	expect(main.hud.get_node("Relics").text.ends_with("/ 33"), "they count among the relics to find: %s" % main.hud.get_node("Relics").text)
+	var first := whites[0]
+	var way := (first.global_position - run.global_position).normalized()
+	expect((-first.global_basis.z).dot(way) > 0.5, "the first gate faces the way you come at it from the ring")
 
 
 func test_the_checker_says_white_gates_take_one_of_you_and_gold_gates_more() -> void:

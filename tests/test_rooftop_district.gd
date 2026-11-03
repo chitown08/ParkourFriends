@@ -767,3 +767,18 @@ func test_items_to_try_lie_about_the_district() -> void:
 
 func test_no_signs_about() -> void:
 	expect(main.level.get_node("Labels").get_child_count() == 0, "no labels or tips in the playground")
+
+
+func test_the_hub_tower_lights_up_a_light_per_relic_delivered() -> void:
+	var board: RelicBoard = main.level.get_node("RelicBoard")
+	var to_plaza := -Vector3(board.global_position.x, 0, board.global_position.z).normalized()
+	expect((-board.global_basis.z).dot(to_plaza) > 0.6, "the board looks out toward the plaza")
+	expect(board.global_position.y > 30.0, "high up on the hub tower, %.0f m" % board.global_position.y)
+	await ticks(2)
+	expect(board.lit() == Vector2i(0, 33), "a light for every relic (the run's too), none lit yet: %s" % board.lit())
+	var relic: WorldItem = main.level.get_node("Relics").get_child(0)
+	relic.host_deliver()
+	await ticks(2)
+	expect(board.lit() == Vector2i(1, 33), "deliver one: its light comes on, %s" % board.lit())
+	var rows := board.rows().map(func(row: Array) -> int: return row.size())
+	expect(rows == [14, 8, 5, 3, 3], "rows by players each takes, then the run: %s" % [rows])

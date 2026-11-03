@@ -23,6 +23,7 @@
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
 [ext_resource type="Script" path="res://levels/group_run.gd" id="23_run"]
 [ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
+[ext_resource type="Script" path="res://levels/relic_board.gd" id="25_board"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -1879,23 +1880,23 @@ title = "Warm-up"
 [node name="Gates" type="Node3D" parent="Runs/Run1"]
 
 [node name="Gate1" type="Node3D" parent="Runs/Run1/Gates"]
-transform = Transform3D(-0.94, 0, 0.34, 0, 1, 0, -0.34, 0, -0.94, 16.05, -1.7, 44.0)
+transform = Transform3D(-0.94, 0, -0.34, 0, 1, 0, 0.34, 0, -0.94, 16.05, -1.7, 44.0)
 script = ExtResource("24_gate")
 
 [node name="Gate2" type="Node3D" parent="Runs/Run1/Gates"]
-transform = Transform3D(-0.67, 0, -0.74, 0, 1, 0, 0.74, 0, -0.67, 3.05, 5.3, 55.83)
+transform = Transform3D(-0.67, 0, 0.74, 0, 1, 0, -0.74, 0, -0.67, 3.05, 5.3, 55.83)
 script = ExtResource("24_gate")
 
 [node name="Gate3" type="Node3D" parent="Runs/Run1/Gates"]
-transform = Transform3D(-0.5, 0, -0.87, 0, 1, 0, 0.87, 0, -0.5, -31.93, 5.3, 75.86)
+transform = Transform3D(-0.5, 0, 0.87, 0, 1, 0, -0.87, 0, -0.5, -31.93, 5.3, 75.86)
 script = ExtResource("24_gate")
 
 [node name="Gate4" type="Node3D" parent="Runs/Run1/Gates"]
-transform = Transform3D(0.45, 0, -0.89, 0, 1, 0, 0.89, 0, 0.45, -57.93, -1.7, 62.86)
+transform = Transform3D(0.45, 0, 0.89, 0, 1, 0, -0.89, 0, 0.45, -57.93, -1.7, 62.86)
 script = ExtResource("24_gate")
 
 [node name="Gate5" type="Node3D" parent="Runs/Run1/Gates"]
-transform = Transform3D(0.98, 0, -0.19, 0, 1, 0, 0.19, 0, 0.98, -65.23, 5.3, 26.0)
+transform = Transform3D(0.98, 0, 0.19, 0, 1, 0, -0.19, 0, 0.98, -65.23, 5.3, 26.0)
 script = ExtResource("24_gate")
 
 [node name="Gold1" type="Node3D" parent="Runs/Run1/Gates"]
@@ -2225,6 +2226,11 @@ item = ExtResource("20_crate")
 [node name="Crate3" parent="Items" instance=ExtResource("12_item")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.0, 0.5, -79.0)
 item = ExtResource("20_crate")
+
+[node name="RelicBoard" type="Node3D" parent="."]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -115.25, 42.5, 25.84)
+script = ExtResource("25_board")
+width = 23.68
 
 [node name="Block00_0_Vault1" type="CSGBox3D" parent="RoofClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -198.89, 21.51, -198.32)

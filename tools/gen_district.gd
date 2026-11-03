@@ -236,6 +236,7 @@ func _write_scene() -> String:
 	_write_relics(buildings)
 	var relics := 5 + _write_extra_relics(buildings)
 	var items := _write_items(buildings)
+	_write_relic_board(buildings)
 	var roof_things := 0
 	for b in buildings:
 		roof_things += _write_roof_clutter(b)
@@ -711,6 +712,7 @@ func _write_header() -> void:
 [ext_resource type="Resource" path="res://items/data/test_balloon.tres" id="22_balloon"]
 [ext_resource type="Script" path="res://levels/group_run.gd" id="23_run"]
 [ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
+[ext_resource type="Script" path="res://levels/relic_board.gd" id="25_board"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -1073,7 +1075,7 @@ func _gate(name: String, at: Vector3, along: Vector3, gold: bool) -> void:
 	var c := cos(yaw)
 	var s := sin(yaw)
 	_out.append("\n[node name=\"%s\" type=\"Node3D\" parent=\"Runs/Run1/Gates\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"24_gate\")%s" % [
-			name, _num(c), _num(-s), _num(s), _num(c), _num(at.x), _num(at.y), _num(at.z), "\ngold = true" if gold else ""])
+			name, _num(c), _num(s), _num(-s), _num(c), _num(at.x), _num(at.y), _num(at.z), "\ngold = true" if gold else ""])
 
 
 ## How far apart two buildings are, seen from above (0 if they touch).
@@ -1081,3 +1083,26 @@ func _gap_between(a: Dictionary, b: Dictionary) -> float:
 	var dx := maxf(0.0, maxf(a.x - (b.x + b.w), b.x - (a.x + a.w)))
 	var dz := maxf(0.0, maxf(a.z - (b.z + b.d), b.z - (a.z + a.d)))
 	return Vector2(dx, dz).length()
+
+
+## The hub: the tower nearest the plaza. Its face looking toward the plaza
+## gets the relic board (levels/relic_board.gd): a light per relic, lit when
+## it's delivered, near the top where you can see it from all over.
+func _write_relic_board(buildings: Array[Dictionary]) -> void:
+	var towers := buildings.filter(func(b: Dictionary) -> bool: return b.tower)
+	var hub: Dictionary = _nearest(towers, Vector2.ZERO)
+	var middle := _middle(hub)
+	var faces := [[Vector2(1, 0), hub.w / 2.0, hub.d], [Vector2(-1, 0), hub.w / 2.0, hub.d],
+			[Vector2(0, 1), hub.d / 2.0, hub.w], [Vector2(0, -1), hub.d / 2.0, hub.w]]
+	var best: Array = faces[0]
+	for face: Array in faces:
+		if (face[0] as Vector2).dot(-middle.normalized()) > (best[0] as Vector2).dot(-middle.normalized()):
+			best = face
+	var normal: Vector2 = best[0]
+	var at: Vector2 = middle + normal * (best[1] + 0.05)
+	var top: float = hub.storeys * STOREY - 3.0
+	var yaw := atan2(-normal.x, -normal.y) # (The board faces -Z: turned to face out.)
+	var c := cos(yaw)
+	var s := sin(yaw)
+	_out.append("\n[node name=\"RelicBoard\" type=\"Node3D\" parent=\".\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"25_board\")\nwidth = %s" % [
+			_num(c), _num(s), _num(-s), _num(c), _num(at.x), _num(top), _num(at.y), _num(best[2] - 4.0)])

@@ -237,6 +237,12 @@ district has one so far, "Warm-up" (`gen_district.gd _write_runs()`): ring on th
 the spawn, five white gates hopping roof to roof, two gold gates floating 9.5 m up (a toss).
 Ideas for later: follow the leader, night runs, reversed routes.
 
+**The hub tower's relic board** (`levels/relic_board.gd`): the tower nearest the plaza carries, near
+the top of the face looking toward the plaza, a 2.6 m light for every relic in the world, lit gold when
+it's delivered, so anyone can look up and see how the crew's doing. Rows: relics for one player, then
+two, three and four (by their rings), then a block per group run. It builds itself from the world's
+relics. (Later, with more regions: a block per region.)
+
 ## Worlds
 
 | World | Purpose |
