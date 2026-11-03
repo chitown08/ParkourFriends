@@ -282,6 +282,10 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 ## Ideas not yet in the master doc
 
+- **Relic delivery celebrations** (Nov 2026): streamers, fireworks; bigger the more style you bring
+  it in with (speed through the drop-off, how many of you are pack-running, how high you come in from).
+- **More ramp shapes**: thin tall ramps built into a building's side, curved launches like a
+  section of half-pipe.
 - **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
   ivy, bounce pads; air vents could pair with a glider. Something for the towers.
 - **Co-op moves that scale with player count** (Nov 2026, the user's favourites):
