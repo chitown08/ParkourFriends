@@ -76,6 +76,12 @@ var sync_leap_charge := 0.0
 ## two friends side by side would keep matching each other's eased-up pace,
 ## faster and faster).
 var sync_free_run_velocity := Vector3.ZERO
+## What this player is called (Settings.player_name), shown over their head.
+var sync_player_name := "":
+	set(value):
+		sync_player_name = value
+		if _name_tag:
+			_name_tag.text = value
 ## The name of the friend we're hanging from (a hanging chain), or "".
 var sync_hanging_on := ""
 ## The name of the friend whose shoulders we're bracing on (a leg-up stack), or "".
@@ -217,6 +223,10 @@ var _rise_gravity: float
 var _fall_gravity: float
 var _jump_buffer_timer := 0.0
 var _outfit_index := 0
+## The name over your head, for friends to see (not shown for your own).
+var _name_tag: Label3D
+## How high above your feet the name floats (metres).
+const NAME_TAG_HEIGHT := 2.3
 
 @onready var input: PlayerInput = $PlayerInput
 @onready var camera_rig: CameraRig = $CameraRig
@@ -338,6 +348,13 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	is_local = is_multiplayer_authority()
 	add_to_group(&"players")
+	_make_name_tag()
+	if is_local and not is_bot:
+		# You: your name and outfit, from your settings, sent to everyone.
+		sync_player_name = Settings.player_name if Settings.player_name else "Player"
+		sync_outfit = Cosmetics.tidy(Settings.outfit)
+	elif is_bot:
+		sync_player_name = "Buddy"
 	_apply_color()
 	_apply_outfit()
 
@@ -716,6 +733,25 @@ func _apply_color() -> void:
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
 	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
 	_body_mesh.material_override = material
+	if _name_tag:
+		_name_tag.modulate = material.albedo_color.lightened(0.5)
+
+
+## The name tag over your head: the same size on screen however far away you
+## are, and seen through walls, so you can find each other.
+func _make_name_tag() -> void:
+	_name_tag = Label3D.new()
+	_name_tag.name = "NameTag"
+	_name_tag.text = sync_player_name
+	_name_tag.position = Vector3.UP * NAME_TAG_HEIGHT
+	_name_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_name_tag.fixed_size = true
+	_name_tag.pixel_size = 0.0006
+	_name_tag.font_size = 40
+	_name_tag.outline_size = 12
+	_name_tag.no_depth_test = true
+	_name_tag.visible = not (is_local and not is_bot)
+	add_child(_name_tag)
 
 
 func _apply_outfit() -> void:

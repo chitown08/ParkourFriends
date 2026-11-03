@@ -17,15 +17,23 @@ func _ready() -> void:
 	%Host.pressed.connect(host_pressed.emit)
 	%Join.pressed.connect(func() -> void: join_pressed.emit(_address.text.strip_edges()))
 	_address.text_submitted.connect(func(text: String) -> void: join_pressed.emit(text.strip_edges()))
+	%Version.text = Settings.version()
+	%PlayerName.text_changed.connect(func(text: String) -> void:
+		Settings.player_name = Settings.clean_name(text)
+		Settings.save_to_disk())
 	open()
 
 
 func open(message: String = "") -> void:
 	visible = true
+	%PlayerName.text = Settings.player_name
 	set_busy(false)
 	_status.text = message
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	%Solo.grab_focus()
+	if Settings.player_name == "":
+		%PlayerName.grab_focus() # First time: type a name first.
+	else:
+		%Solo.grab_focus()
 
 
 ## Shows a message and greys out the buttons while something is happening.

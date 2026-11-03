@@ -55,15 +55,29 @@ static func available(slot: StringName) -> Array[String]:
 	if slot == &"trail":
 		for kind in DirAccess.get_directories_at(DIR + "trail"):
 			for file in DirAccess.get_files_at(DIR + "trail/" + kind):
+				file = file.trim_suffix(".import") # (In the build friends get, only these are listed.)
 				if not file.ends_with(".glb") or (kind == "scarf" and not file.ends_with("_tail.glb")):
 					continue
-				names.append(kind + "/" + file.get_basename().trim_suffix("_tail"))
+				var item := kind + "/" + file.get_basename().trim_suffix("_tail")
+				if not item in names:
+					names.append(item)
 	else:
 		for file in DirAccess.get_files_at(DIR + slot):
-			if file.ends_with(".glb"):
+			file = file.trim_suffix(".import")
+			if file.ends_with(".glb") and not file.get_basename() in names:
 				names.append(file.get_basename())
 	names.sort()
 	return names
+
+
+## `outfit` (an item name or "" per slot, as Settings.outfit) with one entry
+## for every slot, and anything no longer made left out ("").
+static func tidy(outfit: PackedStringArray) -> PackedStringArray:
+	var tidied := PackedStringArray()
+	for i in SLOTS.size():
+		var item := outfit[i] if i < outfit.size() else ""
+		tidied.append(item if item in available(SLOTS[i]) else "")
+	return tidied
 
 
 ## Puts `item` (a name from available(slot), or "" for nothing) on `skeleton`,

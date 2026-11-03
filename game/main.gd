@@ -52,6 +52,9 @@ var delivered_relics := {}
 
 func _ready() -> void:
 	Settings.load_from_disk()
+	Settings.apply_audio()
+	Settings.apply_display()
+	menu.open() # (Again, now your saved name is known.)
 	hud.network = network
 	players.child_entered_tree.connect(_on_player_added)
 	world.child_entered_tree.connect(_on_world_added)
@@ -66,6 +69,9 @@ func _ready() -> void:
 	update_music_volume()
 	pause_menu.quit_pressed.connect(get_tree().quit)
 	pause_menu.movement_changed.connect(set_movement_profile)
+	pause_menu.outfit_changed.connect(func() -> void:
+		if local_player:
+			local_player.sync_outfit = Cosmetics.tidy(Settings.outfit))
 
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -77,6 +83,11 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("toggle_fullscreen"):
+		Settings.fullscreen = not Settings.fullscreen
+		Settings.save_to_disk()
+		Settings.apply_display()
+		return
 	if local_player == null:
 		return
 	if event.is_action_pressed("pause"):

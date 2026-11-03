@@ -48,11 +48,16 @@ var _show_stats := false
 @onready var _items: Label = $Items
 
 
+func _ready() -> void:
+	$Version.text = Settings.version()
+
+
 func _process(_delta: float) -> void:
 	_stats.visible = _show_stats and Settings.dev_tools and player != null
 	_card.visible = _show_card and player != null
 	_prompt.visible = player != null
 	_items.visible = player != null
+	$Version.visible = player != null # (The start menu shows its own.)
 	if player == null:
 		return
 	_show_card_text()

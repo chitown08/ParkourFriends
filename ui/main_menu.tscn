@@ -38,6 +38,18 @@ theme_override_font_sizes/font_size = 36
 text = "Parkour Friends"
 horizontal_alignment = 1
 
+[node name="NameRow" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Items/NameRow"]
+text = "Your name"
+
+[node name="PlayerName" type="LineEdit" parent="Center/Panel/Margin/Items/NameRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+size_flags_horizontal = 3
+placeholder_text = "Shown over your head"
+max_length = 16
+
 [node name="WorldRow" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
 
 [node name="Label" type="Label" parent="Center/Panel/Margin/Items/WorldRow"]
@@ -86,3 +98,19 @@ custom_minimum_size = Vector2(0, 24)
 theme_override_colors/font_color = Color(1, 0.8, 0.4, 1)
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="Version" type="Label" parent="."]
+unique_name_in_owner = true
+modulate = Color(1, 1, 1, 0.5)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -36.0
+offset_right = -16.0
+offset_bottom = -12.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2

@@ -11,7 +11,10 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 1. Double-click **`open_editor.cmd`** to open the Godot editor. (Double-clicking the Godot exe itself runs the
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
 2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Rooftop District, the Free-Run Line, or the
-   Test Course playground), then **Play Solo** or **Host**. Joining players get the host's world.
+   Test Course playground), type **your name** (shown over your head to friends), then **Play Solo** or **Host**.
+   Joining players get the host's world. In the game, **Esc** has the settings (mouse, fullscreen, volume for
+   everything / music / sound effects) and **your outfit** (a hat, gloves, belt, shoes and a trail, or none).
+   All of it is remembered for next time. The version number is in the bottom-right corner.
 
 ## Controls
 
@@ -30,7 +33,8 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | Left click | LT | Use the item in your hands (glider: hold in the air; bat: swing) |
 | Right click | D-pad right | Swap your hands and your backpack (once you wear one) |
 | R | Back | Back to your checkpoint |
-| Esc | Start | Menu (settings, leave, quit) |
+| Esc | Start | Menu: settings, your outfit, leave, quit |
+| F11 | | Fullscreen on/off |
 
 **Moves with no button of their own** (the controls above, used in the right place):
 

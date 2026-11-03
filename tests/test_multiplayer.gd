@@ -319,3 +319,16 @@ func test_catch_a_friend_falling_short() -> void:
 	expect(client_self.state.name == &"Ground" and client_self.global_position.y > 9.9, "the client climbs up, %s at %s" % [client_self.state.name, client_self.global_position])
 	await ticks(30)
 	expect_state_of(host_self, &"Ground")
+
+
+func test_names_show_over_heads_on_the_other_screen() -> void:
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	var host_on_client := _find(client_main, 1)
+	expect(host_on_client.sync_player_name == "Player", "named before the client joined, the host still shows up named on the client's screen, as '%s'" % host_on_client.sync_player_name)
+	host_main.local_player.sync_player_name = "Ana"
+	client_main.local_player.sync_player_name = "Bo"
+	await ticks(30)
+	var tag: Label3D = host_on_client.get_node("NameTag")
+	expect(tag.text == "Ana" and tag.visible, "the client sees 'Ana' over the host's head, sees '%s'" % tag.text)
+	expect(_find(host_main, client_id).get_node("NameTag").text == "Bo", "and the host sees 'Bo'")
+	expect(not host_main.local_player.get_node("NameTag").visible, "no name over your own head")

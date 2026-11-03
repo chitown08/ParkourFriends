@@ -61,7 +61,10 @@ built and the details the code relies on.
   which renders every outfit; `tools/inspect_cosmetics.gd` and `tools/cosmetics_sheet.gd` help
   fit a new one) and hung from a bone with a BoneAttachment3D, so it follows the animations. Pairs
   are fitted on the left and mirrored for the right. `Player.sync_outfit` (sent to everyone) says
-  what you wear; O cycles outfits until the mall exists. When exporting, add `*.cfg` to the
+  what you wear: picked per slot in the pause menu ("Your outfit", "None" to start), saved in
+  `Settings.outfit` and put on when you join (`Cosmetics.tidy()` drops anything no longer made); O
+  still cycles whole outfits for developers. In an exported game only `*.glb.import` files are
+  listed in a folder, so `Cosmetics.available()` reads those too. When exporting, add `*.cfg` to the
   export filter so the fits file goes along.
 - **Trails** (`player/trail.gd`): a banner or streamer flies from a pole on your back, a scarf's
   two tails from the back of your neck. The straight model is skinned onto a 10-link chain built
@@ -150,6 +153,19 @@ and `ItemCarrier.control_hints()` (items, with each ability's `use_hint()`); bot
 or gamepad control, whichever was used last (`ui/control_names.gd`). Developer tools (practice
 buddy G / Q / H, outfits O, readout F3) only work when `Settings.dev_tools` is on: running from the
 editor or a debug build, not the build friends play.
+
+## You, your settings, the version (Nov 2026)
+
+- **Name**: typed in the start menu (`Settings.player_name`, up to 16 characters; "Player" if
+  none), sent to everyone as `Player.sync_player_name` and shown over your head on friends' screens
+  (a Label3D: the same size at any distance, seen through walls, in your body colour, lightened).
+  Not over your own head. Maybe trails will do this job one day.
+- **Settings** (`game/settings.gd`, saved in the user data folder): mouse, invert, fullscreen (F11),
+  volume for everything (the Master channel), music (its player) and sound effects (an Effects
+  channel all `Sfx` sounds go through), plus developer-only movement feel and free-run switch. The
+  tests use their own settings file (`user://test_settings.cfg`), never yours.
+- **Version**: Project Settings > Application > Config > Version (`0.1.0`), shown as "v0.1.0 alpha"
+  in a corner of the start menu, the pause menu and the game screen, so bug reports say which.
 
 ## Multiplayer
 

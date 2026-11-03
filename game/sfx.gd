@@ -15,6 +15,7 @@ static var _sounds := {}
 ## Plays `sound` at `position` in the world (`from` is any node in that world).
 static func play(from: Node, position: Vector3, sound: StringName, volume_db := 0.0) -> void:
 	var speaker := AudioStreamPlayer3D.new()
+	speaker.bus = Settings.EFFECTS_BUS
 	speaker.stream = _stream(sound)
 	speaker.volume_db = volume_db
 	speaker.unit_size = 8.0 # Loud enough a few buildings away.
@@ -26,6 +27,7 @@ static func play(from: Node, position: Vector3, sound: StringName, volume_db := 
 ## Plays `sound` without a position (menus, team announcements).
 static func play_ui(from: Node, sound: StringName, volume_db := 0.0) -> void:
 	var speaker := AudioStreamPlayer.new()
+	speaker.bus = Settings.EFFECTS_BUS
 	speaker.stream = _stream(sound)
 	speaker.volume_db = volume_db
 	_start(from, speaker)
