@@ -46,6 +46,12 @@ func _ready() -> void:
 		_movement.set_item_metadata(_movement.item_count - 1, profile_id)
 	_movement.item_selected.connect(_on_movement_selected)
 	_free_run.toggled.connect(_on_free_run_toggled)
+	%SaveProgress.toggled.connect(func(pressed: bool) -> void:
+		Settings.save_progress = pressed
+		Settings.save_to_disk())
+	%ForgetProgress.pressed.connect(func() -> void:
+		Progress.forget()
+		%ForgetProgress.text = "Forgotten: the next game starts fresh")
 	_master.value_changed.connect(_on_master_changed)
 	_music.value_changed.connect(_on_music_changed)
 	_effects.value_changed.connect(_on_effects_changed)
@@ -60,6 +66,8 @@ func open(can_invite := false) -> void:
 	_invert_y.set_pressed_no_signal(Settings.invert_y)
 	_fullscreen.set_pressed_no_signal(Settings.fullscreen)
 	_free_run.set_pressed_no_signal(Settings.free_run_enabled)
+	%SaveProgress.set_pressed_no_signal(Settings.save_progress)
+	%ForgetProgress.text = "Forget saved progress"
 	for pair: Array in [[_master, Settings.master_volume], [_music, Settings.music_volume], [_effects, Settings.effects_volume]]:
 		pair[0].set_value_no_signal(pair[1])
 		_show_percent(pair[0], pair[1])

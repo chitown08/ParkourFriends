@@ -284,6 +284,16 @@ changing a move changes the answers.
   nobody's left behind (without catching, three could only whip two over). A pack of four
   drafting together can all just leap a gap that size.
 
+## Saving progress (`game/progress.gd`, Nov 2026)
+
+The host saves what the crew has done in each world: relics delivered, and group-run relics earned
+but not yet delivered, each named by where it is in its world ("Relics/RelicBlock12_1",
+"Runs/Run1/Rewards/Finish"). Saved after every delivery and every run that earns something, in
+`progress.cfg` beside `settings.cfg`; put back when the world next starts (solo or hosting), so the
+hub tower's lights, the counter and the run signs carry on. Joining players get it from the host.
+Developers can switch saving off and forget it all in the pause menu (`Settings.save_progress`);
+the build friends play always saves. Tests save to `test_progress.cfg`, off unless a test turns it on.
+
 ## Building (Nov 2026)
 
 `build_windows.cmd` exports the "Windows" preset (`export_presets.cfg`, committed; tests and tools are

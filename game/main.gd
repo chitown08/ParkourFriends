@@ -46,6 +46,8 @@ var level: Level
 ## Relics the team has delivered to a drop-off, by item name. The host's copy is the official
 ## one; it tells everyone else (see _on_delivered()).
 var delivered_relics := {}
+## The world being played (its id in WORLDS; the host's, on a joining computer "").
+var current_world := ""
 
 @onready var world: Node3D = $World
 @onready var players: Node3D = $Players
@@ -193,6 +195,7 @@ func load_world(world_id: String) -> void:
 		world_id = DEFAULT_WORLD
 	_clear_world()
 	delivered_relics.clear()
+	current_world = world_id
 	var new_level := (load(WORLDS[world_id]) as PackedScene).instantiate()
 	world.add_child(new_level, true)
 
@@ -396,6 +399,11 @@ func _on_world_ready(new_level: Level) -> void:
 	for drop_off: DropOff in get_tree().get_nodes_in_group(&"drop_offs"):
 		if level.is_ancestor_of(drop_off):
 			drop_off.delivered.connect(_on_delivered)
+	for run: GroupRun in get_tree().get_nodes_in_group(&"group_runs"):
+		if level.is_ancestor_of(run):
+			run.rewards_earned.connect(_save_progress)
+	if multiplayer.is_server():
+		_load_progress()
 	_show_relics()
 
 
@@ -414,11 +422,53 @@ func _relics() -> Array[WorldItem]:
 
 ## Host only: a drop-off received a relic. Tell everyone.
 func _on_delivered(item: WorldItem) -> void:
-	var relic_name := String(item.name)
+	var relic_name := relic_key(item)
 	if delivered_relics.has(relic_name):
 		return
 	_relic_delivered(relic_name)
 	_relic_delivered.rpc(relic_name)
+	_save_progress()
+
+
+## What a relic is called in delivered_relics and saved progress: where it is
+## in its world ("Relics/RelicBlock12_1": two runs can both have a "Finish").
+func relic_key(item: WorldItem) -> String:
+	return String(level.get_path_to(item))
+
+
+## True if the relic named `relic_name` (its node's name) has been delivered.
+func is_delivered(relic_name: String) -> bool:
+	return delivered_relics.keys().any(func(key: String) -> bool: return key == relic_name or key.ends_with("/" + relic_name))
+
+
+## Host only: puts back what's saved for this world (Progress): delivered
+## relics delivered again, run relics earned unlocked.
+func _load_progress() -> void:
+	if not Progress.is_on() or current_world.is_empty():
+		return
+	var saved := Progress.load_world(current_world)
+	for key: String in saved.earned + saved.delivered:
+		var item := level.get_node_or_null(key) as WorldItem
+		if item:
+			item.host_unlock()
+	for key: String in saved.delivered:
+		var item := level.get_node_or_null(key) as WorldItem
+		if item and item.is_deliverable():
+			item.host_deliver()
+			delivered_relics[key] = true
+	if not saved.delivered.is_empty() or not saved.earned.is_empty():
+		hud.show_message("Welcome back: %d / %d relics" % [delivered_relics.size(), _relics().size()])
+
+
+## Host only: saves what the crew's done in this world (Progress).
+func _save_progress() -> void:
+	if not Progress.is_on() or current_world.is_empty() or not multiplayer.is_server():
+		return
+	var earned := []
+	for item in _relics():
+		if item.locked and item.state != WorldItem.State.LOCKED:
+			earned.append(relic_key(item))
+	Progress.save_world(current_world, delivered_relics.keys(), earned)
 
 
 ## The host announcing a delivered relic.

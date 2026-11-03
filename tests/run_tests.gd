@@ -48,6 +48,10 @@ func _run_all() -> void:
 	# The tests' own settings file (starting fresh), not the player's.
 	Settings.path = "user://test_settings.cfg"
 	Network.steam_allowed = false # (Tests play over the local network.)
+	# Nor do they save progress unless a test turns it on, and then in a file of their own.
+	Settings.save_progress = false
+	Progress.path = "user://test_progress.cfg"
+	DirAccess.remove_absolute(Progress.path)
 	DirAccess.remove_absolute(Settings.path)
 	var catcher := ErrorCatcher.new()
 	OS.add_logger(catcher)

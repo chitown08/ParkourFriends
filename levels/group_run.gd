@@ -24,6 +24,9 @@ extends Node3D
 
 enum Phase { IDLE, COUNTDOWN, RUNNING }
 
+## The crew finished and earned new relics (on the host).
+signal rewards_earned
+
 ## The start ring: stand within this far (metres, across) of its middle.
 const RING_RADIUS := 4.0
 const COUNTDOWN_TIME := 3.0
@@ -127,6 +130,8 @@ func _finish() -> void:
 		if reward and reward.state == WorldItem.State.LOCKED:
 			reward.host_unlock()
 			earned += 1
+	if earned:
+		rewards_earned.emit()
 	_stop("Run complete! %s" % ("%d new relic%s" % [earned, "" if earned == 1 else "s"] if earned else "No new relics this time"))
 
 

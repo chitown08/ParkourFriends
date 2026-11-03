@@ -48,7 +48,7 @@ func test_carrying_a_relic_to_the_drop_off_delivers_it() -> void:
 	var relic := _relic("RelicPillarTop")
 	relic.host_give_to(player)
 	await place(DROP_OFF, FACE_NORTH)
-	expect(main.delivered_relics.has("RelicPillarTop"), "the relic should be delivered")
+	expect(main.is_delivered("RelicPillarTop"), "the relic should be delivered")
 	expect(relic.state == WorldItem.State.DELIVERED and not relic.visible, "and disappear")
 	expect(player.items.hands_item() == null, "your hands should be free again")
 	var counter: Label = main.hud.get_node("Relics")
@@ -61,7 +61,7 @@ func test_throwing_a_relic_into_the_drop_off_delivers_it() -> void:
 	player.camera_rig.pitch = 0.0
 	await hold(&"interact", 20) # Hold F: throw.
 	await ticks(30)
-	expect(main.delivered_relics.has("RelicPillarTop"), "a relic thrown through the drop-off should count")
+	expect(main.is_delivered("RelicPillarTop"), "a relic thrown through the drop-off should count")
 
 
 func test_the_buddy_cannot_pick_up_relics() -> void:

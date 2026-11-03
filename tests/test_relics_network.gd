@@ -24,7 +24,7 @@ func test_client_delivers_a_relic_for_everyone() -> void:
 	await ticks(10)
 	for side_main: Node in [host_main, client_main]:
 		var who := "host" if side_main == host_main else "client"
-		expect(side_main.delivered_relics.has("RelicPillarTop"), "%s should know the relic was delivered" % who)
+		expect(side_main.is_delivered("RelicPillarTop"), "%s should know the relic was delivered" % who)
 		expect(not _relic(side_main).visible, "%s should no longer see the relic" % who)
 
 
@@ -32,7 +32,7 @@ func test_host_delivers_a_relic_for_everyone() -> void:
 	await _move(host_main.local_player, PILLAR_TOP)
 	await _move(host_main.local_player, DROP_OFF)
 	await ticks(10)
-	expect(client_main.delivered_relics.has("RelicPillarTop"), "the client should be told about the host's delivery")
+	expect(client_main.is_delivered("RelicPillarTop"), "the client should be told about the host's delivery")
 
 
 func test_late_joiner_is_told_what_was_delivered() -> void:
@@ -47,7 +47,7 @@ func test_late_joiner_is_told_what_was_delivered() -> void:
 		if client_main.level != null and client_main.local_player != null:
 			break
 	await ticks(10)
-	expect(client_main.delivered_relics.has("RelicPillarTop"), "a player joining later should know what's already delivered")
+	expect(client_main.is_delivered("RelicPillarTop"), "a player joining later should know what's already delivered")
 	if client_main.level:
 		expect(not _relic(client_main).visible, "and not see the delivered relic")
 

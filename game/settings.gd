@@ -33,6 +33,9 @@ static var music_volume := 0.5
 static var effects_volume := 1.0
 ## M switches the music off and on.
 static var music_on := true
+## Save what the crew's done (relics delivered and earned) between sessions
+## (see Progress). Only developers can switch it off.
+static var save_progress := true
 ## Developer tools: the practice buddy (G, Q, H), trying on outfits (O) and the
 ## stats readout (F3). On when running from the editor (or a debug build), off
 ## in the build friends play.
@@ -54,6 +57,7 @@ static func load_from_disk() -> void:
 	music_volume = file.get_value("audio", "music_volume", music_volume)
 	effects_volume = file.get_value("audio", "effects_volume", effects_volume)
 	music_on = file.get_value("audio", "music_on", music_on)
+	save_progress = file.get_value("developer", "save_progress", save_progress)
 
 
 static func save_to_disk() -> void:
@@ -69,6 +73,7 @@ static func save_to_disk() -> void:
 	file.set_value("audio", "music_volume", music_volume)
 	file.set_value("audio", "effects_volume", effects_volume)
 	file.set_value("audio", "music_on", music_on)
+	file.set_value("developer", "save_progress", save_progress)
 	file.save(path)
 
 
