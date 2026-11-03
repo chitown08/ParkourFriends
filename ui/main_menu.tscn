@@ -73,6 +73,7 @@ custom_minimum_size = Vector2(0, 44)
 text = "Host a Game"
 
 [node name="JoinRow" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
+unique_name_in_owner = true
 
 [node name="Address" type="LineEdit" parent="Center/Panel/Margin/Items/JoinRow"]
 unique_name_in_owner = true
@@ -87,6 +88,7 @@ custom_minimum_size = Vector2(100, 44)
 text = "Join"
 
 [node name="Hint" type="Label" parent="Center/Panel/Margin/Items"]
+unique_name_in_owner = true
 modulate = Color(1, 1, 1, 0.6)
 text = "127.0.0.1 = a game hosted on this computer.
 Joining uses the host's world."

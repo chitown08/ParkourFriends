@@ -6,6 +6,8 @@ extends CanvasLayer
 signal resume_pressed
 signal leave_pressed
 signal quit_pressed
+## "Invite Friends": open Steam's invite window.
+signal invite_pressed
 ## The player picked a different movement feel ("superhuman" or "human").
 signal movement_changed(profile_id: String)
 ## The music volume slider moved (the new value is in Settings).
@@ -34,6 +36,7 @@ func _ready() -> void:
 	%Resume.pressed.connect(resume_pressed.emit)
 	%Leave.pressed.connect(leave_pressed.emit)
 	%Quit.pressed.connect(quit_pressed.emit)
+	%Invite.pressed.connect(invite_pressed.emit)
 	%Version.text = Settings.version()
 	_sensitivity.value_changed.connect(_on_sensitivity_changed)
 	_invert_y.toggled.connect(_on_invert_y_toggled)
@@ -49,7 +52,9 @@ func _ready() -> void:
 	_make_outfit_lists()
 
 
-func open() -> void:
+## Shows the menu; `can_invite`: in a Steam game, so there's an "Invite Friends" button.
+func open(can_invite := false) -> void:
+	%Invite.visible = can_invite
 	_sensitivity.set_value_no_signal(Settings.mouse_sensitivity)
 	_sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
 	_invert_y.set_pressed_no_signal(Settings.invert_y)

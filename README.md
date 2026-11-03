@@ -12,7 +12,10 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
    game instead, because it notices the project in its folder. The exe is not committed to Git.)
 2. Press **F5** (or the ▶ "Run Project" button at the top right) to play. Pick a **World** (the Rooftop District playground, or one of the training
    grounds: the Free-Run Line and the Test Course), type **your name** (shown over your head to friends), then **Play Solo** or **Host**.
-   Joining players get the host's world. In the game, **Esc** has the settings (mouse, fullscreen, volume for
+   Joining players get the host's world. **With Steam running**, Host makes a friends-only Steam game and opens Steam's
+   invite window (later: Esc > Invite Friends); friends join by accepting the invite or with "Join Game" in their
+   friends list, even with the game closed. Your name starts as your Steam name. Without Steam, Host and Join work by
+   address (127.0.0.1 = this computer). In the game, **Esc** has the settings (mouse, fullscreen, volume for
    everything / music / sound effects) and **your outfit** (a hat, gloves, belt, shoes and a trail, or none).
    All of it is remembered for next time. The version number is in the bottom-right corner.
 3. **Building the game for friends:** double-click **`build_windows.cmd`**. It makes `buildwindows` (the game

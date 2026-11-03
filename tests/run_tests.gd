@@ -47,6 +47,7 @@ func _initialize() -> void:
 func _run_all() -> void:
 	# The tests' own settings file (starting fresh), not the player's.
 	Settings.path = "user://test_settings.cfg"
+	Network.steam_allowed = false # (Tests play over the local network.)
 	DirAccess.remove_absolute(Settings.path)
 	var catcher := ErrorCatcher.new()
 	OS.add_logger(catcher)

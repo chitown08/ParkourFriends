@@ -36,6 +36,15 @@ func open(message: String = "") -> void:
 		%Solo.grab_focus()
 
 
+## With Steam running, hosting means inviting Steam friends, and they join
+## from Steam, so joining by address is only shown to developers. Without
+## Steam, hosting and joining work by address.
+func set_steam(steam: bool) -> void:
+	%Host.text = "Host a Game (invite Steam friends)" if steam else "Host a Game"
+	%JoinRow.visible = not steam or Settings.dev_tools
+	%Hint.visible = %JoinRow.visible
+
+
 ## Shows a message and greys out the buttons while something is happening.
 func set_busy(busy: bool, message: String = "") -> void:
 	for button in _buttons:

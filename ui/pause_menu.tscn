@@ -43,6 +43,11 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 44)
 text = "Resume"
 
+[node name="Invite" type="Button" parent="Center/Panel/Margin/Items"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+text = "Invite Friends (Steam)"
+
 [node name="Columns" type="HBoxContainer" parent="Center/Panel/Margin/Items"]
 theme_override_constants/separation = 32
 

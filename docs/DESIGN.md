@@ -258,6 +258,16 @@ lists, the music and Steam are all there and developer tools are off, writing `b
 Steam: the GodotSteam GDExtension (4.23.2, from codeberg.org/godotsteam/godotsteam) is in
 `addons/godotsteam/`, Windows and Linux 64-bit only.
 
+**Steam play** (`game/network.gd`, Steam section): with Steam running, the start menu's Host makes a
+friends-only lobby (`host_steam()`) and hosts through it with GodotSteam's `SteamMultiplayerPeer`, so
+the rest of the game's networking is unchanged; Steam's invite window opens (and Esc > Invite Friends).
+Friends join from the invite or "Join Game" (Steam's `join_requested`), or, if the game was closed,
+from the `+connect_lobby <id>` Steam starts it with. Without Steam everything works by address as
+before, and the tests never start Steam (`Network.steam_allowed`). Until our own app ID is approved,
+`STEAM_APP_ID` is 480, Valve's test game "Spacewar" (Steam shows you playing that); swap ours in
+there. Checked by hand: hosting makes a lobby and plays through it. Joining needs two Steam accounts,
+so it waits for a test with a friend.
+
 ## Testing
 
 `run_tests.cmd` runs the gameplay tests (about 140; `run_tests.cmd items` runs just the item ones). New features come with tests, and each

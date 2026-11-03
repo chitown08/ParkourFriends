@@ -62,14 +62,27 @@ func _ready() -> void:
 	Settings.load_from_disk()
 	Settings.apply_audio()
 	Settings.apply_display()
-	menu.open() # (Again, now your saved name is known.)
+	network.start_steam()
+	if Settings.player_name == "" and network.steam_ready:
+		Settings.player_name = Settings.clean_name(network.steam_name()) # Your Steam name, to start with.
+	menu.set_steam(network.steam_ready)
+	menu.open() # (Again, now your name is known.)
 	hud.network = network
 	players.child_entered_tree.connect(_on_player_added)
 	world.child_entered_tree.connect(_on_world_added)
 
 	menu.set_worlds(WORLDS.keys(), DEFAULT_WORLD, WORLD_NAMES)
 	menu.solo_pressed.connect(func() -> void: start_solo())
-	menu.host_pressed.connect(func() -> void: start_host())
+	menu.host_pressed.connect(func() -> void:
+		if network.steam_ready:
+			start_host_steam()
+		else:
+			start_host())
+	network.steam_join_requested.connect(start_steam_join)
+	network.steam_join_failed.connect(func() -> void:
+		network.leave()
+		menu.open("Couldn't join your friend's game. Has it ended?"))
+	pause_menu.invite_pressed.connect(network.invite_friends)
 	menu.join_pressed.connect(start_join)
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
@@ -139,6 +152,30 @@ func start_host(port: int = Network.DEFAULT_PORT, world_id: String = "") -> void
 	spawn_player(1)
 
 
+## Hosts a game through a friends-only Steam lobby, then opens Steam's window
+## for inviting friends.
+func start_host_steam(world_id: String = "") -> void:
+	menu.set_busy(true, "Starting a game on Steam...")
+	network.host_steam()
+	if not await network.steam_hosting:
+		menu.open("Couldn't start a game on Steam. Try again?")
+		return
+	menu.hide()
+	load_world(world_id if world_id else menu.selected_world())
+	spawn_player(1)
+	network.invite_friends()
+	hud.show_message("Invite friends: Esc > Invite Friends")
+
+
+## Joins a friend's Steam lobby (from an invite or "Join Game" in Steam),
+## leaving the game you're in first.
+func start_steam_join(lobby: int) -> void:
+	if local_player:
+		_return_to_menu("")
+	menu.set_busy(true, "Joining your friend...")
+	network.join_steam(lobby)
+
+
 ## Loads a world (replacing any current one). Solo or host only; joining
 ## players receive the host's world automatically.
 func load_world(world_id: String) -> void:
@@ -172,7 +209,7 @@ func leave_game() -> void:
 func set_paused(paused: bool) -> void:
 	is_paused = paused
 	if paused:
-		pause_menu.open()
+		pause_menu.open(network.lobby_id != 0)
 	else:
 		pause_menu.hide()
 	if local_player:
@@ -446,6 +483,9 @@ func _handle_command_line() -> void:
 			start_join(arg.get_slice("=", 1))
 		elif arg == "--check-build":
 			check_build.call_deferred()
+	var invited := Network.lobby_from_command_line()
+	if invited and network.steam_ready:
+		start_steam_join(invited) # Started from a friend's invite.
 
 
 ## For build_windows.cmd: checks the built game has everything it needs (the
