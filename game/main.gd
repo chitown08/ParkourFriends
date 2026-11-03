@@ -509,6 +509,10 @@ func check_build() -> void:
 		if items.is_empty():
 			problems.append("no %s items" % slot)
 	var tracks := Playlist.find_tracks()
+	var runs := CharacterModel.variants_of("run")
+	print("animations: %s" % ("found" if not runs.is_empty() else "MISSING"))
+	if runs.is_empty():
+		problems.append("no animations")
 	print("music: %d track(s)" % tracks.size())
 	if tracks.is_empty():
 		problems.append("no music")

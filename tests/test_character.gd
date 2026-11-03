@@ -161,3 +161,36 @@ func test_o_cycles_through_outfits_and_back_to_nothing() -> void:
 	for i in outfits:
 		await press_event(&"cycle_outfit")
 	expect(Array(player.sync_outfit).all(func(item: String) -> bool: return item.is_empty()), "then back to nothing, got %s" % [player.sync_outfit])
+
+
+func test_a_move_can_have_a_set_of_animations_to_pick_from() -> void:
+	expect(CharacterModel.move_of("vault-kong") == "vault" and CharacterModel.move_of("vault") == "vault", "'vault-kong' is one of the vault set")
+	expect(CharacterModel.move_of("crouch_idle") == "crouch_idle", "(underscores are part of a name)")
+	var model := player.model
+	CharacterModel._variants["test_move"] = [&"test_move", &"test_move-flip", &"test_move-roll"]
+	var picked := {}
+	for variant in 6:
+		model._variant = variant
+		picked[model.pick(&"test_move")] = true
+	CharacterModel._variants.erase("test_move")
+	expect(picked.size() == 3, "different moves pick different ones of the set, picked %s" % [picked.keys()])
+	expect(model.pick(&"idle") == &"idle" or CharacterModel.variants_of("idle").size() > 1, "a move with one animation just plays it")
+
+
+func test_each_new_move_rolls_a_new_variant() -> void:
+	var seen := {}
+	for i in 20:
+		player.change_state(&"Air" if i % 2 == 0 else &"Ground")
+		seen[player.sync_move] = true
+	expect(seen.size() > 10, "starting moves picks new numbers, %d different in 20" % seen.size())
+
+
+func test_a_move_without_its_own_animation_plays_its_stand_in() -> void:
+	if CharacterModel.variants_of("brace").is_empty():
+		expect(player.model.pick(&"brace") == &"crouch_idle", "no brace animation yet: crouching stands in, got %s" % player.model.pick(&"brace"))
+	for move: String in CharacterModel.STAND_INS:
+		expect(not CharacterModel.variants_of(String(CharacterModel.STAND_INS[move])).is_empty(), "the stand-in for %s exists" % move)
+	for state: StringName in CharacterModel.STATE_MOVES:
+		var move: StringName = CharacterModel.STATE_MOVES[state]
+		expect(not CharacterModel.variants_of(String(player.model.pick(move))).is_empty() or CharacterModel.variants_of(String(move)).size() > 0 \
+				or ["linked", "whip", "whipped"].has(String(move)), "%s plays something (%s)" % [state, move])

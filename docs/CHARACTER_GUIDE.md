@@ -46,6 +46,9 @@ Size doesn't matter: I'll scale it to fit the 1.8 m body.
 
 ## 3. Animation list
 
+The full, current list (what we have, what's a stand-in, and variant ideas) is
+**[ANIMATION_LIST.md](ANIMATION_LIST.md)**. The table below is the first batch.
+
 Exact Mixamo names change, so search with the words below and pick whatever looks
 good. Save each one with the file name in the first column. These are the moves the
 game has today.

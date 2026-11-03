@@ -332,3 +332,10 @@ func test_names_show_over_heads_on_the_other_screen() -> void:
 	expect(tag.text == "Ana" and tag.visible, "the client sees 'Ana' over the host's head, sees '%s'" % tag.text)
 	expect(_find(host_main, client_id).get_node("NameTag").text == "Bo", "and the host sees 'Bo'")
 	expect(not host_main.local_player.get_node("NameTag").visible, "no name over your own head")
+
+
+func test_friends_see_the_same_animation_variant() -> void:
+	client_main.local_player.change_state(&"Air")
+	await ticks(20)
+	var mine: int = client_main.local_player.sync_move
+	expect(_find(host_main, client_main.multiplayer.get_unique_id()).sync_move == mine, "the host sees the same pick as the client, %d" % mine)

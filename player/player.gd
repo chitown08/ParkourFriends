@@ -88,6 +88,9 @@ var sync_hanging_on := ""
 var sync_braced_on := ""
 ## The name of the friend whose hand we hold in a line (crack the whip), or "".
 var sync_linked_to := ""
+## A new number each time we start a move: which of its animations play (see
+## CharacterModel: "vault", "vault-kong"...), so everyone sees the same one.
+var sync_move := 0
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
 ## What this player wears: an item name (or "" for nothing) for each slot in
@@ -497,7 +500,7 @@ func _pose_visual(shown_state: StringName, lean_angle: float, leap_charge: float
 		moved = 0.0
 	_last_position = global_position
 	_ground_speed = lerpf(_ground_speed, moved, 1.0 - exp(-12.0 * delta))
-	model.animate(shown_state, _ground_speed, _rising, lean_angle, not sync_tossed_by.is_empty(), hands_busy(), delta)
+	model.animate(shown_state, _ground_speed, _rising, lean_angle, not sync_tossed_by.is_empty(), hands_busy(), delta, sync_move)
 	_swing_timer -= delta
 	_spark_timer -= delta
 	if shown_state == &"Grind" and _spark_timer <= 0.0:
@@ -559,6 +562,8 @@ func show_jump(leap: float) -> void:
 	if leap > 0.0:
 		Sfx.play(self, global_position, &"leap", -6.0 + 4.0 * leap)
 		Effects.burst(self, global_position, Effects.DUST, 10 + int(10 * leap), 3.0 + 3.0 * leap)
+		if leap > 0.5:
+			model.play_leap() # (A flip, a twist... if there are leap animations.)
 	else:
 		Sfx.play(self, global_position, &"jump", -10.0)
 
@@ -605,6 +610,8 @@ func change_state(state_name: StringName, data: Dictionary = {}) -> void:
 	if state:
 		state.exit()
 	state = _states.get_node(NodePath(state_name))
+	if is_local:
+		sync_move = randi() % 1000
 	state.enter(data)
 	state_changed.emit(state_name)
 
