@@ -66,6 +66,8 @@ var layered: LayeredSong
 const MUFFLED_HZ := 3500.0
 const OPEN_HZ := 20000.0
 const MUFFLE_EASE := 1.5
+## Friends free-running this close to whoever delivers a relic count as coming in with them.
+const PACK_NEAR := 12.0
 
 
 func _ready() -> void:
@@ -398,7 +400,7 @@ func _on_world_ready(new_level: Level) -> void:
 			checkpoint.reached.connect(_on_checkpoint_reached)
 	for drop_off: DropOff in get_tree().get_nodes_in_group(&"drop_offs"):
 		if level.is_ancestor_of(drop_off):
-			drop_off.delivered.connect(_on_delivered)
+			drop_off.delivered.connect(_on_delivered.bind(drop_off))
 	for run: GroupRun in get_tree().get_nodes_in_group(&"group_runs"):
 		if level.is_ancestor_of(run):
 			run.rewards_earned.connect(_save_progress)
@@ -420,13 +422,15 @@ func _relics() -> Array[WorldItem]:
 	return found
 
 
-## Host only: a drop-off received a relic. Tell everyone.
-func _on_delivered(item: WorldItem) -> void:
+## Host only: a drop-off received a relic, brought by the player named `by`
+## (thrown in, or carried). Tell everyone, with how big a party it gets.
+func _on_delivered(item: WorldItem, by: String, thrown: bool, drop_off: DropOff) -> void:
 	var relic_name := relic_key(item)
 	if delivered_relics.has(relic_name):
 		return
-	_relic_delivered(relic_name)
-	_relic_delivered.rpc(relic_name)
+	var tier := delivery_tier(players.get_node_or_null(by) as Player, item, thrown, drop_off.global_position.y)
+	_relic_delivered(relic_name, tier)
+	_relic_delivered.rpc(relic_name, tier)
 	_save_progress()
 
 
@@ -471,15 +475,39 @@ func _save_progress() -> void:
 	Progress.save_world(current_world, delivered_relics.keys(), earned)
 
 
-## The host announcing a delivered relic.
+## The host announcing a delivered relic, and the size of its party (1-4: see Celebration).
 @rpc("authority", "call_remote", "reliable")
-func _relic_delivered(relic_name: String) -> void:
+func _relic_delivered(relic_name: String, tier := 1) -> void:
 	delivered_relics[relic_name] = true
 	_show_relics()
 	if local_player == null:
 		return
 	Sfx.play_ui(self, &"delivered", -4.0)
-	hud.show_message("Relic delivered! (%d/%d)" % [delivered_relics.size(), _relics().size()])
+	hud.show_message("%s (%d/%d)" % [Celebration.NAMES[tier], delivered_relics.size(), _relics().size()])
+	for drop_off: DropOff in get_tree().get_nodes_in_group(&"drop_offs"):
+		if level and level.is_ancestor_of(drop_off):
+			Celebration.play(self, drop_off.global_position + Vector3.UP, tier)
+
+
+## How much style a delivery by `by` had (see Celebration.tier_for()): how fast
+## it came in (thrown, or carried), how far they came down to bring it (to the
+## `ground` at the drop-off), and how
+## many of the crew came in free-running with them.
+func delivery_tier(by: Player, item: WorldItem, thrown: bool, ground := 0.0) -> int:
+	if by == null:
+		return 1
+	var speed := item.linear_velocity.length() if thrown else by.seen_speed()
+	var drop := by.recent_peak() - ground # (Down to the drop-off.)
+	return Celebration.tier_for(speed, maxf(drop, 0.0), delivery_pack(by), thrown)
+
+
+## How many of the crew came in free-running with `by` (them included; at least 1).
+func delivery_pack(by: Player) -> int:
+	var pack := 0
+	for other: Player in players.get_children():
+		if not other.is_bot and other.sync_free_run_velocity.length() > 1.0 and other.global_position.distance_to(by.global_position) < PACK_NEAR:
+			pack += 1
+	return maxi(pack, 1)
 
 
 ## The host catching up a newly joined player on what's already been delivered.

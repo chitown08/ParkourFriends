@@ -287,6 +287,11 @@ var _fall_speed := 0.0
 var _swing_timer := 0.0
 var _flash := 0.0 ## Hit flash brightness, fading to 0.
 var _spark_timer := 0.0
+## Your height lately, for a delivery's style (see recent_peak()): [time, y] pairs.
+var _heights: Array[Vector2] = []
+var _clock := 0.0
+## How far back recent_peak() looks (seconds).
+const PEAK_WINDOW := 3.0
 ## The wall last jumped or run off. You can't use the same wall again until
 ## you land (so you can't climb a single wall forever). Zero = none.
 var last_wall_normal := Vector3.ZERO
@@ -499,6 +504,11 @@ func _follow_network(delta: float) -> void:
 ## landing, leaning sideways on a wall run or a glide's turns, tipped forward
 ## while gliding. Runs on everyone's computer, from what they know of us.
 func _pose_visual(shown_state: StringName, lean_angle: float, leap_charge: float, delta: float) -> void:
+	_clock += delta
+	if _heights.is_empty() or _clock - _heights.back().x >= 0.1:
+		_heights.append(Vector2(_clock, global_position.y))
+	while _heights.size() > 1 and _clock - _heights[0].x > PEAK_WINDOW:
+		_heights.pop_front()
 	_show_rally_beam(delta)
 	_watch_for_landing(shown_state, delta)
 	var moved := (global_position - _last_position).slide(Vector3.UP).length() / maxf(delta, 0.001)
@@ -1707,3 +1717,18 @@ func body_fits(feet: Vector3) -> bool:
 	query.collision_mask = collision_mask
 	query.exclude = [get_rid()]
 	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
+
+
+## The highest you've been over the last few seconds (PEAK_WINDOW), as seen
+## on this computer: how far you came down to get where you are.
+func recent_peak() -> float:
+	var peak := global_position.y
+	for sample in _heights:
+		peak = maxf(peak, sample.y)
+	return peak
+
+
+## How fast you're seen moving across the ground (on any computer: it's
+## worked out from how you move on screen, so it works for friends too).
+func seen_speed() -> float:
+	return _ground_speed

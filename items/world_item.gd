@@ -81,6 +81,11 @@ func is_bulky() -> bool:
 	return item != null and item.bulky
 
 
+## Who threw it ("" if it wasn't thrown, or it's landed since).
+func thrown_by() -> String:
+	return _thrown_by
+
+
 func is_deliverable() -> bool:
 	return item != null and item.deliverable
 

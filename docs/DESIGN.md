@@ -284,6 +284,17 @@ changing a move changes the answers.
   nobody's left behind (without catching, three could only whip two over). A pack of four
   drafting together can all just leap a gap that size.
 
+## Delivery celebrations (`game/celebration.gd`, Nov 2026)
+
+A party at the drop-off when a relic comes in, all particles made in code: confetti (tumbling paper);
+streamers (ribbon trails); fireworks (rockets climbing, bursting into trails with a flash of light
+and a bang). Its size comes from the delivery's style, scored by the host (`main.gd
+delivery_tier()`, `Celebration.tier_for()`): speed (carried: how fast you're seen moving; thrown: how
+fast it flew) / 6, up to 3; how far you came down to the drop-off in the last 3 s / 5, up to 4; 1.5
+for each friend free-running within 12 m of you; 0.5 for throwing it in. Under 2: "Relic delivered!",
+confetti. 2+: "Stylish delivery!", plus streamers. 4+: "Spectacular!", plus 3 fireworks. 6.5+:
+"LEGENDARY!", plus 9. Everyone sees the same party (the host sends its size with the delivery).
+
 ## Saving progress (`game/progress.gd`, Nov 2026)
 
 The host saves what the crew has done in each world: relics delivered, and group-run relics earned
@@ -320,8 +331,6 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 ## Ideas not yet in the master doc
 
-- **Relic delivery celebrations** (Nov 2026): streamers, fireworks; bigger the more style you bring
-  it in with (speed through the drop-off, how many of you are pack-running, how high you come in from).
 - **More ramp shapes**: thin tall ramps built into a building's side, curved launches like a
   section of half-pipe.
 - **Full pipes**: a few round tunnels to run round the walls of at speed (a sewer, a road tunnel,
