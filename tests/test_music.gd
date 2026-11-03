@@ -1,5 +1,6 @@
 extends GameTest
-## Background music: each world can have a song (Level.music), M mutes it, and
+## Background music: a world with music starts with its own song (Level.music),
+## then plays everything in audio/music/ shuffled (Playlist); M mutes it, and
 ## the pause menu has a volume slider.
 
 var saved_volume: float
@@ -24,10 +25,35 @@ func after_each() -> void:
 	await super()
 
 
-func test_the_district_plays_its_song_on_a_loop() -> void:
+func test_the_district_starts_with_its_song_then_plays_on() -> void:
 	expect(main.music.playing, "music should be playing")
 	expect(main.music.stream == main.level.music and main.level.music != null, "it should be the world's song")
-	expect(main.music.stream.loop, "the song should loop")
+	expect(not main.music.stream.loop, "it doesn't loop: the playlist moves on")
+	main.music.stop()
+	main.music.finished.emit() # (As if it had played to the end.)
+	await ticks(2)
+	expect(main.music.playing and main.music.stream != null, "the next track plays")
+
+
+func test_the_playlist_plays_everything_once_before_repeating() -> void:
+	var tracks: Array[String] = ["a.ogg", "b.ogg", "c.ogg", "d.ogg"]
+	var playlist := Playlist.new(tracks)
+	playlist.start_with("c.ogg")
+	var heard := ["c.ogg"]
+	for i in 3:
+		heard.append(playlist.next())
+	heard.sort()
+	expect(heard == ["a.ogg", "b.ogg", "c.ogg", "d.ogg"], "each track once in a round, %s" % [heard])
+	for round in 20:
+		var last := playlist.current
+		var first := playlist.next()
+		expect(first != last, "a new round doesn't start with the track that just ended")
+		for i in 3:
+			playlist.next()
+
+
+func test_the_music_folder_is_found() -> void:
+	expect("res://audio/music/test_level.mp3" in Playlist.find_tracks(), "the tracks in audio/music/: %s" % [Playlist.find_tracks()])
 
 
 func test_m_mutes_and_unmutes() -> void:

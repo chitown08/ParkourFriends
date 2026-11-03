@@ -127,7 +127,8 @@ ui/         hud.tscn/.gd          – on screen while playing: controls card, bu
             control_names.gd      – what each control is called (keyboard or gamepad, whichever you last used)
             main_menu.tscn/.gd    – start menu
 materials/  grid.gdshader + .tres – grey-box materials with a 1 m grid (colour says what for: red grid_vault = vault it, yellow grid_climb = climb it, orange grid_ramp = launch off it)
-audio/music/ test_level.mp3        – background music (made by Graham in Suno; a world picks its song with Level.music)
+audio/music/                      – background music (made by Graham in Suno): drop .mp3 or .ogg files here and open the
+                                    editor once; they're shuffled into the playlist (a world starts with its Level.music)
 ```
 
 Physics layers (Project Settings → Layer Names → 3D Physics): 1 = world, 2 = players, 3 = triggers, 4 = items.

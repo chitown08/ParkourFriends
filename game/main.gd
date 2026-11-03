@@ -54,6 +54,8 @@ var delivered_relics := {}
 @onready var pause_menu: CanvasLayer = $PauseMenu
 @onready var network: Network = $Network
 @onready var music: AudioStreamPlayer = $Music
+## What plays next (see Playlist): worlds with music start with their own song.
+var playlist := Playlist.new()
 
 
 func _ready() -> void:
@@ -72,6 +74,7 @@ func _ready() -> void:
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
 	pause_menu.music_changed.connect(update_music_volume)
+	music.finished.connect(_play_next_track)
 	update_music_volume()
 	pause_menu.quit_pressed.connect(get_tree().quit)
 	pause_menu.movement_changed.connect(set_movement_profile)
@@ -450,12 +453,28 @@ func update_music_volume() -> void:
 	music.volume_db = linear_to_db(Settings.music_volume) if Settings.music_on else -80.0
 
 
-## Loops `song` from the start (or goes quiet if the world has none).
+## Starts the music with `song` (a world's own), then the rest of the playlist
+## shuffled; or goes quiet if the world has none.
 func _play_music(song: AudioStream) -> void:
 	music.stop()
-	music.stream = song
+	music.stream = null
 	if song == null:
 		return
+	playlist.start_with(song.resource_path)
+	_play_track(song)
+
+
+## The track that was playing finished: on to the next.
+func _play_next_track() -> void:
+	if music.stream == null:
+		return
+	var path := playlist.next()
+	if path:
+		_play_track(load(path))
+
+
+func _play_track(song: AudioStream) -> void:
 	if "loop" in song:
-		song.loop = true
+		song.loop = false # (The playlist moves on when it ends.)
+	music.stream = song
 	music.play()
