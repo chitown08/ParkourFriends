@@ -107,3 +107,9 @@ extends Resource
 ## once, until you land, grab a ledge, or touch a wall (so bigger groups make
 ## longer throw chains). Off: unlimited juggling.
 @export var limit_tosses_per_air := true
+
+@export_group("Leg-up")
+## A friend bracing at the foot of a wall (back to it, hands cupped) launches
+## you this high (metres) from their hands, up the wall into a scramble.
+## Friends standing on their shoulders put the hands higher.
+@export var leg_up_height := 5.0

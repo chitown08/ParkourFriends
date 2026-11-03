@@ -58,7 +58,9 @@ func test_buddy_midair_toss_reaches_the_high_tower() -> void:
 	# The buddy stands between you and the 8.5 m tower (face at z = 26).
 	await place(Vector3(-25, 0.05, 23), FACE_SOUTH)
 	await press_event(&"call_buddy")
-	await ticks(20)
+	await ticks(5)
+	main.buddy.state.let_go() # (Called looking at the tower, it braced for a leg-up: stand up.)
+	await ticks(15)
 	Input.action_press(&"move_forward")
 	Input.action_press(&"jump") # Full jump...
 	await ticks(18)

@@ -106,7 +106,9 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 			_play(&"wall_run_right" if lean > 0.0 else &"wall_run_left", speed / RUN_ANIM_SPEED)
 		&"WallScramble":
 			_play(&"wall_scramble")
-		&"PipeClimb", &"ChainClimb":
+		&"Brace":
+			_play(&"crouch_idle") # Stand-in: knees bent, ready to boost.
+		&"PipeClimb", &"ChainClimb", &"LegUp":
 			_play(&"wall_scramble") # Stand-in until there's a climbing animation.
 		&"Grind":
 			_play(&"grind")

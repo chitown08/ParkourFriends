@@ -31,6 +31,36 @@ func test_scramble_heights_match_the_game() -> void:
 		expect_near(highest, expected, 0.25, "a %s scramble's height (the checker says %.2f)" % ["leap" if leap else "jump", expected])
 
 
+func test_leg_up_heights_match_the_game() -> void:
+	# One friend braced at the foot of a tall wall, then two (one on the other's shoulders).
+	await _build_floor_and_walls([30.0])
+	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var leg_up: GDScript = load("res://game/reach/rules/leg_up.gd")
+	var bracers: Array[Player] = []
+	for braced in [1, 2]:
+		var friend := main.PLAYER_SCENE.instantiate() as Player
+		friend.name = "Bracer%d" % braced
+		friend.is_bot = true
+		main.players.add_child(friend)
+		friend.set_profile(SUPERHUMAN)
+		friend.global_position = Vector3(0.3 * braced, FLOOR_Y + 0.05, WALL_FACE_Z + 0.9)
+		friend.reset_physics_interpolation()
+		await ticks(10)
+		expect(friend.try_brace(), "%s should brace" % friend.name)
+		bracers.append(friend)
+		await ticks(20)
+		await place(Vector3(0, FLOOR_Y + 0.05, WALL_FACE_Z + 1.8), FACE_NORTH)
+		Input.action_press(&"move_forward")
+		Input.action_press(&"jump")
+		var highest := 0.0
+		for i in 240:
+			await ticks(1)
+			highest = maxf(highest, player.global_position.y - FLOOR_Y)
+		release_all()
+		var expected := map.scramble_height(leg_up.hands(braced) + SUPERHUMAN.leg_up_height)
+		expect_near(highest, expected, 0.25, "a leg-up from %d braced: height (the checker says %.2f)" % [braced, expected])
+
+
 func test_a_running_jump_goes_as_far_as_the_checker_says() -> void:
 	await _build_floor_and_walls([])
 	var map := ReachMap.build(main.level, SUPERHUMAN)
@@ -54,13 +84,13 @@ func test_a_running_jump_goes_as_far_as_the_checker_says() -> void:
 
 
 func test_walls_one_player_can_and_cannot_climb() -> void:
-	# 10 m: alone, but only with a readied leap. 11.5 m: nobody (a toss reaches
-	# about 10.6 m, and a hanging chain needs someone up there first).
+	# 10 m: alone, but only with a readied leap. 11.5 m: not alone (two can: a
+	# leg-up; see test_leg_up.gd).
 	await _build_floor_and_walls([10.0, 11.5])
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	var start := _floor(map)
 	expect(map.players_needed(_wall(map, 0), start) == 1, "the checker should say one player gets up 10 m")
-	expect(map.players_needed(_wall(map, 1), start) == 0, "and nobody gets up 11.5 m, says %d" % map.players_needed(_wall(map, 1), start))
+	expect(map.players_needed(_wall(map, 1), start) == 2, "and two get up 11.5 m, says %d" % map.players_needed(_wall(map, 1), start))
 	expect(await _free_run_up(0, true), "in the game, a readied leap gets you up 10 m, via %s" % [states_entered])
 	expect(not await _free_run_up(1, true), "but not 11.5 m, via %s" % [states_entered])
 
@@ -101,6 +131,18 @@ func test_a_toss_then_a_hanging_chain_gets_everyone_up() -> void:
 	buddy.change_state(&"Hang", {"ledge": buddy.find_ledge(feet, Vector3.FORWARD)})
 	await ticks(10)
 	expect(await _free_run_up(0, true), "and climbing a friend hanging there gets you up, via %s" % [states_entered])
+
+
+func test_bigger_walls_need_bigger_groups() -> void:
+	# 12.5 m: a leg-up from two braced friends (one on the other's shoulders)
+	# gets the third up, but the two left below need two hanging to reach them.
+	# With four, two run up the stack in turn, hang down, and everyone's up.
+	await _build_floor_and_walls([12.5])
+	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var start := _floor(map)
+	expect(map.players_needed(_wall(map, 0), start) == 3, "the checker should say 12.5 m needs three, says %d" % map.players_needed(_wall(map, 0), start))
+	expect(map.solve(start, 3).get(_wall(map, 0), 0) == 1, "three get one of them up")
+	expect(map.solve(start, 4).get(_wall(map, 0), 0) == 4, "four get all four up")
 
 
 func test_the_glider_reaches_a_far_lower_roof() -> void:

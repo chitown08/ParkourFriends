@@ -198,3 +198,49 @@ func test_climb_a_friend_hanging_from_a_wall() -> void:
 		if client_self.is_on_floor():
 			break
 	expect(client_self.is_on_floor() and client_self.global_position.y > 9.9, "the client should climb the host onto the top, at %s in %s" % [client_self.global_position, client_self.state.name])
+
+
+func test_leg_up_from_a_friend() -> void:
+	# An 11 m wall well away from the course: too tall alone, not with a leg-up.
+	for at_size: Array in [[Vector3(140, -0.5, -10), Vector3(40, 1, 40)], [Vector3(140, 5.5, -30), Vector3(30, 11, 20)]]:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		shape.shape = BoxShape3D.new()
+		shape.shape.size = at_size[1]
+		body.add_child(shape)
+		host_main.level.add_child(body)
+		body.global_position = at_size[0]
+	await ticks(2)
+	var host_self: Player = host_main.local_player
+	var client_self: Player = client_main.local_player
+	host_main.local_player.set_controls_enabled(false) # Buttons are shared: only the client moves.
+	for who: Player in [host_self, client_self]:
+		who.set_profile(SUPERHUMAN)
+	# The host braces at the foot of the wall.
+	host_self.global_position = Vector3(140, 0.05, -19.1)
+	host_self.reset_physics_interpolation()
+	client_self.global_position = Vector3(140, 0.05, -8)
+	client_self.reset_physics_interpolation()
+	client_self.camera_rig.yaw = FACE_NORTH
+	await ticks(20)
+	expect(host_self.try_brace(), "the host should brace at the wall")
+	await ticks(10)
+	var puppet := _find(client_main, host_self.name.to_int())
+	expect(puppet.sync_state == &"Brace", "the client should see the host braced, sees %s" % puppet.sync_state)
+	# The client runs at them and jumps: a leg-up, a scramble, onto the top.
+	Input.action_press(&"move_forward")
+	var stepped_in := false
+	for i in 300:
+		await ticks(1)
+		if client_self.global_position.z < -17.8:
+			Input.action_press(&"jump")
+		stepped_in = stepped_in or client_self.state.name == &"LegUp"
+		if client_self.state.name == &"Hang":
+			Input.action_release(&"jump")
+			await ticks(2)
+			Input.action_press(&"jump")
+		if client_self.is_on_floor() and client_self.global_position.y > 10.9:
+			break
+	release_all()
+	expect(stepped_in, "the client should step into the host's leg-up")
+	expect(client_self.is_on_floor() and client_self.global_position.y > 10.9, "and get up the 11 m wall, at %s in %s" % [client_self.global_position, client_self.state.name])

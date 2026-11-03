@@ -46,3 +46,4 @@ pipe_climb_speed = 2.5
 pipe_slide_speed = 5.0
 grind_gravity = 20.0
 grind_max_speed = 18.0
+leg_up_height = 2.5

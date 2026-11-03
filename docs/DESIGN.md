@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault), ChainHang and ChainClimb (the hanging chain). Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault), ChainHang and ChainClimb (the hanging chain), Brace and LegUp (the leg-up). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
@@ -81,6 +81,15 @@ built and the details the code relies on.
   pulls up or climbs past, you move up into their place; if they let go, you drop. Each player sends
   `sync_hanging_on` (who they hang from) and hangs from where they see their friend, so it works
   online. Free-run climbs a chain for you. Solo, G while hanging makes the buddy hang there too.
+- **Leg-up** (co-op): with nobody in toss reach, the toss button (E) braces you at the wall you're next to:
+  back to it, hands cupped (Brace). Press it again beside a braced friend and you climb onto their
+  shoulders and brace there instead (up to 4 in a stack, each 1.5 m higher). Anyone who jumps beside the
+  bottom one, or jumps into them, heading for the wall, steps up the stack (LegUp) and is launched
+  `leg_up_height` (5 m) up from the top hands, straight into a scramble: about 11.6 m of wall with one
+  friend braced, 13.1 m with two, 14.6 m with three. Those bracing stay below; once someone is up, a
+  hanging chain can bring them up after. Each player sends `sync_braced_on` (whose shoulders they're on);
+  the runner's computer decides from what it sees, so it works online. Free-run takes a leg-up for
+  you. Solo, G while looking at a wall (within 10 m) has the buddy brace at its foot.
 - **Grind rails** (`levels/grind_rail.gd`) are straight (`end_point`) or any shape (a `curve`, a Curve3D:
   bends, coaster dips and rises, flat wires). Places on a rail are metres from its start. The Grind state
   works in those: the slope where you are pulls you downhill (`grind_gravity`), pushing along the rail
@@ -98,6 +107,7 @@ built and the details the code relies on.
 | Highest wall you can get up alone (scramble, then grab) | ~8.7 m from a jump, ~10.2 m from a readied leap |
 | Ledge leap (from a hang-only sill) | up to 4.5 m |
 | Toss | ~8 m up, ~8 m/s in the camera's direction |
+| Leg-up (one friend braced / two / three) | ~11.6 / 13.1 / 14.6 m of wall |
 | Grind rail top speed (sliding down) / climbing up | 26 / 5 m/s |
 
 ## Multiplayer
@@ -157,9 +167,9 @@ built and the details the code relies on.
 
 `ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
 and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
-(and drop, and leap, and full-flow jumps), scramble, hanging chain, toss, drainpipe, window sills,
+(and drop, and leap, and full-flow jumps), scramble, hanging chain, toss, leg-up, drainpipe, window sills,
 air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
-or items (`flow`, `glider`), friends who stay behind (a toss), friends already there (a chain).
+or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up), friends already there (a chain).
 `solve()` spreads a group out from the start and gives the most players who can get to each spot;
 `players_needed()` the fewest for one to get there. Numbers come from the movement profile, so
 changing a move changes the answers.
@@ -173,7 +183,10 @@ changing a move changes the answers.
   needs (green 1, yellow 2, orange 3, red 4+, grey nobody).
 - What it has taught us: a hanging chain brings the rest of a group up after someone gets there
   another way (a toss, a fire escape...); on its own it can't get the first one up. A readied leap
-  scrambles about 1.5 m higher than a jump (10 m walls are just soloable with one).
+  scrambles about 1.5 m higher than a jump (10 m walls are just soloable with one). Bigger groups
+  get up bigger walls by combining moves: at 12.5 m, three get one player up (a two-high leg-up
+  stack) but the two left below are out of a one-friend chain's reach; four get everyone up (two
+  run up the stack in turn, then hang down for the others).
 
 ## Testing
 
@@ -186,8 +199,7 @@ new rule is checked by breaking it on purpose to make sure a test notices.
   ivy, bounce pads; air vents could pair with a glider. Something for the towers.
 - **Co-op moves that scale with player count** (Nov 2026, the user's favourites):
   - **Hanging chain**: built (see "How movement is built").
-  - **Leg-up**: stand at a wall and a friend running at you gets boosted up it, higher than a
-    scramble; two or three of you make a stack to run up.
+  - **Leg-up**: built (see "How movement is built"), stacks up to four high.
   - **Crack the whip**: pack-runners link up in a line; the leader swings round and the line pivots,
     flinging the last one off fast. A longer line flings harder.
   - **Drafting**: running in a pack builds flow faster; a bigger pack nudges top speed up.

@@ -75,6 +75,8 @@ var sync_leap_charge := 0.0
 var sync_free_run_velocity := Vector3.ZERO
 ## The name of the friend we're hanging from (a hanging chain), or "".
 var sync_hanging_on := ""
+## The name of the friend whose shoulders we're bracing on (a leg-up stack), or "".
+var sync_braced_on := ""
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
 ## What this player wears: an item name (or "" for nothing) for each slot in
@@ -169,6 +171,7 @@ var toss_recoil_height: float
 var toss_control_lock: float
 var toss_cooldown: float
 var limit_tosses_per_air: bool
+var leg_up_height: float
 
 ## How much flow (momentum) you've built up: 0 = normal running speed,
 ## 1 = top speed. See _update_flow().
@@ -264,7 +267,7 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace"]
 ## Hanging, from a ledge or from a friend: someone can hang from your feet.
 const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang"]
 ## How far from a hanging friend's feet your hands can be to grab them.
@@ -284,6 +287,28 @@ var can_toss_in_air := true
 var tossed_by := PackedStringArray()
 var _toss_cooldown_timer := 0.0
 var _toss_recoil_velocity: float
+
+## Leg-ups: a braced friend's cupped hands are this high above their feet, and
+## a friend standing on their shoulders has their feet this high.
+const BRACE_HANDS := 0.9
+const BRACE_SHOULDERS := 1.5
+## The most friends in one leg-up stack (the one at the wall and those on top).
+const MOST_BRACED := 4
+## How close (across) to a braced friend you must be to step into their hands
+## (pressing jump), or to climb onto their shoulders (pressing toss).
+const LEG_UP_REACH := 1.5
+## Jumping into a braced friend (rather than pressing jump next to them): this
+## close across, moving toward the wall at least this fast (m/s).
+const LEG_UP_CATCH := 1.0
+const LEG_UP_CATCH_SPEED := 1.0
+## How hard a leg-up's launch presses you toward the wall (m/s).
+const LEG_UP_PUSH := 2.0
+## After a leg-up launch, you can't step into another for this long (seconds):
+## you'd be caught again by the same hands.
+const LEG_UP_COOLDOWN := 0.5
+var _leg_up_cooldown_timer := 0.0
+## States you can step into a leg-up from.
+const LEG_UP_STATES: Array[StringName] = [&"Ground", &"Air", &"Slide"]
 
 
 func _enter_tree() -> void:
@@ -345,14 +370,21 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer_timer -= delta
 
 	_toss_cooldown_timer -= delta
+	_leg_up_cooldown_timer -= delta
 	grind_cooldown -= delta
 	if input.toss_just_pressed:
-		try_toss()
+		# With nobody to toss, the toss button braces you for a leg-up (or stops).
+		if state.name == &"Brace":
+			state.let_go()
+		elif not try_toss():
+			try_brace()
 
 	if hands_busy() and state.name in HANDS_MOVES:
 		# A bulky item just landed in your hands (a catch or a swap): let go.
 		grind_cooldown = 0.5
 		change_state(&"Air", {"regrab_delay": 0.5})
+	if state.name in LEG_UP_STATES:
+		_try_leg_up()
 	state.physics_update(delta)
 	_update_flow(delta)
 	if not is_bot:
@@ -634,7 +666,7 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb"]:
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb", &"LegUp"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
@@ -728,6 +760,8 @@ func find_toss_target(reach := -1.0) -> Player:
 		var friend := other as Player
 		if friend == null or friend == self or friend.is_queued_for_deletion():
 			continue
+		if friend.sync_state in [&"Brace", &"LegUp"]:
+			continue # Braced for a leg-up (pressing toss beside them joins in).
 		if limit_tosses_per_air and str(name) in friend.sync_tossed_by:
 			continue # We've already tossed them this air time.
 		var offset := friend.global_position - global_position
@@ -773,6 +807,111 @@ func apply_toss(launch: Vector3, thrower_name: String = "") -> void:
 	tossed_by.append(thrower_name)
 	change_state(&"Air", {"control_lock": toss_control_lock})
 	got_tossed.emit()
+
+
+# --- Leg-ups ---------------------------------------------------------------------
+#
+# A friend braces at the foot of a wall (Brace state: back to it, hands
+# cupped); more friends can climb onto their shoulders and brace there too. You
+# jump into them and step up the stack (LegUp state) to be launched up the
+# wall from the top one's hands. Your computer decides, from what it knows of
+# them (sync_state, sync_braced_on), so nothing needs sending.
+
+## Toss pressed with nobody to toss: brace for a leg-up. Beside a braced
+## friend, you climb onto the shoulders of the top one of their stack;
+## otherwise you brace with your back to the wall you're next to. Returns true
+## if you're bracing.
+func try_brace() -> bool:
+	if state.name not in [&"Ground", &"Crouch"] or hands_busy():
+		return false
+	var base := _find_braced_friend(LEG_UP_REACH)
+	if base:
+		var stack := base.brace_stack()
+		var shoulders: Vector3 = stack.back().global_position + Vector3.UP * BRACE_SHOULDERS
+		if stack.size() >= MOST_BRACED or not body_fits(shoulders):
+			return false
+		change_state(&"Brace", {"on": stack.back(), "wall_normal": base.facing_direction()})
+		return true
+	return brace_at_wall()
+
+
+## Braces with your back to the tall wall you're next to, if any.
+func brace_at_wall() -> bool:
+	var wall := find_wall(true)
+	if wall.is_empty():
+		return false
+	change_state(&"Brace", {"wall_normal": wall.normal, "wall_point": wall.point})
+	return true
+
+
+## A braced friend's leg-up stack, from them up: them, the friend on their
+## shoulders, the friend on theirs...
+func brace_stack() -> Array[Player]:
+	var stack: Array[Player] = [self]
+	while stack.size() < MOST_BRACED * 2:
+		var above: Player = null
+		for other in get_parent().get_children():
+			if other is Player and not other in stack and other.sync_state == &"Brace" and other.sync_braced_on == str(stack.back().name):
+				above = other
+		if above == null:
+			break
+		stack.append(above)
+	return stack
+
+
+## The nearest friend bracing at the foot of a wall (not on someone's
+## shoulders), within `reach` across and about level with your feet, or null.
+func _find_braced_friend(reach: float) -> Player:
+	var best: Player = null
+	var best_distance := INF
+	for other in get_parent().get_children():
+		var friend := other as Player
+		if friend == null or friend == self or friend.sync_state != &"Brace" or friend.sync_braced_on != "":
+			continue
+		var offset := global_position - friend.global_position
+		var across := Vector2(offset.x, offset.z).length()
+		if across <= reach and absf(offset.y) < 0.5 and across < best_distance:
+			best = friend
+			best_distance = across
+	return best
+
+
+## Steps into a braced friend's leg-up: pressing jump beside them, or jumping
+## into them (moving toward their wall), while pushing toward the wall.
+func _try_leg_up() -> void:
+	if _leg_up_cooldown_timer > 0.0:
+		return
+	var jumping := has_jump_buffered()
+	for other in get_parent().get_children():
+		var friend := other as Player
+		if friend == null or friend == self or friend.sync_state != &"Brace" or friend.sync_braced_on != "":
+			continue
+		var wall_out := friend.facing_direction() # (They face away from the wall.)
+		if input.move_direction.dot(-wall_out) < 0.5:
+			continue
+		var offset := global_position - friend.global_position
+		var across := Vector2(offset.x, offset.z).length()
+		var hands: float = friend.brace_stack().back().global_position.y + BRACE_HANDS
+		if offset.y < -0.5 or global_position.y > hands + stand_height:
+			continue # Below them, or already above the top of the stack.
+		var closing := -Vector3(velocity.x, 0.0, velocity.z).dot(wall_out)
+		var caught := state.name == &"Air" and across <= LEG_UP_CATCH and closing >= LEG_UP_CATCH_SPEED
+		if (jumping and across <= LEG_UP_REACH) or caught:
+			if jumping:
+				consume_jump()
+			change_state(&"LegUp", {"base": friend})
+			return
+
+
+## The end of a leg-up: launched leg_up_height up from the hands you're
+## standing in, pressing toward the wall (so you scramble up it).
+func leg_up_launch(toward_wall: Vector3) -> void:
+	velocity = toward_wall * LEG_UP_PUSH + Vector3.UP * sqrt(2.0 * _rise_gravity * leg_up_height)
+	last_wall_normal = Vector3.ZERO
+	_leg_up_cooldown_timer = LEG_UP_COOLDOWN
+	refresh_air_moves()
+	change_state(&"Air")
+	show_effect(&"show_jump", [1.0])
 
 
 ## Lets you toss and be tossed again. Called when you land, grab a ledge,

@@ -32,6 +32,8 @@ const PROFILES := {
 var local_player: Player
 ## The solo practice buddy, once called (see call_buddy()).
 var buddy: Player
+## Calling the buddy while looking at a wall this close (metres) has it brace there.
+const BUDDY_BRACE_DISTANCE := 10.0
 var is_paused := false
 ## The world being played (null while in the main menu).
 var level: Level
@@ -158,7 +160,8 @@ func set_paused(paused: bool) -> void:
 
 ## Solo only: brings the practice buddy (creating it the first time) to stand
 ## 1.5 m in front of you (within toss reach), facing you. It respawns here if it falls.
-## If you're hanging from a ledge, it hangs there too instead.
+## If you're hanging from a ledge, it hangs there too instead; if you're
+## looking at a wall (within BUDDY_BRACE_DISTANCE), it braces at its foot.
 func call_buddy() -> void:
 	if network.is_online() or local_player == null:
 		return
@@ -180,6 +183,19 @@ func call_buddy() -> void:
 		buddy.global_position = buddy.hang_position(ledge)
 		buddy.reset_physics_interpolation()
 		buddy.change_state(&"Hang", {"ledge": ledge})
+		return
+	# Looking at a wall: the buddy braces at its foot, for you to run at and
+	# jump into (a leg-up).
+	var eyes := local_player.global_position + Vector3.UP * Player.BRACE_HANDS
+	var wall := local_player.raycast(eyes, eyes + forward * BUDDY_BRACE_DISTANCE)
+	if not wall.is_empty() and absf(wall.normal.y) < 0.3:
+		var at: Vector3 = wall.position + Vector3(wall.normal.x, 0.0, wall.normal.z).normalized() * (buddy.body_radius + 0.1)
+		at.y = local_player.global_position.y + 0.05
+		if buddy.body_fits(at):
+			buddy.set_checkpoint(at)
+			buddy.respawn()
+			if buddy.brace_at_wall():
+				hud.show_message("Buddy's braced: run at it and jump for a leg-up")
 
 
 ## Solo only: turns the ghost runner on or off: the practice buddy (called
