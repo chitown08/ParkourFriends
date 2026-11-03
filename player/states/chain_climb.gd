@@ -41,10 +41,10 @@ func physics_update(delta: float) -> void:
 
 
 ## The friend at the top of the chain you're climbing (the one hanging from the
-## ledge). If they pull up meanwhile, the next one down takes their place.
-## Null if nobody in the chain is on the ledge any more.
+## ledge, or caught by a friend at it). If they pull up meanwhile, the next one
+## down takes their place. Null if nobody in the chain is at the top any more.
 func _top_of_chain() -> Player:
 	for i in range(_chain.size() - 1, -1, -1):
-		if is_instance_valid(_chain[i]) and _chain[i].sync_state == &"Hang":
+		if is_instance_valid(_chain[i]) and _chain[i].is_chain_top():
 			return _chain[i]
 	return null

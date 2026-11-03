@@ -19,7 +19,7 @@ built and the details the code relies on.
 ## How movement is built
 
 - **States** (`player/states/`): one script per mode: Ground, Air, Hang, Climb, Crouch, Slide,
-  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault), ChainHang and ChainClimb (the hanging chain), Brace and LegUp (the leg-up), Linked, Whip and Whipped (crack the whip). Only the active state runs; it decides how to move and when
+  WallRun, WallScramble, Grind (riding a grind rail), PipeClimb (climbing a drainpipe), Vault (the flow vault), ChainHang and ChainClimb (the hanging chain), Brace and LegUp (the leg-up), Linked, Whip and Whipped (crack the whip), Catch and Caught (catching a friend). Only the active state runs; it decides how to move and when
   to switch (`player.change_state()`).
 - **Movement profiles** (`player/profiles/`): every feel number lives in a profile.
   `superhuman.tres` is the default; `human.tres` keeps realistic numbers and is what the
@@ -106,6 +106,16 @@ built and the details the code relies on.
   2 / 3 / 4. Each player sends `sync_linked_to` (whose hand they hold); each computer moves its own
   player from what it sees, so it works online. Solo, E while ghost-running has the buddy take
   your hand (more practice bots join the end). Numbers: `LINK_`/`WHIP_` constants in `player.gd`.
+- **Catch** (co-op): stand at an edge looking out over it, and a friend falling short of it is
+  caught: nothing to press. If their hands come within 1.5 m out from the wall and 2 m below the
+  edge (and they're not heading away: dropping off on purpose), you kneel and hold them (Catch)
+  and they hang from your hands right at the edge (Caught), as if they'd grabbed it themselves: jump
+  climbs up (free-run does it for you), crouch lets go. More friends can hang below them like any
+  hanging chain, and when the caught one climbs up, the next takes their place. You can stand up
+  to 1.5 m back; you stay put while holding on; jump or crouch lets go (they drop). One catch at a
+  time. The falling player's computer decides from where it sees you (`Player.find_catcher()`) and
+  sends `sync_hanging_on`; yours sees it and kneels, so it works online. Solo, G at an edge looking
+  out has the buddy stand there beside you, to catch you. Numbers: `CATCH_` constants in `player.gd`.
 - **Grind rails** (`levels/grind_rail.gd`) are straight (`end_point`) or any shape (a `curve`, a Curve3D:
   bends, coaster dips and rises, flat wires). Places on a rail are metres from its start. The Grind state
   works in those: the slope where you are pulls you downhill (`grind_gravity`), pushing along the rail
@@ -125,6 +135,7 @@ built and the details the code relies on.
 | Toss | ~8 m up, ~8 m/s in the camera's direction |
 | Leg-up (one friend braced / two / three) | ~11.6 / 13.1 / 14.6 m of wall |
 | Crack the whip, at full flow (line of 2 / 3 / 4) | flung ~18 / 22 / 26 m across |
+| Catch (a friend at the edge) | your hands within 1.5 m out, 2 m below the edge: ~1 m lower and ~2 m further than grabbing it yourself |
 | Grind rail top speed (sliding down) / climbing up | 26 / 5 m/s |
 
 ## Multiplayer
@@ -184,9 +195,9 @@ built and the details the code relies on.
 
 `ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
 and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
-(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, drainpipe, window sills,
+(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, catch, drainpipe, window sills,
 air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
-or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up, the rest of a whip's line), friends already there (a chain), friends going together (a pack's drafting jump).
+or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up, the rest of a whip's line), friends already there (a chain, a catch), friends going together (a pack's drafting jump).
 `solve()` spreads a group out from the start and gives the most players who can get to each spot;
 `players_needed()` the fewest for one to get there. Numbers come from the movement profile, so
 changing a move changes the answers.
@@ -204,8 +215,9 @@ changing a move changes the answers.
   get up bigger walls by combining moves: at 12.5 m, three get one player up (a two-high leg-up
   stack) but the two left below are out of a one-friend chain's reach; four get everyone up (two
   run up the stack in turn, then hang down for the others). Across a gap too wide to leap alone,
-  two can crack the whip to fling one over, and three can do it twice to get two over; the last one
-  is left behind, but a pack of four drafting together can all leap a gap that size.
+  two can crack the whip to fling one over, and the one flung over catches the rest, leaping short:
+  nobody's left behind (without catching, three could only whip two over). A pack of four
+  drafting together can all just leap a gap that size.
 
 ## Testing
 
@@ -222,7 +234,7 @@ new rule is checked by breaking it on purpose to make sure a test notices.
   - **Crack the whip**: built (see "How movement is built"): a longer line flings harder.
   - **Drafting**: built (see "How movement is built"): a bigger pack builds flow faster and runs
     a little faster, so it jumps a little further.
-  - **Catch**: a friend near an edge catches someone falling short of a jump.
+  - **Catch**: built (see "How movement is built"): a friend at the edge catches you falling short.
   - **Human pyramid**: stand on each other's heads (needs players to collide with each other).
 - Hands: only bulky items block hand moves today; zip lines, swing poles and the like could follow
   the same rule (undecided).

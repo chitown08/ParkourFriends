@@ -184,6 +184,18 @@ func call_buddy() -> void:
 		buddy.reset_physics_interpolation()
 		buddy.change_state(&"Hang", {"ledge": ledge})
 		return
+	# At an edge, looking out over it: the buddy stands at it beside you,
+	# looking out too, to catch you when you fall short of it.
+	if local_player.state.name in Player.CATCH_FROM:
+		var ahead := spot + Vector3.UP * 0.5
+		var beside := local_player.global_position + forward.cross(Vector3.UP) * 1.5 + Vector3.UP * 0.05
+		if local_player.raycast(ahead, ahead + Vector3.DOWN * 3.0).is_empty() and buddy.body_fits(beside) \
+				and not local_player.raycast(beside + Vector3.UP * 0.5, beside + Vector3.DOWN * 0.5).is_empty():
+			buddy.set_checkpoint(beside)
+			buddy.respawn()
+			buddy.face_direction(forward, 1.0)
+			hud.show_message("Buddy's at the edge: fall short of it and it'll catch you")
+			return
 	# Looking at a wall: the buddy braces at its foot, for you to run at and
 	# jump into (a leg-up).
 	var eyes := local_player.global_position + Vector3.UP * Player.BRACE_HANDS

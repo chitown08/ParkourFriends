@@ -193,9 +193,6 @@ func _run_and_scramble(x := 0.0) -> void:
 	await ticks(30)
 
 
-func expect_state_of(who: Player, expected: StringName) -> void:
-	expect(who.state.name == expected, "%s should be in %s, is in %s at %s" % [who.name, expected, who.state.name, who.global_position])
-
 
 func _box(at: Vector3, size: Vector3) -> void:
 	var body := StaticBody3D.new()

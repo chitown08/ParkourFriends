@@ -25,6 +25,8 @@
 [ext_resource type="Script" path="res://player/states/linked.gd" id="23_linked"]
 [ext_resource type="Script" path="res://player/states/whip.gd" id="24_whip"]
 [ext_resource type="Script" path="res://player/states/whipped.gd" id="25_whipped"]
+[ext_resource type="Script" path="res://player/states/catch.gd" id="26_catch"]
+[ext_resource type="Script" path="res://player/states/caught.gd" id="27_caught"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -131,6 +133,12 @@ script = ExtResource("24_whip")
 
 [node name="Whipped" type="Node" parent="States"]
 script = ExtResource("25_whipped")
+
+[node name="Catch" type="Node" parent="States"]
+script = ExtResource("26_catch")
+
+[node name="Caught" type="Node" parent="States"]
+script = ExtResource("27_caught")
 
 [node name="Crouch" type="Node" parent="States"]
 script = ExtResource("8_crouch")

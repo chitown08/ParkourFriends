@@ -279,9 +279,9 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace", &"Linked", &"Whipped"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace", &"Linked", &"Whipped", &"Catch", &"Caught"]
 ## Hanging, from a ledge or from a friend: someone can hang from your feet.
-const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang"]
+const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang", &"Caught"]
 ## How far from a hanging friend's feet your hands can be to grab them.
 const CHAIN_GRAB_REACH := 0.8
 ## Where held items sit, by slot (see item_anchor): hands, back, worn backpack.
@@ -383,6 +383,7 @@ func _physics_process(delta: float) -> void:
 
 	_toss_cooldown_timer -= delta
 	_leg_up_cooldown_timer -= delta
+	catch_cooldown -= delta
 	grind_cooldown -= delta
 	if input.toss_just_pressed:
 		# With nobody to toss, the toss button braces you for a leg-up (or stops).
@@ -400,6 +401,8 @@ func _physics_process(delta: float) -> void:
 		_try_leg_up()
 	if state.name in [&"Ground", &"Slide"]:
 		_try_crack_whip()
+	if state.name in CATCH_FROM:
+		_try_catch()
 	state.physics_update(delta)
 	_update_flow(delta)
 	if not is_bot:
@@ -688,7 +691,7 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"Caught", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
@@ -1104,6 +1107,86 @@ func refresh_air_moves() -> void:
 	tossed_by.clear()
 
 
+# --- Catching friends ------------------------------------------------------------
+# Stand at an edge, and a friend falling short of it is caught: you reach down
+# and grab them (Catch), and they hang from your hands (Caught) right at the
+# edge, as if they'd grabbed it, to climb up (or for more friends to hang
+# below them). Nothing to press: the one falling decides, on their computer,
+# seeing where you stand (find_catcher()); yours sees them hanging from you.
+
+## How far out from the wall a falling friend's hands can be for you to catch
+## them, and how far below the edge (metres).
+const CATCH_OUT := 1.5
+const CATCH_DOWN := 2.0
+## How far back from the edge you can stand and still catch someone.
+const CATCH_EDGE := 1.5
+## Just caught, your friend still looks to be standing about for this long
+## (seconds) before their computer says they're catching you.
+const CATCH_GRACE := 0.5
+## After letting go of a catch (either of you), no catching again for this long.
+const CATCH_COOLDOWN := 0.6
+## States you can catch from: standing at the edge.
+const CATCH_FROM: Array[StringName] = [&"Ground", &"Crouch"]
+var catch_cooldown := 0.0
+
+
+## A friend at an edge who can catch you, falling short of it, right now:
+## {"catcher": them, "spot": where your feet hang from the edge, "toward_wall": ...},
+## or an empty dictionary.
+func find_catcher() -> Dictionary:
+	var hands := global_position + Vector3.UP * hang_height
+	var taken := {}
+	for other in get_parent().get_children():
+		if other is Player:
+			taken[other.sync_hanging_on] = true
+	for other in get_parent().get_children():
+		if other == self or not other is Player or not other.sync_state in CATCH_FROM \
+				or taken.has(str(other.name)) or other.hands_busy():
+			continue
+		var edge_y: float = other.global_position.y
+		if hands.y > edge_y + 0.2 or hands.y < edge_y - CATCH_DOWN:
+			continue # Not below their edge (you'd land), or too far down.
+		var toward: Vector3 = other.global_position - global_position
+		toward.y = 0.0
+		if toward.length() > CATCH_OUT + CATCH_EDGE + body_radius:
+			continue
+		toward = toward.normalized()
+		# The wall under their edge, between you.
+		var from := Vector3(global_position.x, edge_y - 0.3, global_position.z)
+		var wall := raycast(from, from + toward * (CATCH_OUT + body_radius))
+		if wall.is_empty() or absf((wall.normal as Vector3).y) > 0.3:
+			continue
+		var normal := Vector3(wall.normal.x, 0.0, wall.normal.z).normalized()
+		var at_edge := Vector3(wall.position.x, edge_y, wall.position.z)
+		var back: Vector3 = other.global_position - at_edge
+		back.y = 0.0
+		if back.length() > CATCH_EDGE or (other as Player).facing_direction().dot(normal) < 0.3:
+			continue # Not at the edge, or not facing out over it.
+		if Vector3(velocity.x, 0.0, velocity.z).dot(normal) > 1.0:
+			continue # Heading away (dropping off on purpose).
+		return {"catcher": other, "spot": at_edge + normal * (body_radius + 0.05) + Vector3.DOWN * hang_height, "toward_wall": -normal}
+	return {}
+
+
+## True if you've caught a friend (they hang from your hands).
+func someone_caught() -> bool:
+	for other in get_parent().get_children():
+		if other != self and other is Player and other.sync_state == &"Caught" and other.sync_hanging_on == str(name):
+			return true
+	return false
+
+
+## Starts catching if a friend has just been caught by you.
+func _try_catch() -> void:
+	if catch_cooldown <= 0.0 and someone_caught():
+		change_state(&"Catch")
+
+
+## The top of a hanging chain: hanging from a ledge, or caught by a friend at it.
+func is_chain_top() -> bool:
+	return sync_state in [&"Hang", &"Caught"]
+
+
 # --- Helpers shared by the states --------------------------------------------
 
 ## True (once) if jump was pressed recently. Lets a slightly-early press count.
@@ -1200,7 +1283,7 @@ func find_player(player_name: String) -> Player:
 func chain_bottom_at(spot: Vector3) -> Player:
 	var at: Player = null
 	for other in get_parent().get_children():
-		if other != self and other is Player and other.sync_state == &"Hang" and other.global_position.distance_to(spot) < CHAIN_GRAB_REACH:
+		if other != self and other is Player and other.is_chain_top() and other.global_position.distance_to(spot) < CHAIN_GRAB_REACH:
 			at = other
 	var steps := 0
 	while at and steps < 16:

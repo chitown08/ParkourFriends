@@ -160,3 +160,7 @@ func expect_near(actual: float, expected: float, tolerance: float, what: String)
 func expect_state(expected: StringName) -> void:
 	expect(player.state.name == expected,
 			"expected state %s, got %s" % [expected, player.state.name])
+
+
+func expect_state_of(who: Player, expected: StringName) -> void:
+	expect(who.state.name == expected, "%s should be in %s, is in %s at %s" % [who.name, expected, who.state.name, who.global_position])

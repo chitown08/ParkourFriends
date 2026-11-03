@@ -124,7 +124,7 @@ func assist(delta: float) -> void:
 	match player.state.name:
 		&"Ground", &"Slide":
 			_look_ahead()
-		&"Hang", &"ChainHang":
+		&"Hang", &"ChainHang", &"Caught":
 			_press_jump() # Pull yourself up straight away.
 
 

@@ -281,3 +281,41 @@ func test_crack_the_whip_with_a_friend() -> void:
 	release_all()
 	expect(swung, "the client should swing round when the host cracks the whip")
 	expect(client_self.state.name == &"Air" and client_self.velocity.x > 15.0, "and be flung off east, %s going %s" % [client_self.state.name, client_self.velocity])
+
+
+func test_catch_a_friend_falling_short() -> void:
+	# A floor and a 10 m building well away from the course. The host stands at
+	# its edge looking out; the client falls short of it.
+	for box: Array in [[Vector3(300, -0.5, 0), Vector3(60, 1, 60)], [Vector3(300, 5, -10), Vector3(20, 10, 20)]]:
+		var body := StaticBody3D.new()
+		var shape := CollisionShape3D.new()
+		shape.shape = BoxShape3D.new()
+		shape.shape.size = box[1]
+		body.add_child(shape)
+		host_main.level.add_child(body)
+		body.global_position = box[0]
+	await ticks(2)
+	var host_self: Player = host_main.local_player
+	var client_self: Player = client_main.local_player
+	for who: Player in [host_self, client_self]:
+		who.set_profile(SUPERHUMAN)
+	host_self.global_position = Vector3(300, 10.05, -0.6)
+	host_self._visual.rotation.y = PI # Facing south, out over the edge.
+	host_self.reset_physics_interpolation()
+	await ticks(30)
+	client_self.global_position = Vector3(300, 10.0 - 1.0 - client_self.hang_height, 1.2)
+	client_self.velocity = Vector3(0, -0.1, -2.0)
+	client_self.change_state(&"Air")
+	client_self.reset_physics_interpolation()
+	await ticks(30)
+	expect(client_self.state.name == &"Caught" and client_self.sync_hanging_on == str(host_self.name), "the client should be caught by the host, %s on '%s'" % [client_self.state.name, client_self.sync_hanging_on])
+	expect_state_of(host_self, &"Catch")
+	expect(_find(client_main, host_self.name.to_int()).sync_state == &"Catch", "the client sees the host holding them")
+	client_self._jump_buffer_timer = 0.2 # The client presses jump (only on their computer).
+	for i in 90:
+		await ticks(1)
+		if client_self.state.name == &"Ground":
+			break
+	expect(client_self.state.name == &"Ground" and client_self.global_position.y > 9.9, "the client climbs up, %s at %s" % [client_self.state.name, client_self.global_position])
+	await ticks(30)
+	expect_state_of(host_self, &"Ground")

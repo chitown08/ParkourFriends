@@ -57,7 +57,9 @@ func _remember_above() -> void:
 
 
 ## The friend above you isn't hanging any more: if they went up (pulled
-## themselves up or are climbing past), take their place; if they let go, so do you.
+## themselves up or are climbing past), take their place (hanging from the
+## ledge, the friend above them, or the friend at the edge who caught them);
+## if they let go, so do you.
 func _anchor_moved_on() -> void:
 	var went_up := is_instance_valid(_anchor) and _anchor.sync_state in [&"Climb", &"ChainClimb", &"Ground"]
 	if went_up:
@@ -65,6 +67,10 @@ func _anchor_moved_on() -> void:
 			var above := player.find_player(_above_name)
 			if above and above.sync_state in Player.CHAIN_STATES:
 				player.change_state(&"ChainHang", {"anchor": above, "toward_wall": _toward_wall})
+				return
+			if above and above.sync_state == &"Catch":
+				# They were caught by a friend at the edge: who now holds you.
+				player.change_state(&"Caught", {"catcher": above, "spot": _above_spot, "toward_wall": _toward_wall})
 				return
 		else:
 			# They were on the ledge: hang from it where they did.

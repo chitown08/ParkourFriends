@@ -178,8 +178,9 @@ func test_the_glider_reaches_a_far_lower_roof() -> void:
 
 func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	# Two 20 m towers with a gap between them a pack of four can leap (at full
-	# flow, drafting) but a pack of three can't, nor anyone alone. (Three can crack
-	# the whip twice to fling two across, but the last one's left behind.)
+	# flow, drafting) but a pack of three can't, nor anyone alone. (Smaller groups
+	# still get everyone across: crack the whip to fling one over, and they catch
+	# the rest, leaping short.)
 	player.set_profile(SUPERHUMAN)
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	var leap := func(pack: int) -> float:
@@ -193,7 +194,12 @@ func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	var near := map.place_named("ReachNear")
 	var far := map.place_named("ReachFar")
 	expect(map.solve(near, 4).get(far, 0) == 4, "a pack of four gets all four across a %.1f m gap" % gap)
-	expect(map.solve(near, 3).get(far, 0) == 2, "three get two across (cracking the whip twice), the last one's left behind")
+	expect(map.solve(near, 3).get(far, 0) == 3, "three all get across: one's flung over, then catches the others")
+	expect(map.solve(near, 2).get(far, 0) == 2, "...and two")
+	for link in map.links.duplicate():
+		if link.how.ends_with("caught"):
+			map.links.erase(link)
+	expect(map.solve(near, 3).get(far, 0) == 2, "with nobody to catch them, three get two across (cracking the whip twice), the last one's left behind")
 	expect(map.players_needed(far, near) > 1, "nobody gets across alone")
 
 
