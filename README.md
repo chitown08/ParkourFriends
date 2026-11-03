@@ -15,7 +15,10 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
    Joining players get the host's world. In the game, **Esc** has the settings (mouse, fullscreen, volume for
    everything / music / sound effects) and **your outfit** (a hat, gloves, belt, shoes and a trail, or none).
    All of it is remembered for next time. The version number is in the bottom-right corner.
-3. In the Rooftop District, bring relics back to the drop-off in the middle of the plaza. The gold rings round each
+3. **Building the game for friends:** double-click **`build_windows.cmd`**. It makes `buildwindows` (the game
+   without developer tools) and runs the built game's self-check (every world loads, outfits, music, Steam).
+   The first time, Godot needs its export templates (Editor > Manage Export Templates > Download).
+4. In the Rooftop District, bring relics back to the drop-off in the middle of the plaza. The gold rings round each
    relic say how many players it takes to reach: one ring, you can get it alone; four rings, it takes four of you.
 
 ## Controls

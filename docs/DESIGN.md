@@ -249,6 +249,15 @@ changing a move changes the answers.
   nobody's left behind (without catching, three could only whip two over). A pack of four
   drafting together can all just leap a gap that size.
 
+## Building (Nov 2026)
+
+`build_windows.cmd` exports the "Windows" preset (`export_presets.cfg`, committed; tests and tools are
+left out, `*.cfg` files are put in) as a release build into `build/windows/`, then runs the built
+game with `-- --check-build` (`main.gd check_build()`): it loads every world and checks the outfit
+lists, the music and Steam are all there and developer tools are off, writing `build/check.log`.
+Steam: the GodotSteam GDExtension (4.23.2, from codeberg.org/godotsteam/godotsteam) is in
+`addons/godotsteam/`, Windows and Linux 64-bit only.
+
 ## Testing
 
 `run_tests.cmd` runs the gameplay tests (about 140; `run_tests.cmd items` runs just the item ones). New features come with tests, and each

@@ -8,7 +8,6 @@ Godot_*.zip
 
 # Exports / builds
 build/
-export_presets.cfg
 
 # OS junk
 Thumbs.db

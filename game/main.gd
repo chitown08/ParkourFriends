@@ -444,6 +444,42 @@ func _handle_command_line() -> void:
 			start_host(Network.DEFAULT_PORT, world_id)
 		elif arg.begins_with("--join"):
 			start_join(arg.get_slice("=", 1))
+		elif arg == "--check-build":
+			check_build.call_deferred()
+
+
+## For build_windows.cmd: checks the built game has everything it needs (the
+## things that work from the editor but can go missing from a build), prints
+## a report, and quits (exit code 1 if anything is wrong).
+func check_build() -> void:
+	var problems := []
+	for world_id: String in WORLDS:
+		start_solo(world_id)
+		for i in 10:
+			await get_tree().physics_frame
+		var relics := level.find_children("*", "WorldItem", true, false).filter(func(item: WorldItem) -> bool: return item.item.deliverable)
+		print("%s: loaded, %d relics, player %s" % [world_id, relics.size(), "in" if local_player else "MISSING"])
+		if local_player == null:
+			problems.append("no player in " + world_id)
+		leave_game()
+		await get_tree().process_frame
+	for slot in Cosmetics.SLOTS:
+		var items := Cosmetics.available(slot)
+		print("outfit %s: %d" % [slot, items.size()])
+		if items.is_empty():
+			problems.append("no %s items" % slot)
+	var tracks := Playlist.find_tracks()
+	print("music: %d track(s)" % tracks.size())
+	if tracks.is_empty():
+		problems.append("no music")
+	print("developer tools: %s" % ("ON (should be off in a release build)" if Settings.dev_tools else "off"))
+	if Settings.dev_tools and not OS.is_debug_build():
+		problems.append("developer tools on")
+	print("Steam: %s" % ("found" if Engine.has_singleton("Steam") else "MISSING"))
+	if not Engine.has_singleton("Steam"):
+		problems.append("no Steam")
+	print("BUILD CHECK " + ("OK" if problems.is_empty() else "FAILED: " + ", ".join(problems)))
+	get_tree().quit(0 if problems.is_empty() else 1)
 
 
 # --- Music -------------------------------------------------------------------
