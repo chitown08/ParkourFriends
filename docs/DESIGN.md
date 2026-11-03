@@ -284,6 +284,19 @@ changing a move changes the answers.
   nobody's left behind (without catching, three could only whip two over). A pack of four
   drafting together can all just leap a gap that size.
 
+## Launchers (`levels/launcher.gd`, Nov 2026)
+
+Orange ramps you run UP and fly off (launch roofs, `Ramp`, are slid down): from 7 m/s, the faster
+the higher, 3 to `max_rise` (9) m above the launch point at 16 m/s, plus 2 for a readied leap,
+keeping the part of your speed along the ramp. Two shapes: **straight** (a wall ramp: 12 m long, up
+to 5 m, built along a building's street side; it throws you up and on, high up the wall, to grab or
+scramble onto the roof) and **curved** (a quarter-pipe: radius 5 m, from flat to 75°; you're launched
+where it gets 40° steep, along the 75° lip: mostly straight up). Free-run rides them rather than
+jumping. The district has four wall ramps (4-5 storey buildings without another way up on that
+wall) and two quarter-pipes (at the foot of 4-storey walls); the checker's `launcher` rule links
+the street to the roof beside the launch's top (`tests/test_launchers.gd` plays it for real).
+Two quarter-pipes facing each other make a half-pipe (none placed yet).
+
 ## Delivery celebrations (`game/celebration.gd`, Nov 2026)
 
 A party at the drop-off when a relic comes in, all particles made in code: confetti (tumbling paper);
@@ -331,8 +344,6 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 ## Ideas not yet in the master doc
 
-- **More ramp shapes**: thin tall ramps built into a building's side, curved launches like a
-  section of half-pipe.
 - **Full pipes**: a few round tunnels to run round the walls of at speed (a sewer, a road tunnel,
   a glass observation tube between skyscrapers). Interiors in general: bridges, building floors.
 - **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),

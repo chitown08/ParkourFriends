@@ -292,10 +292,13 @@ func _is_glancing(wall: Dictionary, direction: Vector3) -> bool:
 	return direction.dot(-(wall.normal as Vector3)) < 0.5
 
 
-## True if you're running up a ramp (see Ramp).
+## True if you're running on a ramp (see Ramp) or up a launcher (Launcher).
 func _on_ramp(feet: Vector3) -> bool:
 	var hit := player.raycast(feet + Vector3.UP * 0.5, feet + Vector3.DOWN * 0.6)
-	return not hit.is_empty() and hit.collider is Node and (hit.collider as Node).get_parent() is Ramp
+	if hit.is_empty() or not hit.collider is Node:
+		return false
+	var owner_node := (hit.collider as Node).get_parent()
+	return owner_node is Ramp or owner_node is Launcher
 
 
 ## True if you're on a slope (a sloped roof) and heading down it.

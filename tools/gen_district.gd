@@ -126,6 +126,14 @@ const RUN_GATES := 5
 const GATE_HEIGHT := 1.8
 const GATE_IN := 4.0
 const GOLD_GATE_HEIGHT := 9.5
+## Launchers (levels/launcher.gd): wall ramps (this many, this long and tall,
+## along the street side of buildings this many storeys tall: a new way up)
+## and quarter-pipes (this many, at the foot of a wall, launching you up it).
+const WALL_RAMPS := 4
+const WALL_RAMP := Vector2(12.0, 5.0)
+const WALL_RAMP_STOREYS := Vector2i(4, 5)
+const QUARTER_PIPES := 2
+const QUARTER_PIPE_STOREYS := 4
 
 # Ways back up: every flat-roofed building without a fire escape (towers
 # aside) gets a yellow drainpipe or a column of window sills up one wall, and
@@ -153,6 +161,8 @@ var _extra_relics: Array = []
 var _needed := {}
 ## Where the pillars stand (clutter keeps clear).
 var _pillar_spots: Array[Vector2] = []
+## Where drainpipes and sill columns go up walls (launchers keep clear).
+var _way_up_spots: Array[Vector2] = []
 var _out := PackedStringArray()
 
 
@@ -203,6 +213,7 @@ func _write_scene() -> String:
 	_fire_escapes.clear()
 	_rails.clear()
 	_pillar_spots.clear()
+	_way_up_spots.clear()
 	var buildings := _all_buildings()
 
 	_write_header()
@@ -230,6 +241,7 @@ func _write_scene() -> String:
 	for i in BLOCKS:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
+	var launchers := _write_launchers(buildings)
 	_write_ramps()
 	_write_markers(buildings)
 	var runs := _write_runs(buildings) # (Before the relics: a run takes its roofs first.)
@@ -248,9 +260,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, relics, items, runs, roof_things, street_things, SEED]
+			staircases, ways_up, vents, rails, launchers, relics, items, runs, roof_things, street_things, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -402,6 +414,7 @@ func _write_way_up(b: Dictionary) -> bool:
 	var walls := _walls(b)
 	var wall: Array = walls[dice.randi() % walls.size()]
 	var at: Vector2 = wall[0] + wall[1] * dice.randf_range(WAY_UP_CORNER, wall[3] - WAY_UP_CORNER)
+	_way_up_spots.append(at)
 	var out: Vector2 = wall[2]
 	var height: float = b.storeys * STOREY
 	if dice.randf() < PIPE_CHANCE:
@@ -713,6 +726,7 @@ func _write_header() -> void:
 [ext_resource type="Script" path="res://levels/group_run.gd" id="23_run"]
 [ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
 [ext_resource type="Script" path="res://levels/relic_board.gd" id="25_board"]
+[ext_resource type="Script" path="res://levels/launcher.gd" id="26_launcher"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -780,7 +794,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Items" type="Node3D" parent="."]
 
-[node name="Runs" type="Node3D" parent="."]""")
+[node name="Runs" type="Node3D" parent="."]
+
+[node name="Launchers" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -1107,3 +1123,57 @@ func _write_relic_board(buildings: Array[Dictionary]) -> void:
 	var s := sin(yaw)
 	_out.append("\n[node name=\"RelicBoard\" type=\"Node3D\" parent=\".\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"25_board\")\nwidth = %s" % [
 			_num(c), _num(s), _num(-s), _num(c), _num(at.x), _num(top), _num(at.y), _num(best[2] - 4.0)])
+
+
+## Wall ramps and quarter-pipes (see the constants above), on street-facing
+## walls clear of fire escapes, drainpipes, sills and vents (and the pavement
+## clutter keeps clear of them). Returns how many.
+func _write_launchers(buildings: Array[Dictionary]) -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "launchers"])
+	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat" and not b.tower)
+	_shuffle(candidates, dice)
+	var ramps := 0
+	var pipes := 0
+	var used := {}
+	for b: Dictionary in candidates:
+		var wants_ramp: bool = ramps < WALL_RAMPS and b.storeys >= WALL_RAMP_STOREYS.x and b.storeys <= WALL_RAMP_STOREYS.y
+		var wants_pipe: bool = not wants_ramp and pipes < QUARTER_PIPES and b.storeys == QUARTER_PIPE_STOREYS
+		if used.has(b.name) or not (wants_ramp or wants_pipe):
+			continue
+		for wall: Array in _walls(b):
+			var along: Vector2 = wall[1]
+			var out: Vector2 = wall[2]
+			var middle: Vector2 = wall[0] + along * wall[3] / 2.0
+			# A street out there (no building within 8 m), and the wall long enough.
+			var street := middle + out * 8.0
+			if wall[3] < WALL_RAMP.x + 6.0 or buildings.any(func(o: Dictionary) -> bool: return Rect2(o.x, o.z, o.w, o.d).has_point(street)):
+				continue
+			var footprint: Rect2
+			var foot: Vector2
+			var heading: Vector2 # (The way you run up it.)
+			if wants_ramp:
+				foot = middle - along * WALL_RAMP.x / 2.0 + out * 1.6
+				heading = along
+				footprint = Rect2(foot, Vector2.ZERO).expand(foot + along * WALL_RAMP.x).grow(1.6)
+			else:
+				foot = middle + out * 5.0
+				heading = -out
+				footprint = Rect2(foot, Vector2.ZERO).expand(middle).grow(1.6)
+			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(1.0).intersects(footprint)) \
+					or _way_up_spots.any(func(spot: Vector2) -> bool: return footprint.grow(1.5).has_point(spot)):
+				continue
+			_fire_escapes.append(footprint) # (Keeps the pavement clutter clear.)
+			var yaw := atan2(-heading.x, -heading.y)
+			var c := cos(yaw)
+			var s := sin(yaw)
+			var shape := "length = %s\nheight = %s" % [_num(WALL_RAMP.x), _num(WALL_RAMP.y)] if wants_ramp else "curved = true"
+			_out.append("\n[node name=\"%s_%s\" type=\"Node3D\" parent=\"Launchers\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, 0, %s)\nscript = ExtResource(\"26_launcher\")\n%s" % [
+					b.name, "WallRamp" if wants_ramp else "QuarterPipe", _num(c), _num(s), _num(-s), _num(c), _num(foot.x), _num(foot.y), shape])
+			used[b.name] = true
+			if wants_ramp:
+				ramps += 1
+			else:
+				pipes += 1
+			break
+	return ramps + pipes

@@ -347,3 +347,14 @@ func _free_run_and_jump(friend: Player = null) -> Array:
 	release_all()
 	await ticks(30)
 	return [speed, took_off - player.global_position.z]
+
+
+func test_every_launcher_gets_you_onto_its_building() -> void:
+	await _load_district()
+	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var launchers: Array = main.level.get_node("Launchers").get_children()
+	expect(launchers.size() == 6, "four wall ramps and two quarter-pipes, %d" % launchers.size())
+	for launcher: Launcher in launchers:
+		var building := str(launcher.name).get_slice("_", 0) + "_" + str(launcher.name).get_slice("_", 1)
+		var up := map.links.any(func(link: ReachMap.Link) -> bool: return link.how == "launcher" and link.to.name == building)
+		expect(up, "%s should get you onto %s" % [launcher.name, building])

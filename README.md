@@ -54,6 +54,7 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | Slide-jump, ledge leap | Jump during a slide (keeps your speed) / jump while hanging from a narrow sill |
 | Drainpipes (yellow), air vents (orange grates), grind rails | Run or jump into a pipe and push to climb / step on a vent / land on a rail |
 | Launch roofs (orange) | Run or slide down them fast; a free-run leap at the lip goes furthest |
+| Wall ramps and quarter-pipes (orange) | Free-run up them fast and they throw you high: a wall ramp up a building's side (steer for the wall to grab the roof), a quarter-pipe straight up |
 | Flow | Keep moving: you build from 10 to 15 m/s; stopping or crashing drains it |
 | Pack-running and drafting | Free-run near friends heading the same way: you're pulled along together, and a bigger pack runs faster |
 | Hanging chain | Jump or scramble up to a hanging friend's feet; Space climbs everyone |
