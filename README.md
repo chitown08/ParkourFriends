@@ -37,10 +37,12 @@ Third-person co-op parkour game made with Godot 4.7 (GDScript).
 | Toss a friend (aim with the camera; mid-air toss gives you a hop too) | E | Right bumper |
 | Leg-up (co-op): brace at a wall for a friend to run at and jump into; beside a braced friend, climb onto their shoulders (higher stack); press again to stop | E with nobody to toss, next to a wall | Right bumper |
 | Take a leg-up: run at a braced friend and jump (free-run does it for you) | Space | A |
+| Crack the whip (co-op): free-running in a pack, take the nearest friend's hand (join the end of their line); press again, jump or crouch to let go | E in a pack | Right bumper |
+| Crack the whip, as the leader: turn hard your own way (away from the line) and it swings round you, flinging the end one off | Steer hard | Left stick |
 | Solo practice: call your buddy / have it toss you | G / Q | D-pad down / Left bumper |
 | Solo practice: G while hanging from a ledge makes the buddy hang there too (drop down and climb it) | G | D-pad down |
 | Solo practice: G while looking at a wall makes the buddy brace at its foot (run at it and jump for a leg-up) | G | D-pad down |
-| Solo practice: ghost runner on/off (the buddy free-runs with you, to try pack-running) | H | D-pad up |
+| Solo practice: ghost runner on/off (the buddy free-runs with you, to try pack-running; E then has it take your hand, to crack the whip) | H | D-pad up |
 | Try on the next outfit (until the mall opens) | O | |
 | Item: pick up / drop (or hand to the friend you face; empty hands: take off backpack) | F | X / Square |
 | Item: throw (where the camera points; friends can catch it) | T | Y / Triangle |
@@ -83,6 +85,9 @@ player/states/                    – one script per movement "mode" (state mach
             chain_climb.gd        – climbing up a hanging chain onto the top
             brace.gd              – bracing at a wall (or on a friend's shoulders) for a leg-up
             leg_up.gd             – stepping up a leg-up stack and launching up the wall
+            linked.gd             – holding a friend's hand in a line (crack the whip)
+            whip.gd               – cracking the whip, as the leader: pivoting
+            whipped.gd            – swinging round with the line, then let go (or flung)
             crouch.gd, slide.gd   – crouch-walking; sliding (slopes speed you up)
             wall_run.gd           – running along walls (wall jumps live in air.gd)
             wall_scramble.gd      – running up a too-tall wall

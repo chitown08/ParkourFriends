@@ -80,6 +80,8 @@ var sync_free_run_velocity := Vector3.ZERO
 var sync_hanging_on := ""
 ## The name of the friend whose shoulders we're bracing on (a leg-up stack), or "".
 var sync_braced_on := ""
+## The name of the friend whose hand we hold in a line (crack the whip), or "".
+var sync_linked_to := ""
 ## Who has tossed us this air time (see tossed_by).
 var sync_tossed_by := PackedStringArray()
 ## What this player wears: an item name (or "" for nothing) for each slot in
@@ -277,7 +279,7 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace", &"Linked", &"Whipped"]
 ## Hanging, from a ledge or from a friend: someone can hang from your feet.
 const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang"]
 ## How far from a hanging friend's feet your hands can be to grab them.
@@ -368,7 +370,7 @@ func _physics_process(delta: float) -> void:
 		_steer_ghost(delta)
 	else:
 		input.gather(camera_rig.yaw)
-	if input.free_run_held:
+	if input.free_run_held and state.name not in LINED_UP:
 		_free_run.assist(delta)
 	else:
 		_free_run.readying_leap = false
@@ -384,9 +386,10 @@ func _physics_process(delta: float) -> void:
 	grind_cooldown -= delta
 	if input.toss_just_pressed:
 		# With nobody to toss, the toss button braces you for a leg-up (or stops).
-		if state.name == &"Brace":
+		# In a pack, it takes a friend's hand (crack the whip).
+		if state.name in [&"Brace", &"Linked"]:
 			state.let_go()
-		elif not try_toss():
+		elif not try_link() and not try_toss():
 			try_brace()
 
 	if hands_busy() and state.name in HANDS_MOVES:
@@ -395,6 +398,8 @@ func _physics_process(delta: float) -> void:
 		change_state(&"Air", {"regrab_delay": 0.5})
 	if state.name in LEG_UP_STATES:
 		_try_leg_up()
+	if state.name in [&"Ground", &"Slide"]:
+		_try_crack_whip()
 	state.physics_update(delta)
 	_update_flow(delta)
 	if not is_bot:
@@ -410,7 +415,8 @@ func _physics_process(delta: float) -> void:
 	sync_state = state.name
 	sync_lean = lean
 	sync_tossed_by = tossed_by
-	sync_free_run_velocity = Vector3(velocity.x, 0.0, velocity.z) / pack_pace if input.free_run_held else Vector3.ZERO
+	var free_running := input.free_run_held and state.name not in LINED_UP # (Holding hands, you're carried.)
+	sync_free_run_velocity = Vector3(velocity.x, 0.0, velocity.z) / pack_pace if free_running else Vector3.ZERO
 
 
 ## The ghost runner wanders this far either side of your heading (degrees)...
@@ -682,7 +688,7 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb", &"LegUp"]:
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
@@ -779,6 +785,8 @@ func find_toss_target(reach := -1.0) -> Player:
 			continue
 		if friend.sync_state in [&"Brace", &"LegUp"]:
 			continue # Braced for a leg-up (pressing toss beside them joins in).
+		if friend.sync_state in LINED_UP or friend.sync_state == &"Whip":
+			continue # Holding hands in a line.
 		if limit_tosses_per_air and str(name) in friend.sync_tossed_by:
 			continue # We've already tossed them this air time.
 		var offset := friend.global_position - global_position
@@ -929,6 +937,164 @@ func leg_up_launch(toward_wall: Vector3) -> void:
 	refresh_air_moves()
 	change_state(&"Air")
 	show_effect(&"show_jump", [1.0])
+
+
+# --- Crack the whip -------------------------------------------------------------
+#
+# Free-running in a pack, the toss button takes the nearest friend's hand: you
+# join the end of their line (Linked state), in a row across the way the
+# leader (the one at the other end) runs. The leader turns hard their own way
+# and the whip cracks: they pivot (Whip), the line swings a quarter turn round
+# them (Whipped), and each is let go faster the further out they are; the end
+# one is flung off into the air. Each computer decides for its own player from
+# what it knows of the others (sync_state, sync_linked_to).
+
+## Room between friends in a line (metres).
+const LINK_SPACING := 1.2
+## How close (across) a friend must be for you to take their hand.
+const LINK_REACH := 4.0
+## Pulled this far from your spot in the line, you let go (snagged).
+const LINK_BREAK := 3.0
+## The most players in one line (the leader too).
+const MOST_IN_LINE := 6
+## The leader cracks the whip by steering at least this far their own way
+## (degrees off the way they run)...
+const WHIP_TURN_DEGREES := 60.0
+## ...running at least this fast (a fraction of run speed).
+const WHIP_MIN_SPEED := 0.8
+## How long the line takes to swing round (seconds).
+const WHIP_TIME := 0.4
+## Each place out from the leader, you're let go this much faster (0.3 = 30%
+## faster than you were running).
+const WHIP_GAIN := 0.3
+## The end one, flung off, can't steer for this long (seconds).
+const WHIP_LOCK := 0.3
+## States of everyone in a line but the leader.
+const LINED_UP: Array[StringName] = [&"Linked", &"Whipped"]
+## States a line's leader can be in (any other and the line lets go).
+const LEADING: Array[StringName] = [&"Ground", &"Air", &"Slide", &"Crouch", &"Whip"]
+
+
+## The friend whose hand you hold (in toward the leader), or null.
+func linked_inside() -> Player:
+	return null if sync_linked_to == "" else get_parent().get_node_or_null(sync_linked_to) as Player
+
+
+## The friend holding your hand from further out, or null.
+func linked_outside() -> Player:
+	for other in get_parent().get_children():
+		if other is Player and other != self and other.sync_linked_to == str(name) and other.sync_state in LINED_UP:
+			return other
+	return null
+
+
+## The leader of the line you're in (yourself if you aren't holding anyone's hand).
+func line_leader() -> Player:
+	var at: Player = self
+	for i in MOST_IN_LINE * 2:
+		var inside := at.linked_inside()
+		if inside == null:
+			break
+		at = inside
+	return at
+
+
+## Your line, from the leader out to the end (just you, if you're in none).
+func line() -> Array[Player]:
+	var all: Array[Player] = [line_leader()]
+	while all.size() < MOST_IN_LINE * 2:
+		var outside := all.back().linked_outside() as Player
+		if outside == null or outside in all:
+			break
+		all.append(outside)
+	return all
+
+
+## True if nobody holds your hand from further out.
+func is_line_end() -> bool:
+	return linked_outside() == null
+
+
+## How much faster than you ran you're let go by the whip, `place` places
+## out from the leader. Also used by the reachability checker (rules/whip.gd).
+static func whip_boost(place: int) -> float:
+	return 1.0 + WHIP_GAIN * place
+
+
+## Toss pressed while free-running in a pack: takes the nearest friend's hand,
+## joining the end of their line. (The practice buddy takes yours instead.)
+## Returns true if you did.
+func try_link() -> bool:
+	if state.name not in [&"Ground", &"Slide"] or pack_size() == 0 or hands_busy():
+		return false
+	var mine := line()
+	var best: Player = null
+	var best_distance := INF
+	for other in get_parent().get_children():
+		var friend := other as Player
+		if friend == null or friend in mine or friend.sync_state not in [&"Ground", &"Slide", &"Linked"]:
+			continue
+		if friend.sync_state != &"Linked" and friend.sync_free_run_velocity.length() < 1.0:
+			continue # Not running with you.
+		var offset := friend.global_position - global_position
+		var across := Vector2(offset.x, offset.z).length()
+		if across <= LINK_REACH and absf(offset.y) < 1.5 and across < best_distance:
+			best = friend
+			best_distance = across
+	if best == null:
+		return false
+	var theirs := best.line()
+	if best.is_bot and best.is_multiplayer_authority() and theirs.size() == 1:
+		if mine.size() >= MOST_IN_LINE:
+			return false
+		best.join_line(mine.back()) # Practice: the buddy takes your hand.
+		return true
+	if mine.size() > 1 or theirs.size() >= MOST_IN_LINE:
+		return false # You lead a line already, or theirs is full.
+	join_line(theirs.back())
+	return true
+
+
+## Takes `inside`'s hand: you run beside them, on the far side from the leader
+## (or, beside the leader, on whichever side you're on).
+func join_line(inside: Player) -> void:
+	var leader := inside.line_leader()
+	var right := leader.facing_direction().cross(Vector3.UP).normalized()
+	var from := global_position if inside == leader else inside.global_position
+	var side := 1.0 if (from - leader.global_position).dot(right) >= 0.0 else -1.0
+	change_state(&"Linked", {"inside": inside, "side": side})
+
+
+## Leading a line, running: steer hard your own way (away from the line) and
+## the whip cracks.
+func _try_crack_whip() -> void:
+	if sync_linked_to != "":
+		return
+	var follower := linked_outside()
+	if follower == null or follower.sync_state != &"Linked":
+		return
+	var going := Vector3(velocity.x, 0.0, velocity.z)
+	var steer := Vector3(input.move_direction.x, 0.0, input.move_direction.z)
+	if going.length() < run_speed * WHIP_MIN_SPEED or steer.length() < 0.5:
+		return
+	var right := going.normalized().cross(Vector3.UP)
+	var turn_to := -right * signf((follower.global_position - global_position).dot(right))
+	if steer.normalized().dot(turn_to) >= sin(deg_to_rad(WHIP_TURN_DEGREES)):
+		change_state(&"Whip", {"turn_to": turn_to})
+
+
+## The end of the whip's swing: let go going `speed` along `across`; the one
+## on the end (`flung`) goes up into the air too, as high as a full leap.
+func whip_release(across: Vector3, speed: float, flung: bool) -> void:
+	velocity.x = across.x * speed
+	velocity.z = across.z * speed
+	if flung:
+		velocity.y = sqrt(2.0 * _rise_gravity * leap_height)
+		refresh_air_moves()
+		change_state(&"Air", {"control_lock": WHIP_LOCK})
+		show_effect(&"show_jump", [1.0])
+	else:
+		change_state(&"Ground" if is_on_floor() else &"Air")
 
 
 ## Lets you toss and be tossed again. Called when you land, grab a ledge,

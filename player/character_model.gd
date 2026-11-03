@@ -76,7 +76,7 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 		return # Let the one-off move finish.
 
 	match state:
-		&"Ground":
+		&"Ground", &"Linked", &"Whip", &"Whipped": # (Holding hands: stand-in.)
 			if speed < STILL_SPEED:
 				_play(&"carry" if carrying else &"idle")
 			elif speed < SPRINT_FROM:

@@ -22,6 +22,9 @@
 [ext_resource type="Script" path="res://player/states/chain_climb.gd" id="20_chain_climb"]
 [ext_resource type="Script" path="res://player/states/brace.gd" id="21_brace"]
 [ext_resource type="Script" path="res://player/states/leg_up.gd" id="22_leg_up"]
+[ext_resource type="Script" path="res://player/states/linked.gd" id="23_linked"]
+[ext_resource type="Script" path="res://player/states/whip.gd" id="24_whip"]
+[ext_resource type="Script" path="res://player/states/whipped.gd" id="25_whipped"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -58,6 +61,9 @@ properties/8/replication_mode = 2
 properties/9/path = NodePath(".:sync_braced_on")
 properties/9/spawn = false
 properties/9/replication_mode = 2
+properties/10/path = NodePath(".:sync_linked_to")
+properties/10/spawn = false
+properties/10/replication_mode = 2
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")
@@ -116,6 +122,15 @@ script = ExtResource("21_brace")
 
 [node name="LegUp" type="Node" parent="States"]
 script = ExtResource("22_leg_up")
+
+[node name="Linked" type="Node" parent="States"]
+script = ExtResource("23_linked")
+
+[node name="Whip" type="Node" parent="States"]
+script = ExtResource("24_whip")
+
+[node name="Whipped" type="Node" parent="States"]
+script = ExtResource("25_whipped")
 
 [node name="Crouch" type="Node" parent="States"]
 script = ExtResource("8_crouch")

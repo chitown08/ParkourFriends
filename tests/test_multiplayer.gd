@@ -244,3 +244,40 @@ func test_leg_up_from_a_friend() -> void:
 	release_all()
 	expect(stepped_in, "the client should step into the host's leg-up")
 	expect(client_self.is_on_floor() and client_self.global_position.y > 10.9, "and get up the 11 m wall, at %s in %s" % [client_self.global_position, client_self.state.name])
+
+
+func test_crack_the_whip_with_a_friend() -> void:
+	# A floor well away from the course: both run north, the client holding the host's hand.
+	var body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	shape.shape = BoxShape3D.new()
+	shape.shape.size = Vector3(80, 1, 80)
+	body.add_child(shape)
+	host_main.level.add_child(body)
+	body.global_position = Vector3(220, -0.5, 0)
+	await ticks(2)
+	var host_self: Player = host_main.local_player
+	var client_self: Player = client_main.local_player
+	for who: Player in [host_self, client_self]:
+		who.set_profile(SUPERHUMAN)
+		who.camera_rig.yaw = FACE_NORTH
+	host_self.global_position = Vector3(220, 0.05, 30)
+	client_self.global_position = Vector3(217, 0.05, 30)
+	for who: Player in [host_self, client_self]:
+		who.reset_physics_interpolation()
+	Input.action_press(&"free_run")
+	await ticks(30)
+	client_self.join_line(_find(client_main, host_self.name.to_int()))
+	await ticks(30)
+	var puppet := _find(host_main, client_self.name.to_int())
+	expect(puppet.sync_state == &"Linked" and puppet.sync_linked_to == str(host_self.name), "the host should see the client holding their hand, sees %s" % puppet.sync_state)
+	host_self.camera_rig.yaw = -PI / 2 # The host turns hard right (east), away from the client.
+	var swung := false
+	for i in 60:
+		await ticks(1)
+		swung = swung or client_self.state.name == &"Whipped"
+		if swung and client_self.state.name == &"Air":
+			break
+	release_all()
+	expect(swung, "the client should swing round when the host cracks the whip")
+	expect(client_self.state.name == &"Air" and client_self.velocity.x > 15.0, "and be flung off east, %s going %s" % [client_self.state.name, client_self.velocity])

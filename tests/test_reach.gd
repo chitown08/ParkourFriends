@@ -178,7 +178,8 @@ func test_the_glider_reaches_a_far_lower_roof() -> void:
 
 func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	# Two 20 m towers with a gap between them a pack of four can leap (at full
-	# flow, drafting) but a pack of three can't, nor anyone alone.
+	# flow, drafting) but a pack of three can't, nor anyone alone. (Three can crack
+	# the whip twice to fling two across, but the last one's left behind.)
 	player.set_profile(SUPERHUMAN)
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	var leap := func(pack: int) -> float:
@@ -191,8 +192,9 @@ func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	map = ReachMap.build(main.level, SUPERHUMAN)
 	var near := map.place_named("ReachNear")
 	var far := map.place_named("ReachFar")
-	expect(map.players_needed(far, near) == 4, "a %.1f m gap should need a pack of four, says %d" % [gap, map.players_needed(far, near)])
-	expect(map.solve(near, 4).get(far, 0) == 4, "and all four get across together")
+	expect(map.solve(near, 4).get(far, 0) == 4, "a pack of four gets all four across a %.1f m gap" % gap)
+	expect(map.solve(near, 3).get(far, 0) == 2, "three get two across (cracking the whip twice), the last one's left behind")
+	expect(map.players_needed(far, near) > 1, "nobody gets across alone")
 
 
 # --- Intent: the rooftop district ------------------------------------------------
