@@ -45,6 +45,10 @@ built and the details the code relies on.
   free-run breaks it. The HUD shows "pack of N". Solo, H makes the practice buddy a **ghost runner**
   that free-runs with you (wandering 15° either side of your heading; it reappears beside you if it
   falls 20 m behind). Numbers: the PACK_ constants in `player/free_run.gd`.
+- **Drafting** (co-op): running in a pack, flow builds faster (half again as fast for each friend:
+  a pack of four reaches top speed in 40% of the time) and top speed goes up 3% for each friend (up
+  to 9% in a pack of four), for everyone in it. So a bigger pack can clear a gap nobody can alone,
+  all together. Numbers: `DRAFT_SPEED`, `DRAFT_FLOW`, `MOST_DRAFTING` in `player/player.gd`.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
 - **The character** is a Meshy model rigged and animated in Mixamo (`characters/blob/`, see
@@ -167,9 +171,9 @@ built and the details the code relies on.
 
 `ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
 and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
-(and drop, and leap, and full-flow jumps), scramble, hanging chain, toss, leg-up, drainpipe, window sills,
+(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, drainpipe, window sills,
 air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
-or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up), friends already there (a chain).
+or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up), friends already there (a chain), friends going together (a pack's drafting jump).
 `solve()` spreads a group out from the start and gives the most players who can get to each spot;
 `players_needed()` the fewest for one to get there. Numbers come from the movement profile, so
 changing a move changes the answers.
@@ -202,7 +206,8 @@ new rule is checked by breaking it on purpose to make sure a test notices.
   - **Leg-up**: built (see "How movement is built"), stacks up to four high.
   - **Crack the whip**: pack-runners link up in a line; the leader swings round and the line pivots,
     flinging the last one off fast. A longer line flings harder.
-  - **Drafting**: running in a pack builds flow faster; a bigger pack nudges top speed up.
+  - **Drafting**: built (see "How movement is built"): a bigger pack builds flow faster and runs
+    a little faster, so it jumps a little further.
   - **Catch**: a friend near an edge catches someone falling short of a jump.
   - **Human pyramid**: stand on each other's heads (needs players to collide with each other).
 - Hands: only bulky items block hand moves today; zip lines, swing poles and the like could follow

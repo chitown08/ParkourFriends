@@ -11,7 +11,8 @@ extends RefCounted
 ## - Links: each way of getting around is a rule (a script in rules/, see
 ##   ReachRule) that adds links between spots, saying what the link needs:
 ##   friends who stay behind (a toss), friends already there (a hanging chain),
-##   and abilities or items (full flow, the glider).
+##   friends going together (a pack drafting), and abilities or items (full
+##   flow, the glider).
 ## - solve() spreads a group of players out from the start along the links and
 ##   works out the most of them that can get to each spot.
 ##
@@ -58,6 +59,9 @@ class Link:
 	var helpers_here := 0
 	## Friends who must already be at `to` (a hanging chain: those hanging).
 	var helpers_there := 0
+	## Players who must all be at `from` and go together (a pack's drafting
+	## jump); they all arrive.
+	var together := 0
 
 
 var level: Node
@@ -86,7 +90,7 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 	return map
 
 
-func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0) -> void:
+func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0, together := 0) -> void:
 	if from == null or to == null or from == to:
 		return
 	var link := Link.new()
@@ -96,6 +100,7 @@ func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], 
 	link.needs = needs
 	link.helpers_here = helpers_here
 	link.helpers_there = helpers_there
+	link.together = together
 	links.append(link)
 
 
@@ -109,6 +114,8 @@ func solve(start: Spot, players: int, abilities: Array[StringName] = [&"flow"]) 
 		for link in links:
 			if not most.has(link.from) or not link.needs.all(func(need: StringName) -> bool: return need in abilities):
 				continue
+			if most[link.from] < link.together:
+				continue # Not enough of you there to run as a pack.
 			var there: int = most.get(link.to, 0)
 			var arrive: int = most[link.from] - link.helpers_here
 			if link.helpers_there > 0 and there < link.helpers_there:

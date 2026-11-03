@@ -72,6 +72,52 @@ func test_letting_go_of_free_run_is_never_carried() -> void:
 	expect(player.get_horizontal_speed() < 0.1, "and you stop, %.1f m/s" % player.get_horizontal_speed())
 
 
+func test_drafting_builds_flow_faster() -> void:
+	await place(Vector3(0, FLOOR_Y + 0.05, 0), FACE_NORTH)
+	await hold(&"free_run", 60)
+	var alone := player.flow
+	await ticks(60) # Let go: flow drains away.
+	await _run_beside(Vector3(-3, 0, 0), 0.0, 60)
+	expect(player.flow > alone * 1.3, "in a pack of two, flow should build faster: %.2f, alone %.2f" % [player.flow, alone])
+
+
+func test_a_bigger_pack_runs_a_little_faster() -> void:
+	player.debug_full_flow = true
+	buddy = _ghost_buddy(Vector3(-3, 0, 0))
+	buddy.debug_full_flow = true
+	await _run_beside(Vector3(-3, 0, 0), 0.0, 120, false)
+	expect(player.pack_size() == 1, "test setup: a pack of two")
+	var two := player.top_speed(false)
+	expect_near(two, SUPERHUMAN.flow_speed * 1.03, 0.01, "a pack of two: top speed")
+	expect(player.pack_pace < 1.05 and buddy.pack_pace < 1.05, "side by side, neither eases faster (%.2f, %.2f): friends don't keep speeding each other up" % [player.pack_pace, buddy.pack_pace])
+	# Two more friends join in.
+	for i in 2:
+		var friend := main.PLAYER_SCENE.instantiate() as Player
+		friend.name = "Friend%d" % i
+		friend.is_bot = true
+		main.players.add_child(friend)
+		friend.set_profile(SUPERHUMAN)
+		friend.debug_full_flow = true
+		friend.ghost_of = player
+		friend.ghost_wander_degrees = 0.0
+		friend.global_position = player.global_position + Vector3(3.0 + 3.0 * i, 0.0, 0.0)
+		friend.reset_physics_interpolation()
+	Input.action_press(&"free_run")
+	await ticks(120)
+	# The whole pack's pace (one runner can briefly go faster or slower to keep alongside).
+	var pack: Array[Node] = main.players.get_children()
+	var before := pack.map(func(p: Player) -> Vector3: return p.global_position)
+	await ticks(60)
+	var travelled := 0.0
+	for i in pack.size():
+		travelled += (pack[i].global_position - before[i]).length() / pack.size()
+	release_all()
+	player.debug_full_flow = false
+	expect(player.pack_size() == 3, "should be a pack of four, pack of %d" % (player.pack_size() + 1))
+	expect_near(player.top_speed(false), SUPERHUMAN.flow_speed * 1.09, 0.01, "a pack of four: top speed")
+	expect(travelled > SUPERHUMAN.flow_speed * 1.05, "and the pack really runs faster, %.2f m/s" % travelled)
+
+
 func test_the_ghost_runner_runs_with_you() -> void:
 	await place(Vector3(0, FLOOR_Y + 0.05, 0), FACE_NORTH)
 	await press_event(&"ghost_run")

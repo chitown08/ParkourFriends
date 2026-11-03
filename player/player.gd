@@ -72,6 +72,9 @@ var sync_lean := 0.0
 var sync_leap_charge := 0.0
 ## Our velocity across the ground while free-running (zero otherwise), so
 ## friends free-running nearby can run with us as a pack (FreeRun._run_with_pack()).
+## At our own pace: without the pack easing us faster or slower (otherwise
+## two friends side by side would keep matching each other's eased-up pace,
+## faster and faster).
 var sync_free_run_velocity := Vector3.ZERO
 ## The name of the friend we're hanging from (a hanging chain), or "".
 var sync_hanging_on := ""
@@ -118,6 +121,13 @@ var vault_takeoff_time: float
 var pending_leap := 0.0
 ## Pack-running eases your top speed by this factor (1 = your own pace); set by free-run.
 var pack_pace := 1.0
+## Drafting: in a pack, your top speed goes up this much for each friend
+## running with you (0.03 = 3%), and flow builds this much faster (0.5 = half
+## again as fast)...
+const DRAFT_SPEED := 0.03
+const DRAFT_FLOW := 0.5
+## ...counting at most this many friends.
+const MOST_DRAFTING := 3
 var max_fall_speed: float
 var ledge_max_height: float
 var hang_min_height: float
@@ -400,7 +410,7 @@ func _physics_process(delta: float) -> void:
 	sync_state = state.name
 	sync_lean = lean
 	sync_tossed_by = tossed_by
-	sync_free_run_velocity = Vector3(velocity.x, 0.0, velocity.z) if input.free_run_held else Vector3.ZERO
+	sync_free_run_velocity = Vector3(velocity.x, 0.0, velocity.z) / pack_pace if input.free_run_held else Vector3.ZERO
 
 
 ## The ghost runner wanders this far either side of your heading (degrees)...
@@ -657,11 +667,17 @@ func apply_profile() -> void:
 ## How fast you run right now: normal speed, rising to top speed with flow,
 ## eased by pack-running (unless `paced` is false).
 func top_speed(paced := true) -> float:
-	return lerpf(run_speed, flow_speed, flow) * (pack_pace if paced else 1.0)
+	return lerpf(run_speed, flow_speed * drafting(pack_size()), flow) * (pack_pace if paced else 1.0)
 
 
-## Flow builds while you keep moving at speed, and drains when you stop,
-## let go of the controls, or crash into something.
+## How much a pack with `friends` friends (besides you) raises your top speed
+## (1 = not at all). Also used by the reachability checker (rules/jump.gd).
+static func drafting(friends: int) -> float:
+	return 1.0 + DRAFT_SPEED * mini(friends, MOST_DRAFTING)
+
+
+## Flow builds while you keep moving at speed (faster in a pack: drafting),
+## and drains when you stop, let go of the controls, or crash into something.
 func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
@@ -671,7 +687,8 @@ func _update_flow(delta: float) -> void:
 	var pushing := input.move_direction.length() > 0.3
 	var speed := get_horizontal_speed()
 	if pushing and speed >= run_speed * minf(pack_pace, 1.0) * 0.9:
-		flow = minf(flow + delta / flow_build_time, 1.0)
+		var draft := 1.0 + DRAFT_FLOW * mini(pack_size(), MOST_DRAFTING)
+		flow = minf(flow + delta / flow_build_time * draft, 1.0)
 	elif is_on_floor() and (not pushing or speed < run_speed * 0.5):
 		# Only drains on the ground: bumping into a ledge mid-jump on your way
 		# up onto it doesn't count as crashing.
