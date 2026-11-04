@@ -306,7 +306,11 @@ func path_clear(from: Spot, to: Spot) -> bool:
 	var near := gap(from, to) + 8.0
 	for s in _samples(from, to, near):
 		var t := _closest_in(to.area, s) # (Coming down on the nearest bit of it.)
-		if segment_clear(Vector3(s.x, start_y, s.y), Vector3(s.x, peak, s.y)) \
+		# You take off from the place itself (with room overhead there), then on past its edge.
+		var off := _closest_in(from.area, s)
+		if segment_clear(Vector3(off.x, start_y, off.y), Vector3(off.x, peak, off.y)) \
+				and segment_clear(Vector3(off.x, peak, off.y), Vector3(s.x, peak, s.y)) \
+				and segment_clear(Vector3(s.x, start_y, s.y), Vector3(s.x, peak, s.y)) \
 				and segment_clear(Vector3(s.x, peak, s.y), Vector3(t.x, peak, t.y)) \
 				and segment_clear(Vector3(t.x, peak, t.y), Vector3(t.x, end_y, t.y)):
 			return true

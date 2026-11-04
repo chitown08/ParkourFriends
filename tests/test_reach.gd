@@ -238,13 +238,19 @@ func test_every_drainpipe_sill_column_and_vent_is_a_way_up() -> void:
 	expect(vent_roofs.size() >= vents, "each of the %d vents should blow you up to a roof, %d roofs reached" % [vents, vent_roofs.size()])
 
 
-func test_the_towers_have_no_way_up_yet() -> void:
+func test_you_can_climb_every_tower_from_the_inside() -> void:
 	await _load_district()
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	for b: CSGBox3D in main.level.get_node("Buildings").get_children():
-		if b.size.y >= 30.0:
-			expect(map.players_needed(map.place_named(b.name), _spawn(map), [&"flow", &"glider"]) == 0,
-					"%s is a tower: nothing gets up it yet (when something does, update this test)" % b.name)
+		if b.size.y < 30.0:
+			continue
+		var roof := map.place_named(b.name)
+		expect(map.players_needed(roof, _spawn(map), []) == 1, "%s is a tower: you can climb it alone, inside" % b.name)
+		# Its last platform and the hatch above it are the way onto the roof.
+		var platforms: Array = main.level.get_node("Interiors").get_children().filter(func(node: Node) -> bool: return node.name.begins_with(b.name + "_Platform"))
+		var last := map.place_named("%s_Platform%d" % [b.name, platforms.size()])
+		expect(map.links.any(func(link: ReachMap.Link) -> bool: return link.from == last and link.to == roof),
+				"%s: up through the hatch from its top platform" % b.name)
 
 
 func test_what_each_relic_takes() -> void:

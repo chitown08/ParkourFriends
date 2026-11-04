@@ -378,3 +378,29 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 - Hands: only bulky items block hand moves today; zip lines, swing poles and the like could follow
   the same rule (undecided).
 - Hold-to-aim toss, players colliding / standing on each other's heads.
+
+## Interiors (`tools/gen_district.gd`, `game/reach/`, Nov 2026)
+
+Built for running through, not offices with doors: wide, tall (a room is two storeys: 6 m), long
+sight lines, open doorways and window-openings (no glass), so the third-person camera and full
+speed work inside. Mostly larger buildings, as shortcuts through or up. About a quarter of the
+district's buildings (16 of 61) are hollow, cut out of their box by "subtract" child boxes
+(`Room`, `Door*`, `Opening*`, `Hatch*`), so the outside, the roof and everything on it stay the same:
+- **Tower atriums** (all five towers): hollow from the street to the roof, a doorway in three walls,
+  and a climb of yellow blocks round the inside walls, each a storey above the last (like a fire
+  escape on the inside: a face to grab), the last coming up through a hatch, level with the roof.
+  The towers' first way up.
+- **Warehouses** (4, 4-5 storeys, 20 m+ wide): one big hall from the street, an 8 x 6 m loading door
+  in each wall, red vault boxes clear of the lanes through. A relic up in the air (a friend's toss).
+- **Top floors you run through** (7, 6+ storeys): the top two storeys hollow, 6 x 4.5 m openings
+  about every 12 m along each wall at floor level: leap in from a roof that height, out the other
+  side. A few have a relic in the middle.
+Openings slide along a wall to keep clear of fire escapes, drainpipes, sills, vents and launchers
+(the way onto the roof stays), and the pavement keeps clear in front of them.
+
+The checker knows about inside: buildings are solid apart from their holes; a `Room` hole's floor
+is a place ("Building/Room", unless it's the street); and a link only counts if a path between
+its two spots (taking off from the place itself with room overhead, up to above the higher one,
+across, down) stays clear of walls and ceilings (`ReachMap.path_clear()`). Only buildings block
+(in a "Buildings" node, or the `reach_solid` group). Interior relic spots are tried before roofs.
+Later: parking garages, hallways between buildings, shapes other than boxes.

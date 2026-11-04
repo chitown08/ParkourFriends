@@ -413,8 +413,15 @@ func test_relics_float_in_the_open() -> void:
 	solid.append_array(_clutter())
 	for step in main.level.get_node("FireEscapes").get_children():
 		solid.append(step)
+	for thing in main.level.get_node("Interiors").get_children():
+		solid.append(thing)
 	for relic: WorldItem in main.level.get_node("Relics").get_children():
 		for box in solid:
+			var room := box.get_node_or_null("Room") as CSGBox3D
+			if room:
+				var in_room := (room.global_position - relic.global_position).abs() - room.size / 2.0
+				if in_room.x < -1.0 and in_room.y < -0.5 and in_room.z < -1.0:
+					continue # (Inside its room, clear of the walls, floor and ceiling.)
 			var inside := (box.global_position - relic.global_position).abs() - box.size / 2.0
 			expect(inside.x > 1.0 or inside.y > 0.5 or inside.z > 1.0, "%s should be clear of %s" % [relic.name, box.name])
 	for roof_relic in ["RelicHighRoof", "RelicFarCorner"]:

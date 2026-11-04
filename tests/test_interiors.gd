@@ -39,6 +39,7 @@ func test_in_through_a_doorway_not_through_a_wall_or_the_ceiling() -> void:
 	expect(not _linked(map, "Hollow/Room", "Hollow"), "and not up through the ceiling onto the roof")
 	expect(not _linked(map, "Hollow", "Hollow/Room"), "nor down through it")
 	expect(_linked(map, "Hollow/Room", "SouthRoof"), "back out the way you came")
+	expect(_linked(map, "SouthRoof", "InteriorGround"), "and off the edge of a roof, down to the ground")
 
 
 func test_a_wall_between_two_roofs_is_in_the_way() -> void:
@@ -48,6 +49,20 @@ func test_a_wall_between_two_roofs_is_in_the_way() -> void:
 	await ticks(3)
 	map = ReachMap.build(main.level, SUPERHUMAN)
 	expect(not _linked(map, "SouthRoof", "EastRoof"), "with a tall wall between them, no way across")
+
+
+func test_no_room_overhead_no_jumping_up() -> void:
+	# A ledge a storey up from a block, with a low ceiling over the block (and
+	# not quite to its edge): you can't jump up from under it.
+	_box("UnderCeiling", Vector3(63, FLOOR_Y + 1.5, 1.5), Vector3(6, 3, 3))
+	_box("UpperBlock", Vector3(69, FLOOR_Y + 3.25, 1.5), Vector3(6, 6.5, 3))
+	await ticks(3)
+	var map := ReachMap.build(main.level, SUPERHUMAN)
+	expect(_linked(map, "UnderCeiling", "UpperBlock"), "test setup: up a storey, no ceiling: fine")
+	_box("LowCeiling", Vector3(62.15, FLOOR_Y + 6.0, 1.5), Vector3(8.3, 1, 7))
+	await ticks(3)
+	map = ReachMap.build(main.level, SUPERHUMAN)
+	expect(not _linked(map, "UnderCeiling", "UpperBlock"), "a ceiling over where you'd jump from: no")
 
 
 func test_run_in_through_the_doorway_for_real() -> void:
@@ -89,3 +104,129 @@ func _hole(building: CSGBox3D, hole_name: String, at: Vector3, size: Vector3) ->
 	hole.operation = CSGShape3D.OPERATION_SUBTRACTION
 	building.add_child(hole)
 	hole.global_position = at
+
+
+# --- In the rooftop district ------------------------------------------------------------
+
+func test_climb_up_through_the_hatch_onto_a_towers_roof() -> void:
+	await _load_district()
+	var tower := _buildings_with("Hatch")[0]
+	var platforms := _platforms(tower)
+	var roof_y := tower.global_position.y + tower.size.y / 2.0
+	var last: CSGBox3D = platforms.back()
+	expect_near(last.global_position.y + last.size.y / 2.0, roof_y, 0.01, "the last step comes up through the hatch, level with the roof")
+	expect(await _climb(platforms[platforms.size() - 2], last), "climbing onto it: on %s's roof (at %s)" % [tower.name, player.global_position])
+
+func test_climb_from_one_platform_to_the_next() -> void:
+	await _load_district()
+	var platforms := _platforms(_buildings_with("Hatch")[0])
+	expect(await _climb(platforms[0], platforms[1]), "up onto the next one (at %s)" % player.global_position)
+
+func test_a_towers_doorways_are_clear_inside() -> void:
+	await _load_district()
+	for tower in _buildings_with("Hatch"):
+		for door: CSGBox3D in tower.get_children().filter(func(hole: Node) -> bool: return hole.name.begins_with("Door")):
+			var inside := AABB(door.global_position - door.size / 2.0, door.size).grow(2.0)
+			inside.position.y = 0.0
+			inside.size.y = 2.5
+			for platform: CSGBox3D in _platforms(tower):
+				var box := AABB(platform.global_position - platform.size / 2.0, platform.size)
+				expect(not box.intersects(inside), "%s's %s is blocked by %s" % [tower.name, door.name, platform.name])
+
+
+func test_run_through_a_warehouse_from_door_to_door() -> void:
+	await _load_district()
+	var hall: CSGBox3D = null
+	for b in _buildings_with("DoorN0"):
+		if not b.has_node("Hatch") and b.has_node("DoorS0"):
+			hall = b
+			break
+	expect(hall != null, "there's a warehouse")
+	var south: Vector3 = hall.get_node("DoorS0").global_position
+	var north: Vector3 = hall.get_node("DoorN0").global_position
+	var start := Vector3(south.x, 0.05, south.z + 6.0)
+	await place(start, yaw_for(Vector3(north.x - start.x, 0, north.z - start.z))) # Facing the far door.
+	player.debug_full_flow = true
+	Input.action_press(&"free_run")
+	var out := false
+	for i in 60 * 8:
+		await ticks(1)
+		if player.global_position.z < north.z - 3.0:
+			out = true
+			break
+	release_all()
+	player.debug_full_flow = false
+	expect(out, "in the south door, through the hall and out the north (at %s)" % player.global_position)
+
+
+func test_run_through_a_top_floor_and_out_the_other_side() -> void:
+	await _load_district()
+	var b := _buildings_with("OpeningS0").filter(func(it: CSGBox3D) -> bool: return it.has_node("OpeningN0"))[0] as CSGBox3D
+	var room: CSGBox3D = b.get_node("Room")
+	var floor_y := room.global_position.y - room.size.y / 2.0
+	var south: Vector3 = b.get_node("OpeningS0").global_position
+	await place(Vector3(south.x, floor_y + 0.05, south.z - 2.0), FACE_NORTH) # Just inside the south opening.
+	Input.action_press(&"move_forward")
+	var north_wall := b.global_position.z - b.size.z / 2.0
+	var out := false
+	for i in 60 * 8:
+		await ticks(1)
+		if player.global_position.z < north_wall - 0.5:
+			out = true
+			break
+	release_all()
+	expect(out, "straight through and out the north side (at %s)" % player.global_position)
+
+
+## Free-runs along platform `from` (from its far end) toward `to`, the next
+## one up; true if you end up on top of it.
+func _climb(from: CSGBox3D, to: CSGBox3D) -> bool:
+	var way := to.global_position - from.global_position
+	var along := Vector3(signf(way.x), 0, 0) if absf(way.x) > absf(way.z) else Vector3(0, 0, signf(way.z))
+	var length := absf((from.size * along).length())
+	var start := Vector3(from.global_position.x, from.global_position.y + from.size.y / 2.0 + 0.05, from.global_position.z) - along * (length / 2.0 - 1.0)
+	return await _free_run_until_on(start, along, to.global_position.y + to.size.y / 2.0)
+
+
+## Free-runs from `start` along `along` (holding it); true once you're on
+## the floor at `height` or above.
+func _free_run_until_on(start: Vector3, along: Vector3, height: float) -> bool:
+	await place(start, yaw_for(along))
+	player.debug_full_flow = true
+	Input.action_press(&"free_run")
+	var made_it := false
+	for i in 60 * 4:
+		await ticks(1)
+		if player.state.name == &"Hang":
+			Input.action_press(&"jump")
+		if player.is_on_floor() and player.global_position.y > height - 0.2:
+			made_it = true
+			break
+	release_all()
+	player.debug_full_flow = false
+	return made_it
+
+
+func _load_district() -> void:
+	main.leave_game()
+	await ticks(5)
+	main.start_solo("rooftop_district")
+	await ticks(10)
+	player = main.get_node("Players/1")
+	player.set_profile(SUPERHUMAN)
+
+
+## The district's buildings with a hole called `hole_name`.
+func _buildings_with(hole_name: String) -> Array[CSGBox3D]:
+	var found: Array[CSGBox3D] = []
+	for b: CSGBox3D in main.level.get_node("Buildings").get_children():
+		if b.has_node(hole_name):
+			found.append(b)
+	return found
+
+
+## A tower's platforms, bottom to top.
+func _platforms(tower: CSGBox3D) -> Array:
+	var found: Array = main.level.get_node("Interiors").get_children().filter(func(node: Node) -> bool: return node.name.begins_with(tower.name + "_Platform"))
+	found.sort_custom(func(a: Node3D, b: Node3D) -> bool: return a.global_position.y < b.global_position.y)
+	return found

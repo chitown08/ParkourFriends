@@ -64,6 +64,7 @@ const PHONE_BOOTH := Vector3(1.2, 2.6, 1.2)
 const KERB_OUT := 1.5 ## How far out from the buildings the pavement things stand.
 const STREET_SPACING := Vector2(8.0, 16.0) ## Gap between pavement things (random in this range).
 const FIRE_ESCAPE_CLEAR := 10.0 ## Pavement stays clear this far around a fire escape (room to run at it).
+const DOORWAY_CLEAR := 3.0 ## And this far in front of doorways.
 ## Rail run-ups and landings stay clear this wide, this far onto each roof.
 const RAIL_CLEAR_WIDTH := 3.0
 const RAIL_RUN_UP := 10.0
@@ -111,6 +112,10 @@ const CORNER_RELIC_IN := 6.0
 ## _relic_candidates()), asks the reachability checker what each takes, and
 ## keeps this many of each (the rings round a relic say which).
 const RELICS_WANTED := {1: 14, 2: 8, 3: 5, 4: 3}
+## Relics inside: a warehouse's this high (a friend's toss up), and only
+## this many top floors get one.
+const INSIDE_TOSS_HEIGHT := 9.0
+const INSIDE_TOP_FLOORS := 3
 ## Relics on pillars stand on roofs: this wide, and this tall for what they're
 ## meant to take (the checker has the last word).
 const PILLAR := 2.5
@@ -143,6 +148,19 @@ const TUBE_IN := 3.0
 const TUBE_RADIUS := 3.0
 const TUBE_MIN_STOREYS := 5
 const TUNNEL := Vector2(40.0, 4.5) ## (Length, radius.)
+## Interiors (see _pick_interiors()): about a quarter of the buildings are
+## hollow, built for running through (wide, tall, open).
+const WALL := 0.5 ## Outer walls this thick...
+const ROOF_SLAB := 1.0 ## ...and the roof.
+const WAREHOUSES := 4 ## Big halls, floor to roof: 4-5 storeys, at least this wide...
+const WAREHOUSE_MIN := 20.0
+const WAREHOUSE_DOOR := Vector2(8.0, 6.0) ## ...with a loading door (wide, tall) in each wall.
+const THROUGH_FLOORS := 7 ## Top floors you run through: 6+ storeys, two storeys tall...
+const THROUGH_MIN := 14.0
+const THROUGH_OPENING := Vector2(6.0, 4.5) ## ...with an opening this big about every
+const THROUGH_SPACING := 12.0 ## this far along each wall (at floor level).
+const TOWER_DOOR := Vector2(6.0, 5.0) ## Towers: a doorway in each wall, and a
+const PLATFORM_RUN := 5.0 ## climb of blocks (at least this long) round the inside walls.
 
 # Ways back up: every flat-roofed building without a fire escape (towers
 # aside) gets a yellow drainpipe or a column of window sills up one wall, and
@@ -160,6 +178,8 @@ var _starts: Array[float] = []
 var _rail_paths: Array = []
 var _marker_spots: Array[Vector2] = []
 var _fire_escapes: Array[Rect2] = []
+## Doorways and openings at street level: the pavement keeps clear in front.
+var _doorways: Array[Rect2] = []
 ## Every rail as [start, end].
 var _rails: Array = []
 ## The plaza (where the avenues cross) is the origin of the world.
@@ -211,6 +231,7 @@ func _all_buildings() -> Array[Dictionary]:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			buildings.append_array(_block(bx, bz))
+	_pick_interiors(buildings)
 	return buildings
 
 
@@ -220,6 +241,7 @@ func _write_scene() -> String:
 	_rail_paths.clear()
 	_marker_spots.clear()
 	_fire_escapes.clear()
+	_doorways.clear()
 	_rails.clear()
 	_pillar_spots.clear()
 	_way_up_spots.clear()
@@ -252,6 +274,12 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	var launchers := _write_launchers(buildings)
 	var pipes := _write_pipes(buildings)
+	# (After the ways up the outside: openings keep clear of them.)
+	var interiors := 0
+	for b in buildings:
+		if b.interior != "":
+			_write_interior(b)
+			interiors += 1
 	_write_ramps()
 	_write_markers(buildings)
 	var runs := _write_runs(buildings) # (Before the relics: a run takes its roofs first.)
@@ -270,9 +298,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, launchers, pipes, relics, items, runs, roof_things, street_things, SEED]
+			staircases, ways_up, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -318,7 +346,7 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 				else dice.randi_range(MIN_STOREYS, MAX_STOREYS)
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
-				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false})
+				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": ""})
 	_limit_alley_steps(buildings)
 	var lowest := buildings[0]
 	for b in buildings:
@@ -591,7 +619,8 @@ func _write_street_clutter(block: Vector2i) -> int:
 			var size := along.abs() * shape.x + out.abs() * shape.z
 			var footprint := Rect2(middle - size / 2.0, size)
 			at += dice.randf_range(STREET_SPACING.x, STREET_SPACING.y)
-			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(FIRE_ESCAPE_CLEAR).intersects(footprint)):
+			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(FIRE_ESCAPE_CLEAR).intersects(footprint)) \
+					or _doorways.any(func(r: Rect2) -> bool: return r.grow(DOORWAY_CLEAR).intersects(footprint)):
 				continue
 			n += 1
 			_box("Block%d%d_%s%s%d" % [block.x, block.y, side[3], kind, n], "StreetClutter",
@@ -809,7 +838,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Launchers" type="Node3D" parent="."]
 
-[node name="Pipes" type="Node3D" parent="."]""")
+[node name="Pipes" type="Node3D" parent="."]
+
+[node name="Interiors" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -905,6 +936,24 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 		var pillar: float = PILLAR_HEIGHTS[int(kind.get_slice(" ", 1))] if kind.begins_with("pillar") else 0.0
 		var height: float = pillar + RELIC_HOVER if kind != "float" else FLOAT_HEIGHT
 		candidates.append({"name": "Relic" + b.name, "at": Vector3(spot.x, roof + height, spot.y), "pillar": pillar, "on": b.name})
+	# Inside (first: picked before roofs): up in the air in a warehouse (a
+	# toss up from the floor), level with the climb halfway up a tower's atrium
+	# but out over the middle, and in the middle of a few top floors.
+	var inside_ones := []
+	var top_floors := 0
+	for b: Dictionary in buildings:
+		var inside := _middle(b)
+		var height := -1.0
+		match b.interior:
+			"warehouse": height = INSIDE_TOSS_HEIGHT
+			"atrium": height = (b.storeys / 2) * STOREY + RELIC_HOVER
+			"through":
+				if top_floors < INSIDE_TOP_FLOORS:
+					top_floors += 1
+					height = (b.storeys - 2) * STOREY + RELIC_HOVER
+		if height > 0.0:
+			inside_ones.append({"name": "RelicInside" + b.name, "at": Vector3(inside.x, height, inside.y), "pillar": 0.0, "on": ""})
+	candidates = inside_ones + candidates
 	# Down in the streets between blocks.
 	for i in 6:
 		var block := Vector2i(dice.randi_range(0, BLOCKS - 2), dice.randi_range(0, BLOCKS - 1))
@@ -1257,3 +1306,162 @@ func _write_pipe(name: String, from: Vector2, to: Vector2, y: float, radius: flo
 	var s := sin(yaw)
 	_out.append("\n[node name=\"%s\" type=\"Node3D\" parent=\"Pipes\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"27_pipe\")\nlength = %s\nradius = %s\nglass = %s" % [
 			name, _num(c), _num(s), _num(-s), _num(c), _num(from.x), _num(y), _num(from.y), _num(from.distance_to(to)), _num(radius), "true" if glass else "false"])
+
+
+## Which buildings are hollow inside (b.interior): every tower ("atrium": a
+## climb up the inside to the roof), the WAREHOUSES biggest-enough 4-5 storey
+## ones ("warehouse": one big hall, doors all round), and THROUGH_FLOORS of the
+## 6+ storey ones ("through": a top floor you run through). Flat roofs only.
+func _pick_interiors(buildings: Array[Dictionary]) -> void:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "interiors"])
+	var flat := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat")
+	for b: Dictionary in flat:
+		if b.tower:
+			b.interior = "atrium"
+	var halls := flat.filter(func(b: Dictionary) -> bool:
+			return not b.tower and b.storeys <= 5 and minf(b.w, b.d) >= WAREHOUSE_MIN)
+	_shuffle(halls, dice)
+	for b: Dictionary in halls.slice(0, WAREHOUSES):
+		b.interior = "warehouse"
+	var tall := flat.filter(func(b: Dictionary) -> bool:
+			return not b.tower and b.storeys >= 6 and minf(b.w, b.d) >= THROUGH_MIN and b.interior == "")
+	_shuffle(tall, dice)
+	for b: Dictionary in tall.slice(0, THROUGH_FLOORS):
+		b.interior = "through"
+
+
+## Cuts `b`'s interior out of it (see _pick_interiors()) and fills it.
+func _write_interior(b: Dictionary) -> void:
+	var top: float = b.storeys * STOREY
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, b.name, "inside"])
+	match b.interior:
+		"atrium":
+			_hole(b, "Room", 0.0, top - ROOF_SLAB, WALL) # (Down to the street: that's its floor.)
+			_openings(b, "Door", 0.0, TOWER_DOOR, 1000.0, ["N"]) # (The climb starts along the north wall.)
+			_write_platforms(b)
+		"warehouse":
+			_hole(b, "Room", 0.0, top - ROOF_SLAB, WALL)
+			_openings(b, "Door", 0.0, WAREHOUSE_DOOR, 1000.0)
+			_write_vaults(b, 0.0, 5, dice)
+		"through":
+			var floor_y: float = (b.storeys - 2) * STOREY
+			_hole(b, "Room", floor_y, top - ROOF_SLAB, WALL)
+			_openings(b, "Opening", floor_y, THROUGH_OPENING, THROUGH_SPACING)
+			_write_vaults(b, floor_y, 3, dice)
+
+
+## A room cut out of `b` from `bottom` to `top` (heights), `inset` in from its
+## walls. (From the street, it goes a little below, to cut cleanly.)
+func _hole(b: Dictionary, name: String, bottom: float, top: float, inset: float) -> void:
+	if bottom <= 0.0:
+		bottom = -0.5
+	_cut(b, name, Vector3(b.x + b.w / 2.0, (bottom + top) / 2.0, b.z + b.d / 2.0),
+			Vector3(b.w - 2.0 * inset, top - bottom, b.d - 2.0 * inset))
+
+
+## Openings `size` (wide, tall) through each of `b`'s walls at height
+## `bottom`: one in the middle of a wall, or more, about `spacing` apart.
+func _openings(b: Dictionary, name: String, bottom: float, size: Vector2, spacing: float, skip: Array = []) -> void:
+	var cut_y := bottom + size.y / 2.0
+	var height := size.y
+	if bottom <= 0.0: # (From the street: cut a little below.)
+		cut_y = (size.y - 0.5) / 2.0
+		height = size.y + 0.5
+	var through := WALL * 3.0
+	for side in ["N", "S", "W", "E"]:
+		if side in skip:
+			continue
+		var along_x: bool = side in ["N", "S"]
+		var length: float = b.w if along_x else b.d
+		var count := clampi(int((length - size.x) / spacing) + 1, 1, 8)
+		for i in count:
+			# Its spot along the wall; a lone one slides along if the middle's taken.
+			var tries: Array = [float(i + 1) / (count + 1)] if count > 1 else [0.5, 0.3, 0.7, 0.2, 0.8]
+			for fraction: float in tries:
+				var along: float = clampf(length * fraction, size.x / 2.0 + WALL, length - size.x / 2.0 - WALL)
+				var at: Vector3
+				match side:
+					"N": at = Vector3(b.x + along, cut_y, b.z)
+					"S": at = Vector3(b.x + along, cut_y, b.z + b.d)
+					"W": at = Vector3(b.x, cut_y, b.z + along)
+					"E": at = Vector3(b.x + b.w, cut_y, b.z + along)
+				var cut_size := Vector3(size.x, height, through) if along_x else Vector3(through, height, size.x)
+				var cut_rect := Rect2(at.x - cut_size.x / 2.0, at.z - cut_size.z / 2.0, cut_size.x, cut_size.z)
+				if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(1.0).intersects(cut_rect)) \
+						or _way_up_spots.any(func(spot: Vector2) -> bool: return cut_rect.grow(2.0).has_point(spot)):
+					continue # (Not where a fire escape, drainpipe or sills come up: the way onto the roof.)
+				_cut(b, "%s%s%d" % [name, side, i], at, cut_size)
+				_doorways.append(cut_rect) # (The pavement keeps clear in front of it.)
+				break
+
+
+## A hole called `name` cut out of `b`, `size` big, centred at `at` (world).
+func _cut(b: Dictionary, name: String, at: Vector3, size: Vector3) -> void:
+	var local := at - Vector3(b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0)
+	_out.append("\n[node name=\"%s\" type=\"CSGBox3D\" parent=\"Buildings/%s\"]\ntransform = %s\noperation = 2\nsize = Vector3(%s, %s, %s)\nmaterial = ExtResource(\"4_building\")" % [
+			name, b.name, _at(local.x, local.y, local.z), _num(size.x), _num(size.y), _num(size.z)])
+
+
+## A tower's climb: yellow platforms round its inside walls, each a storey
+## above the last, like a fire escape on the inside, up to a hatch in the roof.
+func _write_platforms(b: Dictionary) -> void:
+	var x0: float = b.x + WALL
+	var x1: float = b.x + b.w - WALL
+	var z0: float = b.z + WALL
+	var z1: float = b.z + b.d - WALL
+	var depth := STEP_DEPTH
+	# Round the walls (north, east, south, west), each starting past the last's corner.
+	var walls := [[Vector2(x0 + depth, z0), Vector2.RIGHT, Vector2.DOWN, x1 - x0 - depth],
+			[Vector2(x1, z0 + depth), Vector2.DOWN, Vector2.LEFT, z1 - z0 - depth],
+			[Vector2(x1 - depth, z1), Vector2.LEFT, Vector2.UP, x1 - x0 - depth],
+			[Vector2(x0, z1 - depth), Vector2.UP, Vector2.RIGHT, z1 - z0 - depth]]
+	var slots := [] # [start, along, in, run]
+	for wall: Array in walls:
+		var count := maxi(1, int(wall[3] / PLATFORM_RUN))
+		var run: float = wall[3] / count
+		for i in count:
+			slots.append([wall[0] + wall[1] * run * i, wall[1], wall[2], run])
+	# Each a block a storey tall (so there's a face to grab, like a fire
+	# escape's steps); the last comes up through a hatch in the roof, level with it.
+	var top: float = b.storeys * STOREY
+	var rect: Rect2
+	var before: Rect2
+	for k in range(1, b.storeys + 1):
+		var slot: Array = slots[(k - 1) % slots.size()]
+		before = rect
+		rect = _slot_rect(slot, slot[3])
+		_box("%s_Platform%d" % [b.name, k], "Interiors", rect.get_center().x, (k - 0.5) * STOREY, rect.get_center().y,
+				rect.size.x, STOREY, rect.size.y, "7_climb")
+	_cut(b, "Hatch", Vector3(rect.get_center().x, top - ROOF_SLAB / 2.0, rect.get_center().y),
+			Vector3(rect.size.x, ROOF_SLAB + 1.0, rect.size.y))
+	# And over the block before it, so there's room overhead to jump up onto the last.
+	_cut(b, "HatchOver", Vector3(before.get_center().x, top - ROOF_SLAB / 2.0, before.get_center().y),
+			Vector3(before.size.x, ROOF_SLAB + 1.0, before.size.y))
+
+
+## The rectangle (from above) of a platform slot, `length` along it from its start.
+func _slot_rect(slot: Array, length: float) -> Rect2:
+	var start: Vector2 = slot[0]
+	return Rect2(start, Vector2.ZERO).expand(start + (slot[1] as Vector2) * length + (slot[2] as Vector2) * STEP_DEPTH)
+
+
+## A few red vault boxes about `b`'s room (its floor at `floor_y`), clear of
+## the lanes from door to door through the middle.
+func _write_vaults(b: Dictionary, floor_y: float, count: int, dice: RandomNumberGenerator) -> void:
+	var middle := _middle(b)
+	var placed: Array[Rect2] = []
+	for i in count * 4:
+		if placed.size() >= count:
+			break
+		var at := Vector2(dice.randf_range(b.x + 3.0, b.x + b.w - 3.0), dice.randf_range(b.z + 3.0, b.z + b.d - 3.0))
+		if absf(at.x - middle.x) < 4.0 or absf(at.y - middle.y) < 4.0:
+			continue # (The lanes through.)
+		var size := Vector2(VAULT_BOX.x, VAULT_BOX.z) if dice.randf() < 0.5 else Vector2(VAULT_BOX.z, VAULT_BOX.x)
+		var footprint := Rect2(at - size / 2.0, size)
+		if placed.any(func(r: Rect2) -> bool: return r.grow(ITEM_SPACING).intersects(footprint)):
+			continue
+		placed.append(footprint)
+		_box("%s_Vault%d" % [b.name, placed.size()], "Interiors", at.x, floor_y + VAULT_BOX.y / 2.0, at.y,
+				size.x, VAULT_BOX.y, size.y, "9_vault")
