@@ -165,6 +165,40 @@ const MUSEUM_TERRACES := [
 ## curves over into its top.
 const MUSEUM_CURVE_FROM := 0.65
 
+## The skyline: the futuristic quarter, east of the old town across a
+## boulevard (an avenue wide), its blocks FUTURE_COLUMNS across and
+## FUTURE_ROWS (of the old town's) down, avenues between them all. Each block
+## is a podium (FUTURE_PODIUM storeys, the whole block: up it by the old
+## town's ways: fire escape, drainpipe or sills, air vent) with a skyscraper
+## on it, in stages, each set back FUTURE_SETBACK (or less) from the one
+## below: a terrace round it. Glass bridges join the first stages' terraces
+## across the avenues (sloping up if they differ). Ways up a skyscraper:
+## - "lift": a sky lift (a big air vent) on the podium, up to its terrace;
+## - "spiral": a ramp round its first stage, from the podium up to its terrace;
+## - "bridges": none: across a bridge from a neighbour;
+## and from each terrace a sky lift up to the next. Each: [its block, its way
+## up, its stages: [half its width, up to (storeys)] from the podium up].
+const FUTURE_COLUMNS := 2
+const FUTURE_ROWS := Vector2i(1, 3) ## (First and last.)
+const FUTURE_PODIUM := 3
+const FUTURE_SETBACK := 4.0
+const SKYSCRAPERS := [
+	[Vector2i(5, 1), "lift", [[12.0, 12], [8.0, 22]]],
+	[Vector2i(6, 1), "spiral", [[12.0, 12], [8.0, 26]]],
+	[Vector2i(5, 2), "lift", [[12.0, 12], [8.0, 28]]],
+	[Vector2i(6, 2), "bridges", [[12.0, 16], [8.0, 28], [5.0, 40]]], # (The spire.)
+	[Vector2i(5, 3), "spiral", [[12.0, 12], [8.0, 24]]],
+	[Vector2i(6, 3), "bridges", [[12.0, 16], [8.0, 30]]],
+]
+const BRIDGE := Vector2(4.0, 0.4) ## (Wide, thick.)
+## The spiral: a ramp SPIRAL_WIDTH wide round the first stage's walls, a landing
+## at each corner, rising at most SPIRAL_STEEPEST degrees.
+const SPIRAL_WIDTH := 4.0
+const SPIRAL_STEEPEST := 25.0
+const SPIRAL_THICK := 0.5
+## A sky lift stands this far in from a wall's corner.
+const LIFT_CORNER := 3.0
+
 ## The launch plaza: a launch roof in each avenue arm (a low building whose roof
 ## slopes down to a lip), its lip this far from the middle of the plaza, all
 ## launching toward the middle (see levels/ramp.gd).
@@ -182,10 +216,11 @@ const RELIC_HOVER := 1.0
 ## How far in from the roof's edge the far-corner relic sits.
 const CORNER_RELIC_IN := 6.0
 ## How many relics the district gets for each number of players they take,
-## counting the five above. The generator tries a relic on spots all over (see
+## counting the five above and the skyline's (see _skyline_relic_spots(): six
+## on its tops, two floating high). The generator tries a relic on spots all over (see
 ## _relic_candidates()), asks the reachability checker what each takes, and
 ## keeps this many of each (the rings round a relic say which).
-const RELICS_WANTED := {1: 14, 2: 8, 3: 5, 4: 3}
+const RELICS_WANTED := {1: 20, 2: 10, 3: 5, 4: 3}
 ## Relics inside: a warehouse's this high (a friend's toss up), and only
 ## this many top floors get one.
 const INSIDE_TOSS_HEIGHT := 9.0
@@ -247,6 +282,8 @@ const VENT_LIFT := 1.0 ## ...and it blows you this far above the roof.
 
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
+## Where the skyline's columns of blocks start (x, before centring on the plaza).
+var _future_x: Array[float] = []
 ## Places clutter mustn't go: rail paths as [from, to] (seen from above), the
 ## spawn and checkpoints, and fire escape footprints (Rect2s, for the pavement).
 var _rail_paths: Array = []
@@ -260,6 +297,8 @@ var _rails: Array = []
 var _plaza_middle := 0.0
 ## The relics beyond the five fixed ones, as dictionaries (see _relic_candidates()).
 var _extra_relics: Array = []
+## The skyline's relics' names (see _skyline_relic_spots()).
+var _skyline_relics: Array[String] = []
 ## What each relic takes (players), by name, once measured: written as its rings.
 var _needed := {}
 ## Where the pillars stand (clutter keeps clear).
@@ -275,6 +314,10 @@ func _init() -> void:
 		_starts.append(at)
 		at += BLOCK + (AVENUE if i == AVENUE_AFTER else STREET)
 	_plaza_middle = _starts[AVENUE_AFTER] + BLOCK + AVENUE / 2.0
+	at = _starts[BLOCKS - 1] + BLOCK + AVENUE # (Across the boulevard.)
+	for i in FUTURE_COLUMNS:
+		_future_x.append(at)
+		at += BLOCK + AVENUE
 	_generate.call_deferred() # (Once the scene tree is up: measuring needs it.)
 
 
@@ -315,6 +358,8 @@ func _all_buildings() -> Array[Dictionary]:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			buildings.append_array(_block(bx, bz))
+	for spec: Array in SKYSCRAPERS:
+		buildings.append_array(_skyscraper_block(spec))
 	_pick_shapes(buildings)
 	_pick_interiors(buildings)
 	return buildings
@@ -340,6 +385,7 @@ func _write_scene() -> String:
 			"round": _write_round(b)
 			"turned", "leaning", "curved": _write_modern(b)
 			"museum": _write_museum(b)
+			"skyscraper": _write_skyscraper(b)
 			_:
 				_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
 						b.w, b.storeys * STOREY, b.d, "4_building")
@@ -348,6 +394,8 @@ func _write_scene() -> String:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			staircases += 1 if _write_staircase(buildings, Vector2i(bx, bz)) else 0
+	for block in future_blocks():
+		staircases += 1 if _write_staircase(buildings, block) else 0
 	var ways_up := 0
 	for b in buildings:
 		ways_up += 1 if _write_way_up(b) else 0
@@ -355,6 +403,9 @@ func _write_scene() -> String:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			vents += 1 if _write_air_vent(buildings, Vector2i(bx, bz)) else 0
+	for block in future_blocks():
+		vents += 1 if _write_air_vent(buildings, block) else 0
+	var bridges := _write_bridges(buildings)
 	var rails := 0
 	for i in BLOCKS:
 		rails += 1 if _write_rail(buildings, i, true) else 0
@@ -371,7 +422,7 @@ func _write_scene() -> String:
 	_write_markers(buildings)
 	var runs := _write_runs(buildings) # (Before the relics: a run takes its roofs first.)
 	_write_relics(buildings)
-	var relics := 6 + _write_extra_relics(buildings) # (The five fixed ones and the tunnel's.)
+	var relics := 6 + _skyline_relics.size() + _write_extra_relics(buildings) # (The five fixed ones, the tunnel's and the skyline's.)
 	var items := _write_items(buildings)
 	_write_relic_board(buildings)
 	var roof_things := 0
@@ -381,12 +432,15 @@ func _write_scene() -> String:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			street_things += _write_street_clutter(Vector2i(bx, bz))
+	for block in future_blocks():
+		street_things += _write_street_clutter(block)
 
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
-			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
+	return "Wrote %s: %d buildings, %d towers, %d skyscrapers, %d glass bridges, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
+			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower and b.roof != "skyscraper").size(),
+			buildings.filter(func(b: Dictionary) -> bool: return b.roof == "skyscraper").size(), bridges,
 			staircases, ways_up, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, SEED]
 
 
@@ -456,6 +510,34 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 		# (Rails and tubes cross the avenues between flat roofs: those stay.)
 		b.shapeable = b.roof != "flat" or not _on_avenue(b)
 	return buildings
+
+
+## A skyline block (see SKYSCRAPERS): its podium (a flat roof like the old
+## town's, style "future") and the skyscraper on it (b.stages: [half its width,
+## from, to (heights)] each; b.way; b.podium: its podium's name). The podium's
+## b.keep_clear: what its roof clutter keeps off (the skyscraper, its spiral,
+## its sky lift).
+func _skyscraper_block(spec: Array) -> Array[Dictionary]:
+	var block: Vector2i = spec[0]
+	var area := _block_rect(block)
+	var podium := {"name": "Podium%d%d" % [block.x, block.y], "x": area.position.x, "z": area.position.y,
+			"w": BLOCK, "d": BLOCK, "storeys": FUTURE_PODIUM, "tower": false, "block": block, "roof": "flat",
+			"fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false,
+			"style": "future", "turn": 0.0, "keep_clear": []}
+	var stages := []
+	var from := FUTURE_PODIUM * STOREY
+	for stage: Array in spec[2]:
+		stages.append([stage[0], from, stage[1] * STOREY])
+		from = stage[1] * STOREY
+	var half: float = stages[0][0]
+	var middle := area.get_center()
+	var tower := podium.duplicate(true)
+	tower.merge({"name": "Sky%d%d" % [block.x, block.y], "x": middle.x - half, "z": middle.y - half,
+			"w": 2.0 * half, "d": 2.0 * half, "storeys": (spec[2] as Array).back()[1], "tower": true,
+			"roof": "skyscraper", "stages": stages, "way": spec[1], "podium": podium.name}, true)
+	var around := SPIRAL_WIDTH if spec[1] == "spiral" else AirVent.SIZE + VENT_OUT
+	podium.keep_clear = [Rect2(tower.x, tower.z, tower.w, tower.d).grow(around + 1.0)]
+	return [podium, tower]
 
 
 ## Gives some of the buildings that could have one (b.shapeable: of each
@@ -749,7 +831,8 @@ func _write_roof_clutter(b: Dictionary) -> int:
 			size = Vector3(size.z, size.y, size.x) # Turned the other way.
 		var middle := Vector2(dice.randf_range(inner.position.x, inner.end.x), dice.randf_range(inner.position.y, inner.end.y))
 		var footprint := Rect2(middle - Vector2(size.x, size.z) / 2.0, Vector2(size.x, size.z))
-		if not inner.encloses(footprint) or not _clear_of(footprint, placed):
+		if not inner.encloses(footprint) or not _clear_of(footprint, placed) \
+				or b.get("keep_clear", []).any(func(r: Rect2) -> bool: return r.intersects(footprint)):
 			continue
 		placed.append(footprint)
 		_box("%s_%s%d" % [b.name, "Hut" if hut else "Vault", placed.size()], "RoofClutter",
@@ -1066,8 +1149,108 @@ static func terrace_steepest(terrace: Array) -> float:
 	return rad_to_deg(atan(terrace[5] / (terrace[4] * whole)))
 
 
+## A skyscraper (see SKYSCRAPERS): its stages, added into its podium (so its
+## podium's roof and each terrace are what's left round the stage on it),
+## the first called b.name, the rest b.name_2, _3...; its spiral, if it has
+## one; and its sky lifts.
+func _write_skyscraper(b: Dictionary) -> void:
+	var podium_top := FUTURE_PODIUM * STOREY
+	var middle := _middle(b)
+	var inside: String = "Buildings/" + b.podium
+	var origin := Vector3(middle.x, podium_top / 2.0, middle.y) # (The podium's middle: what's in it is placed from there.)
+	var stages: Array = b.stages
+	for i in stages.size():
+		var stage: Array = stages[i]
+		var half: float = stage[0]
+		_box(b.name if i == 0 else "%s_%d" % [b.name, i + 1], inside, 0.0, (stage[1] + stage[2]) / 2.0 - origin.y, 0.0,
+				2.0 * half, stage[2] - stage[1], 2.0 * half, "29_tower", false)
+		if i == 0:
+			_mark_shape(b)
+		# A sky lift up to its top: from the podium (if that's its way up) or
+		# the terrace it stands on, by its south wall, in from the corner.
+		if i > 0 or b.way == "lift":
+			var at := Vector3(middle.x + half - LIFT_CORNER, stage[1], middle.y + half + VENT_OUT)
+			_out.append("\n[node name=\"%s_Lift%d\" type=\"Node3D\" parent=\"AirVents\"]\ntransform = %s\nscript = ExtResource(\"17_vent\")\nrise = %s" % [
+					b.name, i + 1, _at(at.x, at.y, at.z), _num(stage[2] - stage[1] + VENT_LIFT)])
+	if b.way == "spiral":
+		_write_spiral(b, inside, origin)
+
+
+## A ramp round a skyscraper's first stage (in its podium, `inside`, placed
+## from `origin`): from the podium's roof at its north-east corner, clockwise
+## (seen from above) along each wall, a landing (a column up from the podium)
+## at each corner, up to the stage's top; then a flat walk along the next wall
+## beside its top (step across onto the terrace).
+func _write_spiral(b: Dictionary, inside: String, origin: Vector3) -> void:
+	var stage: Array = b.stages[0]
+	var half: float = stage[0]
+	var faces := spiral_faces(stage)
+	var rise: float = (stage[2] - stage[1]) / faces
+	var out := half + SPIRAL_WIDTH / 2.0 # (The ramp's middle line, out from the stage's middle.)
+	var corners := [Vector2(out, -out), Vector2(out, out), Vector2(-out, out), Vector2(-out, -out)]
+	for k in faces + 1:
+		var from: Vector2 = corners[k % 4]
+		var to: Vector2 = corners[(k + 1) % 4]
+		var along := (to - from).normalized()
+		var outward := Vector3(from.x + to.x, 0.0, from.y + to.y).normalized()
+		var low := Vector3(from.x + along.x * SPIRAL_WIDTH / 2.0, stage[1] + k * rise, from.y + along.y * SPIRAL_WIDTH / 2.0)
+		var high := Vector3(to.x - along.x * SPIRAL_WIDTH / 2.0, stage[1] + (k + 1) * rise, to.y - along.y * SPIRAL_WIDTH / 2.0)
+		if k == faces: # (The walk along beside the top, level.)
+			high.y = low.y
+		var way := (high - low).normalized()
+		var up := way.cross(outward)
+		if up.y < 0.0:
+			outward = -outward
+			up = way.cross(outward)
+		var centre := (low + high) / 2.0 - up * SPIRAL_THICK / 2.0 - Vector3(0.0, origin.y, 0.0)
+		_node("CSGBox3D", "%s_Ramp%d" % [b.name, k + 1], inside, Transform3D(Basis(outward, up, way), centre),
+				"size = Vector3(%s, %s, %s)" % [_num(SPIRAL_WIDTH), _num(SPIRAL_THICK), _num(low.distance_to(high))])
+		if k > 0: # (A landing at the corner it starts from.)
+			var top: float = stage[1] + k * rise
+			_box("%s_Landing%d" % [b.name, k], inside, from.x, (stage[1] + top) / 2.0 - origin.y, from.y,
+					SPIRAL_WIDTH, top - stage[1], SPIRAL_WIDTH, "4_building", false)
+
+
+## How many walls a spiral round `stage` ([half its width, from, to]) climbs
+## along (no steeper than SPIRAL_STEEPEST).
+static func spiral_faces(stage: Array) -> int:
+	return ceili((stage[2] - stage[1]) / (2.0 * stage[0] * tan(deg_to_rad(SPIRAL_STEEPEST))))
+
+
+## The glass bridges: between each two skyscrapers in blocks side by side,
+## from the first stage's terrace of one to the other's, across the avenue (a
+## slope if they're not level). Returns how many.
+func _write_bridges(buildings: Array[Dictionary]) -> int:
+	var count := 0
+	var skyscrapers := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "skyscraper")
+	for a: Dictionary in skyscrapers:
+		for b: Dictionary in skyscrapers:
+			var step: Vector2i = b.block - a.block
+			if step != Vector2i(1, 0) and step != Vector2i(0, 1):
+				continue
+			var way := Vector2(step)
+			var start := _middle(a) + way * float(a.stages[0][0])
+			var end := _middle(b) - way * float(b.stages[0][0])
+			var low := Vector3(start.x, a.stages[0][2], start.y)
+			var high := Vector3(end.x, b.stages[0][2], end.y)
+			var along := (high - low).normalized()
+			# (A little onto each terrace: no crack.)
+			low -= along * 0.5
+			high += along * 0.5
+			var across := Vector3(way.y, 0.0, -way.x)
+			var up := along.cross(across)
+			if up.y < 0.0:
+				across = -across
+				up = along.cross(across)
+			_node("CSGBox3D", "Bridge%d%d_%d%d" % [a.block.x, a.block.y, b.block.x, b.block.y], "Bridges",
+					Transform3D(Basis(across, up, along), (low + high) / 2.0 - up * BRIDGE.y / 2.0),
+					"size = Vector3(%s, %s, %s)" % [_num(BRIDGE.x), _num(BRIDGE.y), _num(low.distance_to(high))], "28_glass")
+			count += 1
+	return count
+
+
 ## A CSG shape node on its own (with collision), anywhere and turned any way.
-func _node(type: String, name: String, parent: String, transform: Transform3D, properties: String) -> void:
+func _node(type: String, name: String, parent: String, transform: Transform3D, properties: String, material := "4_building") -> void:
 	var r := transform.basis
 	var o := transform.origin
 	var numbers := PackedStringArray()
@@ -1075,8 +1258,8 @@ func _node(type: String, name: String, parent: String, transform: Transform3D, p
 		numbers.append(str(snappedf(value, 0.0001)))
 	for value: float in [o.x, o.y, o.z]:
 		numbers.append(_num(value))
-	_out.append("\n[node name=\"%s\" type=\"%s\" parent=\"%s\"]\ntransform = Transform3D(%s)\nuse_collision = true\n%s\nmaterial = ExtResource(\"4_building\")" % [
-			name, type, parent, ", ".join(numbers), properties])
+	_out.append("\n[node name=\"%s\" type=\"%s\" parent=\"%s\"]\ntransform = Transform3D(%s)\nuse_collision = true\n%s\nmaterial = ExtResource(\"%s\")" % [
+			name, type, parent, ", ".join(numbers), properties, material])
 
 
 ## A CSG shape node (`type`) at `at` (in its parent), with `properties`; on
@@ -1128,7 +1311,17 @@ func _roof(name: String, b: Dictionary, along_x: bool, start: float, height: flo
 
 
 func _block_rect(block: Vector2i) -> Rect2:
-	return Rect2(_starts[block.x] - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
+	var x: float = _starts[block.x] if block.x < BLOCKS else _future_x[block.x - BLOCKS]
+	return Rect2(x - _plaza_middle, _starts[block.y] - _plaza_middle, BLOCK, BLOCK)
+
+
+## The skyline's blocks (see SKYSCRAPERS).
+static func future_blocks() -> Array[Vector2i]:
+	var blocks: Array[Vector2i] = []
+	for column in FUTURE_COLUMNS:
+		for row in range(FUTURE_ROWS.x, FUTURE_ROWS.y + 1):
+			blocks.append(Vector2i(BLOCKS + column, row))
+	return blocks
 
 
 func _write_header() -> void:
@@ -1160,6 +1353,8 @@ func _write_header() -> void:
 [ext_resource type="Script" path="res://levels/relic_board.gd" id="25_board"]
 [ext_resource type="Script" path="res://levels/launcher.gd" id="26_launcher"]
 [ext_resource type="Script" path="res://levels/pipe.gd" id="27_pipe"]
+[ext_resource type="Material" path="res://materials/glass.tres" id="28_glass"]
+[ext_resource type="Material" path="res://materials/grid_tower.tres" id="29_tower"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -1233,14 +1428,17 @@ directional_shadow_max_distance = 250.0
 
 [node name="Pipes" type="Node3D" parent="."]
 
-[node name="Interiors" type="Node3D" parent="."]""")
+[node name="Interiors" type="Node3D" parent="."]
+
+[node name="Bridges" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
 func _write_ground() -> void:
 	var low := _starts[0] - _plaza_middle - EDGE
 	var high := _starts[BLOCKS - 1] + BLOCK - _plaza_middle + EDGE
-	_box("Ground", "Street", (low + high) / 2.0, -1.0, (low + high) / 2.0, high - low, 2.0, high - low, "3_ground")
+	var east: float = _future_x.back() + BLOCK - _plaza_middle + EDGE # (The skyline, across the boulevard.)
+	_box("Ground", "Street", (low + east) / 2.0, -1.0, (low + high) / 2.0, east - low, 2.0, high - low, "3_ground")
 	# Two tracks, flush with the street (no collision, so nothing to trip on).
 	for side in [-3.0, 3.0]:
 		_box("Track%s" % ("West" if side < 0 else "East"), "Street", side, 0.01, (low + high) / 2.0,
@@ -1263,6 +1461,10 @@ func _write_markers(buildings: Array[Dictionary]) -> void:
 				return b.block == quarters[quarter] and b.roof == "flat" and not b.tower)
 		in_block.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys)
 		_checkpoint("Checkpoint" + quarter, _roof_spot(in_block[0]))
+	# And on a podium in the middle of the skyline, by its corner (clear of the skyscraper).
+	var middle_row := Vector2i(BLOCKS, (FUTURE_ROWS.x + FUTURE_ROWS.y) / 2)
+	var podium := _block_rect(middle_row)
+	_checkpoint("CheckpointSkyline", Vector3(podium.position.x + 8.0, FUTURE_PODIUM * STOREY, podium.position.y + 8.0))
 
 
 ## The drop-off in the middle of the plaza, and five relics:
@@ -1292,13 +1494,41 @@ func _write_relics(buildings: Array[Dictionary]) -> void:
 	_relic("RelicFarCorner", Vector3(spot.x, far.storeys * STOREY + RELIC_HOVER, spot.y), true)
 
 	var climbable := buildings.filter(func(b: Dictionary) -> bool:
-			return not b.tower and b.roof == "flat" and not _marker_spots.any(func(marker: Vector2) -> bool:
+			return not b.tower and b.roof == "flat" and b.style != "future" and not _marker_spots.any(func(marker: Vector2) -> bool:
 				return Rect2(b.x, b.z, b.w, b.d).has_point(marker)))
 	climbable.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 			return a.storeys > b.storeys or (a.storeys == b.storeys and _middle(a).length() < _middle(b).length()))
 	_relic("RelicHighRoof", _roof_spot(climbable[0]) + Vector3.UP * RELIC_HOVER, true)
 
 	_relic("RelicSubway", Vector3(0, RELIC_HOVER, _block_rect(Vector2i(0, 0)).position.y + 2.0))
+
+	_skyline_relics.clear()
+	for relic: Array in _skyline_relic_spots(buildings):
+		_relic(relic[0], relic[1])
+		_skyline_relics.append(relic[0])
+
+
+## The skyline's relics (always there, like the five above): [name, where].
+## On each skyscraper's top; floating high over the spire's (a toss up from
+## it); and floating high over the first level glass bridge.
+func _skyline_relic_spots(buildings: Array[Dictionary]) -> Array:
+	var spots := []
+	var skyscrapers := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "skyscraper")
+	var spire: Dictionary = skyscrapers[0]
+	for b: Dictionary in skyscrapers:
+		var top: float = (b.stages as Array).back()[2]
+		spots.append(["RelicSkyTop%d%d" % [b.block.x, b.block.y], Vector3(_middle(b).x, top + RELIC_HOVER, _middle(b).y)])
+		if b.stages.size() > spire.stages.size():
+			spire = b
+	var spire_top: float = (spire.stages as Array).back()[2]
+	spots.append(["RelicOverSpire", Vector3(_middle(spire).x, spire_top + FLOAT_HEIGHT, _middle(spire).y)])
+	for a: Dictionary in skyscrapers:
+		for b: Dictionary in skyscrapers:
+			if b.block - a.block in [Vector2i(1, 0), Vector2i(0, 1)] and a.stages[0][2] == b.stages[0][2]:
+				var middle := (_middle(a) + _middle(b)) / 2.0
+				spots.append(["RelicOverBridge", Vector3(middle.x, a.stages[0][2] + FLOAT_HEIGHT, middle.y)])
+				return spots
+	return spots
 
 
 func _relic(name: String, at: Vector3, on_roof := false, data := "13_relic") -> void:
@@ -1316,7 +1546,7 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, "relics"])
 	var roofs := buildings.filter(func(b: Dictionary) -> bool:
-			return b.roof == "flat" and not b.tower and b.w >= 14.0 and b.d >= 14.0)
+			return b.roof == "flat" and b.style != "future" and not b.tower and b.w >= 14.0 and b.d >= 14.0)
 	_shuffle(roofs, dice)
 	var kinds := ["roof", "pillar 4", "pillar 3", "float", "pillar 2", "pillar 1", "pillar 4", "pillar 3"]
 	var candidates := []
@@ -1407,7 +1637,7 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 ## takes, by name): enough of each to make up RELICS_WANTED with the fixed five.
 func _pick_relics(needed: Dictionary) -> Array:
 	var have := {}
-	for fixed in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway", "RelicTunnel"]:
+	for fixed: String in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway", "RelicTunnel"] + _skyline_relics:
 		have[needed[fixed]] = have.get(needed[fixed], 0) + 1
 	var picked := []
 	var used := {} # (One to a building.)
@@ -1453,7 +1683,7 @@ func _write_items(buildings: Array[Dictionary]) -> int:
 	var items := [["Bat1", "19_bat", Vector3(6, 0.5, -6)], ["Bat2", "19_bat", Vector3(-6, 0.5, -6)],
 			["Balloon4", "22_balloon", Vector3(-6, 0.5, 6)], ["Balloon5", "22_balloon", Vector3(6, 0.5, 6)]]
 	var free := buildings.filter(func(b: Dictionary) -> bool:
-			return b.roof == "flat" and not b.tower and not _marker_spots.any(func(spot: Vector2) -> bool:
+			return b.roof == "flat" and b.style != "future" and not b.tower and not _marker_spots.any(func(spot: Vector2) -> bool:
 				return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))
 	free.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys or (a.storeys == b.storeys and a.name < b.name))
 	for i in mini(free.size(), 6):
@@ -1535,7 +1765,7 @@ func _num(value: float) -> String:
 ## high over roofs on the way; and its relics at the finish. Returns how many.
 func _write_runs(buildings: Array[Dictionary]) -> int:
 	var flat := buildings.filter(func(b: Dictionary) -> bool:
-			return b.roof == "flat" and not b.tower and b.w >= 12.0 and b.d >= 12.0)
+			return b.roof == "flat" and b.style != "future" and not b.tower and b.w >= 12.0 and b.d >= 12.0)
 	var free := flat.filter(func(b: Dictionary) -> bool:
 			return not _marker_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).grow(2.0).has_point(spot)) \
 				and not _pillar_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))
@@ -1660,7 +1890,7 @@ func _write_relic_board(buildings: Array[Dictionary]) -> void:
 func _write_launchers(buildings: Array[Dictionary]) -> int:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, "launchers"])
-	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat" and not b.tower)
+	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat" and b.style != "future" and not b.tower)
 	_shuffle(candidates, dice)
 	var ramps := 0
 	var pipes := 0
@@ -1782,7 +2012,7 @@ func _write_pipe(name: String, from: Vector2, to: Vector2, y: float, radius: flo
 func _pick_interiors(buildings: Array[Dictionary]) -> void:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, "interiors"])
-	var flat := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat")
+	var flat := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat" and b.style != "future")
 	for b: Dictionary in flat:
 		if b.tower:
 			b.interior = "atrium"

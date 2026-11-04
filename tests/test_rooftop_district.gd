@@ -116,7 +116,7 @@ func test_every_block_has_a_fire_escape_from_the_street() -> void:
 		for k in range(1, steps.size()):
 			expect_near(_top(steps[k]) - _top(steps[k - 1]), STOREY, 0.01, "each step one storey up")
 	# (All but the museum's block: you run up the museum.)
-	expect(climbed.size() == 24 and not climbed.has("Museum"), "all 24 blocks but the museum's should have one, %d do" % climbed.size())
+	expect(climbed.size() == 30 and not climbed.has("Museum"), "all 30 blocks (the skyline's too) but the museum's should have one, %d do" % climbed.size())
 
 
 func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
@@ -405,11 +405,11 @@ func test_you_can_steer_in_the_air_after_a_launch() -> void:
 	expect(player.global_position.x < straight_x - 2.0, "holding left in the air should carry you left, x %.1f vs %.1f" % [player.global_position.x, straight_x])
 
 
-func test_thirty_relics_and_a_drop_off_in_the_plaza() -> void:
+func test_thirty_eight_relics_and_a_drop_off_in_the_plaza() -> void:
 	var relics: Array[Node] = main.level.get_node("Relics").get_children()
-	expect(relics.size() == 30, "thirty relics, %d" % relics.size())
+	expect(relics.size() == 38, "thirty-eight relics (eight in the skyline), %d" % relics.size())
 	# (And 3 from the group run.)
-	expect(main.hud.get_node("Relics").text == "Relics 0 / 33", "the counter should show them: %s" % main.hud.get_node("Relics").text)
+	expect(main.hud.get_node("Relics").text == "Relics 0 / 41", "the counter should show them: %s" % main.hud.get_node("Relics").text)
 	var drop_off: DropOff = main.level.get_node("DropOff")
 	expect(_flat(drop_off.global_position).length() < 0.1 and absf(drop_off.global_position.y) < 0.1,
 			"the drop-off should be in the middle of the plaza, on the street")
@@ -791,10 +791,10 @@ func test_the_hub_tower_lights_up_a_light_per_relic_delivered() -> void:
 	expect((-board.global_basis.z).dot(to_plaza) > 0.6, "the board looks out toward the plaza")
 	expect(board.global_position.y > 30.0, "high up on the hub tower, %.0f m" % board.global_position.y)
 	await ticks(2)
-	expect(board.lit() == Vector2i(0, 33), "a light for every relic (the run's too), none lit yet: %s" % board.lit())
+	expect(board.lit() == Vector2i(0, 41), "a light for every relic (the run's too), none lit yet: %s" % board.lit())
 	var relic: WorldItem = main.level.get_node("Relics").get_child(0)
 	relic.host_deliver()
 	await ticks(2)
-	expect(board.lit() == Vector2i(1, 33), "deliver one: its light comes on, %s" % board.lit())
+	expect(board.lit() == Vector2i(1, 41), "deliver one: its light comes on, %s" % board.lit())
 	var rows := board.rows().map(func(row: Array) -> int: return row.size())
-	expect(rows == [14, 8, 5, 3, 3], "rows by players each takes, then the run: %s" % [rows])
+	expect(rows == [20, 10, 5, 3, 3], "rows by players each takes, then the run: %s" % [rows])

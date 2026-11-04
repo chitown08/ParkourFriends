@@ -26,7 +26,7 @@ func test_delivered_relics_are_still_delivered_next_time() -> void:
 	await _play_district() # Next session.
 	var again: WorldItem = main.level.get_node("Relics").get_child(0)
 	expect(main.delivered_relics.size() == 1 and again.state == WorldItem.State.DELIVERED, "it's still delivered: %s" % [main.delivered_relics.keys()])
-	expect(main.hud.get_node("Relics").text == "Relics 1 / 33", "and counted: %s" % main.hud.get_node("Relics").text)
+	expect(main.hud.get_node("Relics").text == "Relics 1 / 41", "and counted: %s" % main.hud.get_node("Relics").text)
 	await ticks(2)
 	expect((main.level.get_node("RelicBoard") as RelicBoard).lit().x == 1, "and lit on the hub tower")
 

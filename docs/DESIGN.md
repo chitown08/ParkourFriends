@@ -456,7 +456,7 @@ blocks (four lots each) and its own shapes, dealt out to every building there th
   road: rails, tubes, the tunnel), at least 7 m up; a relic sits at the tip.
 - **Round** (as in the old town).
 The rest is the **old town** (round, domed, stepped, courtyard, winged).
-Next: the futuristic quarter itself (tall leaning and turned towers, glass bridges); a church or
+Since built: the museum and the skyline (below). Next: a church or
 cathedral, parking garages, hallways.
 
 ### Slopes and the museum
@@ -480,6 +480,36 @@ curving over into its top) you run straight up from the street: the gallery (to 
 terrace on it (to 18 m), and a low wing (5 m) either side. Relics on the terraces' tops and floating
 over the dome. Tests: `tests/test_museum.gd` (keeps to its block; slopes runnable; every top
 reachable alone; in the game, up both terraces from the street, and up the dome).
+
+### The skyline (the futuristic quarter)
+
+East of the old town, across a boulevard as wide as an avenue, six blocks (two across, three down;
+`SKYSCRAPERS` in the generator), avenues between them all. Each block is a **podium** (3 storeys,
+the whole block: up it the old town's ways, fire escape, drainpipe or sills, air vent) with a
+**skyscraper** on it: 77-105 m, and the **spire** in the middle, 140 m. Each goes up in stages, each
+set back from the one below, leaving a narrow **terrace** round it (4 m, or 3): the higher you go,
+the less room to land and the further to fall. Ways up (nothing impossible, not everything direct):
+
+- a **sky lift** (a big orange air vent) on the podium beside the first stage, or
+- a **spiral**: a ramp 4 m wide round the first stage's walls, a landing at each corner, no steeper
+  than 25 degrees, then a level walk beside its top; you step across onto the terrace; or
+- **none**: the spire and its neighbour to the south are got into across a bridge;
+- then from each terrace a sky lift up the next stage.
+
+**Glass bridges** (see-through, 4 m wide, no rails) join the first stages' terraces across the
+avenues, 42-56 m up, about 60 m long; where the terraces differ, the bridge slopes (13 degrees) and
+you run up it. Relics: one on each skyscraper's top, one floating over the spire (a toss up from its
+top) and one floating over a level bridge. The skyline's relics are always there (like the five
+fixed ones), and `RELICS_WANTED` counts them, so the old town keeps the same relics. The old town
+is left exactly as it was: nothing in it picks from the skyline's buildings. A checkpoint on the
+middle-west podium. The checker needed nothing new: sky lifts are air vents, the spiral and the
+sloping bridges are slopes. Tests: `tests/test_skyline.gd` (across the boulevard; heights; the
+spiral's slope; every stage reachable alone, each skyscraper its own way; bridges join the terraces
+both ways; in the game, round and up a spiral, up a sky lift to the spire's top, up a sloping
+bridge).
+
+Still to come here: wingsuit courses off the tops (see the ideas backlog), and the hub tower is now
+dwarfed (56-60 m against 77-140 m), so it should grow to stay a landmark.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 
