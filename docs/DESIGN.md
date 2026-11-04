@@ -403,4 +403,29 @@ is a place ("Building/Room", unless it's the street); and a link only counts if 
 its two spots (taking off from the place itself with room overhead, up to above the higher one,
 across, down) stays clear of walls and ceilings (`ReachMap.path_clear()`). Only buildings block
 (in a "Buildings" node, or the `reach_solid` group). Interior relic spots are tried before roofs.
-Later: parking garages, hallways between buildings, shapes other than boxes.
+Later: parking garages, hallways between buildings.
+
+## Shapes (`tools/gen_district.gd`, `game/reach/`, Nov 2026)
+
+Not every building is a box. A building is CSG shapes joined (a box, an upright cylinder, a
+sphere, added into it as children) less holes (subtract boxes). Twelve of the district's 61:
+- **Round**: a rotunda (a cylinder) on a squarish lot, half of them with a dome; on a long lot, a
+  box with a half-round end each way. You scramble straight up the curved wall.
+- **Domed**: a shallow dome on the roof. Its middle is sunk 3/4 of its radius under the roof, so it
+  is never steeper than about 41 degrees: you run right up it and over.
+- **Stepped**: one or two tiers on top, each set back 4 m and two storeys tall (a scramble up each).
+- **Courtyard**: a yard down through the middle (the building a ring 8 m deep), with a 6 x 5 m arch
+  through from one side.
+- **Winged**: an L, a corner cut out.
+They're dealt out in turn so there's some of each, from buildings that would otherwise be sloped
+or flat, but never a block's lowest, nor a flat roof facing an avenue (rails and tubes cross there).
+Like sloped roofs they get none of the flat roofs' things (fire escapes, clutter...). Relic spots on
+them: on top of a dome, a tier or a round roof, over a courtyard, and higher over each (floating
+over a dome, on a tall pillar otherwise). Tests tell them apart by `metadata/shape`.
+
+The checker reads the shapes: each one's top is a place (a box's, less holes cut down through it
+and other parts standing on it, split into rectangles; a cylinder's as two rectangles crossed; a
+dome's crown, `DOME_CROWN` under its top), named after it or "Building/Part" (pieces "#2", "#3"
+...); cylinders and spheres are round when it checks a path is clear; and getting onto or off
+something on top of a place, it tries taking off or landing a few metres out round it (a dome's foot).
+Next: a church or cathedral (steep roofs, a spire), curvy walls (a museum), parking garages, hallways.

@@ -68,7 +68,12 @@ func test_run_into_a_drainpipe_and_climb_it_to_the_roof() -> void:
 
 func test_free_run_climbs_a_drainpipe() -> void:
 	var pipe := _tallest_pipe()
-	await place(_in_front_of(pipe, 10.0), yaw_for(-pipe.out_of_wall()))
+	# A run-up (as long as the street or alley it faces leaves room for).
+	var run_up := 10.0
+	var across := player.raycast(_in_front_of(pipe, 0.5) + Vector3.UP, _in_front_of(pipe, 20.0) + Vector3.UP)
+	if not across.is_empty():
+		run_up = minf(run_up, (across.position - pipe.point_at(1.0)).length() - 1.5)
+	await place(_in_front_of(pipe, run_up), yaw_for(-pipe.out_of_wall()))
 	Input.action_press(&"free_run")
 	for i in 60 * 12:
 		await ticks(1)
@@ -221,12 +226,13 @@ func _wall_beside(vent: AirVent) -> Vector3:
 func _buildings() -> Array[CSGBox3D]:
 	var found: Array[CSGBox3D] = []
 	for child in main.level.get_node("Buildings").get_children():
-		found.append(child as CSGBox3D)
+		if child is CSGBox3D: # (Not round ones.)
+			found.append(child as CSGBox3D)
 	return found
 
 
-func _is_flat(b: CSGBox3D) -> bool:
-	return main.level.get_node("Roofs").get_children().all(func(roof: Node) -> bool:
+func _is_flat(b: CSGBox3D) -> bool: # (Not a sloped roof, nor another shape.)
+	return not b.has_meta(&"shape") and main.level.get_node("Roofs").get_children().all(func(roof: Node) -> bool:
 			return not String(roof.name).begins_with(b.name + "_"))
 
 

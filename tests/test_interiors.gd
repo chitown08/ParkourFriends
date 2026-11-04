@@ -144,7 +144,10 @@ func test_run_through_a_warehouse_from_door_to_door() -> void:
 	expect(hall != null, "there's a warehouse")
 	var south: Vector3 = hall.get_node("DoorS0").global_position
 	var north: Vector3 = hall.get_node("DoorN0").global_position
-	var start := Vector3(south.x, 0.05, south.z + 6.0)
+	# Back out from the door (as far as the street or alley there leaves room for).
+	var outside := player.raycast(Vector3(south.x, 1.0, south.z + 1.0), Vector3(south.x, 1.0, south.z + 7.5))
+	var back := 6.0 if outside.is_empty() else minf(6.0, outside.position.z - south.z - 1.5)
+	var start := Vector3(south.x, 0.05, south.z + back)
 	await place(start, yaw_for(Vector3(north.x - start.x, 0, north.z - start.z))) # Facing the far door.
 	player.debug_full_flow = true
 	Input.action_press(&"free_run")
@@ -219,8 +222,8 @@ func _load_district() -> void:
 ## The district's buildings with a hole called `hole_name`.
 func _buildings_with(hole_name: String) -> Array[CSGBox3D]:
 	var found: Array[CSGBox3D] = []
-	for b: CSGBox3D in main.level.get_node("Buildings").get_children():
-		if b.has_node(hole_name):
+	for b in main.level.get_node("Buildings").get_children():
+		if b is CSGBox3D and b.has_node(hole_name):
 			found.append(b)
 	return found
 

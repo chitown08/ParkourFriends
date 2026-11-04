@@ -634,7 +634,7 @@ func _pair_across(size: float, rise := 0.0) -> Array:
 	var buildings := _buildings()
 	for a in buildings:
 		for b in buildings:
-			if a == b or _is_tower(a) or _is_tower(b) or absf(_top(b) - _top(a) - rise) > 0.01:
+			if a == b or _is_tower(a) or _is_tower(b) or not _is_flat(a) or not _is_flat(b) or absf(_top(b) - _top(a) - rise) > 0.01:
 				continue
 			if _gap_size(_facing_gap(a, b)) != size or _overlap(a, b) < 12.0:
 				continue
@@ -650,7 +650,8 @@ func _pair_across(size: float, rise := 0.0) -> Array:
 func _buildings() -> Array[CSGBox3D]:
 	var found: Array[CSGBox3D] = []
 	for child in main.level.get_node("Buildings").get_children():
-		found.append(child as CSGBox3D)
+		if child is CSGBox3D and not child.has_meta(&"shape"): # (Plain boxes: not round, domed, stepped...)
+			found.append(child as CSGBox3D)
 	return found
 
 
@@ -671,9 +672,10 @@ func _is_tower(b: CSGBox3D) -> bool:
 	return b.size.y > 30.0
 
 
-## False for an old-town house or a sawtooth shed (their roofs are in Roofs).
+## False for an old-town house or a sawtooth shed (their roofs are in Roofs), or a
+## building of another shape (a dome, tiers, a courtyard...: see gen_district.gd).
 func _is_flat(b: CSGBox3D) -> bool:
-	return main.level.get_node("Roofs").get_children().all(func(roof: Node) -> bool:
+	return not b.has_meta(&"shape") and main.level.get_node("Roofs").get_children().all(func(roof: Node) -> bool:
 			return not String(roof.name).begins_with(b.name + "_"))
 
 

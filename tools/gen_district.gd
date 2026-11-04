@@ -91,6 +91,32 @@ const TOOTH := 5.0 ## About this long...
 const TOOTH_RISE := 1.2 ## ...and this tall (low enough for free-run to flow-vault each face).
 const GLASS_DEGREES := 75.0
 
+## Shapes (b.roof, see _pick_shapes()): of the rest (not towers, not a block's
+## lowest, not a flat roof facing an avenue), this many aren't plain boxes or
+## sloped. Like sloped roofs, they get none of the flat roofs' things (fire
+## escapes, rails, clutter...).
+const SHAPE_CHANCE := 0.5
+## "round": a rotunda (a cylinder) on a squarish lot, or rounded at both ends
+## on a long one. Some rotundas have a dome.
+const ROTUNDA_ASPECT := 1.4
+const ROTUNDA_DOME_CHANCE := 0.5
+## "domed": a shallow dome on the roof, its middle this much of its radius
+## under the roof (so it's never steeper than you can run up), no bigger than
+## DOME_MAX, leaving a ring of roof round it.
+const DOME_SINK := 0.75
+const DOME_MAX := 12.0
+## "stepped": one or two tiers on top, each set back this far and two storeys tall.
+const SETBACK := 4.0
+const TIER_STOREYS := 2
+## "courtyard": a yard down through the middle, the building a ring this deep
+## round it, with an arch through to it from one side.
+const COURT_RING := 8.0
+const ARCH := Vector2(6.0, 5.0)
+## "winged": an L, a corner cut out, this much of each side.
+const NOTCH := 0.45
+## Smallest lot (its shorter side) each shape needs.
+const SHAPE_MIN := {"round": 14.0, "domed": 16.0, "stepped": 18.0, "winged": 18.0, "courtyard": 26.0}
+
 ## The launch plaza: a launch roof in each avenue arm (a low building whose roof
 ## slopes down to a lip), its lip this far from the middle of the plaza, all
 ## launching toward the middle (see levels/ramp.gd).
@@ -204,16 +230,26 @@ func _init() -> void:
 	_generate.call_deferred() # (Once the scene tree is up: measuring needs it.)
 
 
-## Writes the district three times: first with a relic on every spot that might
+## Writes the district a few times: first with a relic on every spot that might
 ## hold one, to ask the reachability checker what each takes; then with just
-## the ones picked to make up RELICS_WANTED; then once more, marking each with
-## the players it takes (players_needed: its rings).
+## the ones picked to make up RELICS_WANTED (again till that adds up); then
+## once more, marking each with the players it takes (players_needed: its rings).
 func _generate() -> void:
-	_extra_relics = _relic_candidates(_all_buildings())
+	var candidates := _relic_candidates(_all_buildings())
+	_extra_relics = candidates
 	_write_scene()
-	_extra_relics = _pick_relics(_measure())
-	_write_scene()
-	_needed = _measure()
+	var measured := _measure()
+	# (Measured with every candidate there, some take fewer or more players than
+	# they will alone: a pillar left out was a stepping stone. So pick, measure
+	# what was picked, and pick again until it adds up.)
+	for attempt in 6:
+		_extra_relics = candidates
+		_extra_relics = _pick_relics(measured)
+		_write_scene()
+		_needed = _measure()
+		if _needed.keys().all(func(name: String) -> bool: return measured.get(name) == _needed[name]):
+			break
+		measured.merge(_needed, true)
 	var summary := _write_scene()
 	var tiers := {}
 	for relic_name: String in _needed:
@@ -231,6 +267,7 @@ func _all_buildings() -> Array[Dictionary]:
 	for bx in BLOCKS:
 		for bz in BLOCKS:
 			buildings.append_array(_block(bx, bz))
+	_pick_shapes(buildings)
 	_pick_interiors(buildings)
 	return buildings
 
@@ -250,13 +287,13 @@ func _write_scene() -> String:
 	_write_header()
 	_write_ground()
 	for b in buildings:
-		if b.roof == "pitched":
-			_write_terrace(b)
-			continue
-		_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
-				b.w, b.storeys * STOREY, b.d, "4_building")
-		if b.roof == "sawtooth":
-			_write_sawtooth(b)
+		match b.roof:
+			"pitched": _write_terrace(b)
+			"round": _write_round(b)
+			_:
+				_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
+						b.w, b.storeys * STOREY, b.d, "4_building")
+				_write_shape(b)
 	var staircases := 0
 	for bx in BLOCKS:
 		for bz in BLOCKS:
@@ -346,7 +383,7 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 				else dice.randi_range(MIN_STOREYS, MAX_STOREYS)
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
-				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": ""})
+				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false})
 	_limit_alley_steps(buildings)
 	var lowest := buildings[0]
 	for b in buildings:
@@ -360,7 +397,47 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 			b.roof = "pitched"
 		elif roll < PITCHED_CHANCE + SAWTOOTH_CHANCE:
 			b.roof = "sawtooth"
+		# (Rails and tubes cross the avenues between flat roofs: those stay.)
+		b.shapeable = b.roof != "flat" or not _on_avenue(b)
 	return buildings
+
+
+## Gives SHAPE_CHANCE of the buildings that could have one (b.shapeable) a
+## shape other than a box, dealt out in turn (the next that fits the lot) so
+## there's some of each; and works out each one's details: b.dome (the dome's
+## radius, 0 for none), b.tiers, b.side (the arch's or the cut-out corner's).
+func _pick_shapes(buildings: Array[Dictionary]) -> void:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "shapes"])
+	var shapeable := buildings.filter(func(b: Dictionary) -> bool: return b.shapeable)
+	_shuffle(shapeable, dice)
+	var kinds: Array = SHAPE_MIN.keys()
+	var turn := 0
+	for b: Dictionary in shapeable.slice(0, roundi(shapeable.size() * SHAPE_CHANCE)):
+		var shortest := minf(b.w, b.d)
+		for i in kinds.size():
+			var kind: String = kinds[(turn + i) % kinds.size()]
+			if shortest >= SHAPE_MIN[kind]:
+				b.roof = kind
+				turn += i + 1
+				break
+		match b.roof:
+			"round":
+				if maxf(b.w, b.d) / shortest <= ROTUNDA_ASPECT and dice.randf() < ROTUNDA_DOME_CHANCE:
+					b.dome = minf(_round_radius(b) - 1.5, DOME_MAX)
+			"domed":
+				b.dome = minf(shortest / 2.0 - 1.0, DOME_MAX)
+			"stepped":
+				b.tiers = 2 if shortest - 4.0 * SETBACK >= 10.0 else 1
+			"courtyard":
+				b.side = ["N", "S", "W", "E"][dice.randi() % 4]
+			"winged":
+				b.side = ["NW", "NE", "SW", "SE"][dice.randi() % 4]
+
+
+## A round building's radius (or its rounded ends').
+func _round_radius(b: Dictionary) -> float:
+	return minf(b.w, b.d) / 2.0 - 0.5
 
 
 ## Cuts `r` in two with an alley, `at` (0..1) of the way across (along x if `along_x`).
@@ -698,6 +775,87 @@ func _write_terrace(b: Dictionary) -> void:
 		at += width + (lanes[i] if i < lanes.size() else 0.0)
 
 
+## What's added to (or cut out of) plain box `b` for its shape (see _pick_shape()).
+func _write_shape(b: Dictionary) -> void:
+	if b.roof == "sawtooth":
+		_write_sawtooth(b)
+	if b.roof in ["flat", "sawtooth"]:
+		return
+	_mark_shape(b)
+	var height: float = b.storeys * STOREY
+	var middle := _middle(b)
+	var centre := Vector3(middle.x, height / 2.0, middle.y)
+	match b.roof:
+		"domed":
+			_write_dome(b)
+		"stepped":
+			var tier := TIER_STOREYS * STOREY
+			for k in range(1, b.tiers + 1):
+				_shape_node("CSGBox3D", "Tier%d" % k, "Buildings/" + b.name, Vector3(0, height / 2.0 + (k - 0.5) * tier, 0),
+						"size = Vector3(%s, %s, %s)" % [_num(b.w - 2.0 * SETBACK * k), _num(tier), _num(b.d - 2.0 * SETBACK * k)])
+		"courtyard":
+			_cut(b, "Courtyard", centre, Vector3(b.w - 2.0 * COURT_RING, height + 2.0, b.d - 2.0 * COURT_RING))
+			# The arch: from the street right through the ring into the yard.
+			var at: Vector2
+			match b.side:
+				"N": at = Vector2(middle.x, b.z + COURT_RING / 2.0)
+				"S": at = Vector2(middle.x, b.z + b.d - COURT_RING / 2.0)
+				"W": at = Vector2(b.x + COURT_RING / 2.0, middle.y)
+				"E": at = Vector2(b.x + b.w - COURT_RING / 2.0, middle.y)
+			var size := Vector2(ARCH.x, COURT_RING + 1.0) if b.side in ["N", "S"] else Vector2(COURT_RING + 1.0, ARCH.x)
+			_cut(b, "Arch" + b.side, Vector3(at.x, (ARCH.y - 0.5) / 2.0, at.y), Vector3(size.x, ARCH.y + 0.5, size.y))
+			_doorways.append(Rect2(at - size / 2.0, size)) # (The pavement keeps clear in front of it.)
+		"winged":
+			# The corner cut out (from just outside the walls, to cut cleanly).
+			var cut := Vector2(b.w * NOTCH + 1.0, b.d * NOTCH + 1.0)
+			var x: float = b.x - 1.0 + cut.x / 2.0 if "W" in b.side else b.x + b.w + 1.0 - cut.x / 2.0
+			var z: float = b.z - 1.0 + cut.y / 2.0 if "N" in b.side else b.z + b.d + 1.0 - cut.y / 2.0
+			_cut(b, "Notch", Vector3(x, height / 2.0, z), Vector3(cut.x, height + 2.0, cut.y))
+
+
+## A round building (see ROTUNDA_ASPECT): a cylinder on a squarish lot (maybe
+## with a dome), or on a long one a box with a half-round end each way.
+func _write_round(b: Dictionary) -> void:
+	var height: float = b.storeys * STOREY
+	var middle := _middle(b)
+	var centre := Vector3(middle.x, height / 2.0, middle.y)
+	var r := _round_radius(b)
+	var cylinder := "radius = %s\nheight = %s\nsides = 48" % [_num(r), _num(height)]
+	var long := maxf(b.w, b.d)
+	if long / minf(b.w, b.d) <= ROTUNDA_ASPECT:
+		_shape_node("CSGCylinder3D", b.name, "Buildings", centre, cylinder, true)
+		_mark_shape(b)
+		if b.dome > 0.0:
+			_write_dome(b)
+		return
+	var along := Vector3.RIGHT if b.w > b.d else Vector3.BACK
+	var size := along * (long - 2.0 * r) + (Vector3.ONE - along - Vector3.UP) * 2.0 * r + Vector3.UP * height
+	_box(b.name, "Buildings", centre.x, centre.y, centre.z, size.x, size.y, size.z, "4_building")
+	_mark_shape(b)
+	for end in [-1.0, 1.0]:
+		_shape_node("CSGCylinder3D", "End%d" % (1 if end < 0.0 else 2), "Buildings/" + b.name, along * end * (long / 2.0 - r), cylinder)
+
+
+## A shallow dome (radius b.dome) in the middle of `b`'s roof, its middle
+## sunk DOME_SINK of that under it.
+func _write_dome(b: Dictionary) -> void:
+	var height: float = b.storeys * STOREY
+	_shape_node("CSGSphere3D", "Dome", "Buildings/" + b.name, Vector3(0, height / 2.0 - DOME_SINK * b.dome, 0),
+			"radius = %s\nradial_segments = 48\nrings = 24" % _num(b.dome))
+
+
+## A CSG shape node (`type`) at `at` (in its parent), with `properties`; on
+## its own (`solid`: with collision), or added into its parent.
+func _shape_node(type: String, name: String, parent: String, at: Vector3, properties: String, solid := false) -> void:
+	_out.append("\n[node name=\"%s\" type=\"%s\" parent=\"%s\"]\ntransform = %s\n%s%s\nmaterial = ExtResource(\"4_building\")" % [
+			name, type, parent, _at(at.x, at.y, at.z), "use_collision = true\n" if solid else "", properties])
+
+
+## Notes `b`'s shape on the building just written (tests tell them apart by it).
+func _mark_shape(b: Dictionary) -> void:
+	_out[_out.size() - 1] += "\nmetadata/shape = \"%s\"" % b.roof
+
+
 ## A sawtooth roof along the building's longer side (see SAWTOOTH_CHANCE).
 func _write_sawtooth(b: Dictionary) -> void:
 	var dice := RandomNumberGenerator.new()
@@ -953,7 +1111,32 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 					height = (b.storeys - 2) * STOREY + RELIC_HOVER
 		if height > 0.0:
 			inside_ones.append({"name": "RelicInside" + b.name, "at": Vector3(inside.x, height, inside.y), "pillar": 0.0, "on": ""})
-	candidates = inside_ones + candidates
+	# On the shapes (next): over a dome's top, on the top tier, on a round
+	# roof, and hanging over a courtyard (jump out off the roof to it).
+	var shape_ones := []
+	for b: Dictionary in buildings:
+		var middle := _middle(b)
+		var roof: float = b.storeys * STOREY
+		var height := -1.0
+		if b.dome > 0.0:
+			height = roof + b.dome * (1.0 - DOME_SINK) + RELIC_HOVER
+		else:
+			match b.roof:
+				"stepped": height = roof + b.tiers * TIER_STOREYS * STOREY + RELIC_HOVER
+				"round": height = roof + RELIC_HOVER
+				"courtyard": height = roof - 1.0
+		if height > 0.0:
+			shape_ones.append({"name": "RelicOn" + b.name, "at": Vector3(middle.x, height, middle.y), "pillar": 0.0, "on": b.name})
+		# And one high over its top: floating over a dome, else on a tall pillar.
+		if b.roof in SHAPE_MIN and b.roof != "courtyard":
+			var top := height - RELIC_HOVER if height > 0.0 else roof
+			var spot := middle + Vector2(2.0, 2.0) # (Off the middle: room round a pillar.)
+			if b.dome > 0.0 or b.roof == "winged":
+				shape_ones.append({"name": "RelicOver" + b.name, "at": Vector3(middle.x, top + FLOAT_HEIGHT, middle.y), "pillar": 0.0, "on": b.name})
+			else:
+				var pillar: float = PILLAR_HEIGHTS[3]
+				shape_ones.append({"name": "RelicOver" + b.name, "at": Vector3(spot.x, top + pillar + RELIC_HOVER, spot.y), "pillar": pillar, "base": top, "on": b.name})
+	candidates = inside_ones + shape_ones + candidates
 	# Down in the streets between blocks.
 	for i in 6:
 		var block := Vector2i(dice.randi_range(0, BLOCKS - 2), dice.randi_range(0, BLOCKS - 1))
@@ -972,28 +1155,34 @@ func _pick_relics(needed: Dictionary) -> Array:
 	for fixed in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway", "RelicTunnel"]:
 		have[needed[fixed]] = have.get(needed[fixed], 0) + 1
 	var picked := []
+	var used := {} # (One to a building.)
 	for candidate: Dictionary in _extra_relics:
 		var players: int = needed.get(candidate.name, 0)
+		if candidate.on != "" and used.has(candidate.on):
+			continue
 		if needed.has(candidate.name) and RELICS_WANTED.has(players) and have.get(players, 0) < RELICS_WANTED[players]:
+			used[candidate.on] = true
 			have[players] = have.get(players, 0) + 1
 			picked.append(candidate)
 	return picked
 
 
 ## Writes _extra_relics (and their pillars), skipping any on a roof that has a
-## marker or a fixed relic already. Returns how many it wrote.
+## marker or a fixed relic already (not one of these: while measuring them
+## all, a building can have more than one). Returns how many it wrote.
 func _write_extra_relics(buildings: Array[Dictionary]) -> int:
 	var count := 0
+	var markers := _marker_spots.duplicate()
 	for candidate: Dictionary in _extra_relics:
 		var b: Dictionary = {}
 		for building in buildings:
 			if building.name == candidate.on:
 				b = building
-		if not b.is_empty() and _marker_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)):
+		if not b.is_empty() and markers.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)):
 			continue
 		var at: Vector3 = candidate.at
 		if candidate.pillar > 0.0:
-			var roof: float = b.storeys * STOREY
+			var roof: float = candidate.get("base", b.storeys * STOREY) # (On a tier, the top one.)
 			_box("Pillar" + b.name, "Pillars", at.x, roof + candidate.pillar / 2.0, at.z, PILLAR, candidate.pillar, PILLAR, "4_building")
 			_pillar_spots.append(Vector2(at.x, at.z))
 		_relic(candidate.name, at, not b.is_empty())
@@ -1465,3 +1654,12 @@ func _write_vaults(b: Dictionary, floor_y: float, count: int, dice: RandomNumber
 		placed.append(footprint)
 		_box("%s_Vault%d" % [b.name, placed.size()], "Interiors", at.x, floor_y + VAULT_BOX.y / 2.0, at.y,
 				size.x, VAULT_BOX.y, size.y, "9_vault")
+
+
+## True if one of `b`'s walls faces across an avenue.
+func _on_avenue(b: Dictionary) -> bool:
+	var side := AVENUE / 2.0 # (The avenues run either side of the plaza's middle lines.)
+	for edge: float in [b.x, b.x + b.w, b.z, b.z + b.d]:
+		if is_equal_approx(absf(edge), side):
+			return true
+	return false

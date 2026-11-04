@@ -212,9 +212,9 @@ func test_every_ordinary_roof_can_be_reached_alone() -> void:
 	var street := map.place_under(Vector3(0, 0.5, 0))
 	var from_street := map.solve(street, 1)
 	var missing := []
-	for b: CSGBox3D in main.level.get_node("Buildings").get_children():
+	for b: CSGShape3D in main.level.get_node("Buildings").get_children():
 		var roof := map.place_named(b.name)
-		if b.size.y < 30.0 and not (reached.has(roof) and from_street.has(roof)):
+		if ReachMap._bounds(b).size.y < 30.0 and not (reached.has(roof) and from_street.has(roof)):
 			missing.append(b.name)
 	expect(missing.is_empty(), "every roof but the towers should be reachable alone, from the start and from the street: %s" % [missing])
 
@@ -241,8 +241,8 @@ func test_every_drainpipe_sill_column_and_vent_is_a_way_up() -> void:
 func test_you_can_climb_every_tower_from_the_inside() -> void:
 	await _load_district()
 	var map := ReachMap.build(main.level, SUPERHUMAN)
-	for b: CSGBox3D in main.level.get_node("Buildings").get_children():
-		if b.size.y < 30.0:
+	for b: CSGShape3D in main.level.get_node("Buildings").get_children():
+		if ReachMap._bounds(b).size.y < 30.0:
 			continue
 		var roof := map.place_named(b.name)
 		expect(map.players_needed(roof, _spawn(map), []) == 1, "%s is a tower: you can climb it alone, inside" % b.name)

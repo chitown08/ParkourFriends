@@ -189,35 +189,149 @@ func scramble_height(takeoff_height: float) -> float:
 	return takeoff_height + moves.wall_scramble_speed * moves.wall_scramble_time - SCRAMBLE_LOSS
 
 
+# --- Places: the tops of things ----------------------------------------------
+# Anything solid is made of shapes: a box, an upright cylinder (a round
+# building, a turret), or a sphere (a dome). A building can be several of them
+# joined (a wing, a tier set back on top, a dome on the roof: shapes added into
+# it), with holes cut out (see _find_solids()). Each shape's top is a place:
+# - a box's: its top, less any hole cut down through it and anything else of
+#   the building standing on it (split into rectangles where it has to be);
+# - a cylinder's: two rectangles crossed, about filling its circle;
+# - a dome's: just its crown, DOME_CROWN below the very top (lower down it's
+#   too steep to stand, or you'd slide down to the roof it's on anyway).
+# Named after the shape, or "<building>/<shape>" for one added into a building;
+# a top split in pieces gives "#2", "#3"... to the smaller ones.
+
+## A dome's crown (the place on top of it) is this far down from its very top.
+const DOME_CROWN := 0.5
+
+
 func _find_places(root: Node) -> void:
-	for node in root.find_children("*", "CSGBox3D", true, false):
-		var box := node as CSGBox3D
-		if box.operation == CSGShape3D.OPERATION_SUBTRACTION and box.name.begins_with("Room"):
-			_add_room_floor(box)
+	for node in root.find_children("*", "CSGShape3D", true, false):
+		var shape := node as CSGShape3D
+		if shape is CSGBox3D and shape.operation == CSGShape3D.OPERATION_SUBTRACTION and shape.name.begins_with("Room"):
+			_add_room_floor(shape)
 			continue
-		if not box.use_collision or not box.is_visible_in_tree():
+		if not _is_part(shape):
 			continue
-		var size := box.size * box.global_basis.get_scale()
-		if size.x * size.z < MIN_PLACE_AREA:
+		var top := _top_of(shape)
+		if top.is_empty():
 			continue
-		var spot := Spot.new()
-		spot.name = str(box.name)
-		var corner := box.global_position - size / 2.0
-		spot.area = Rect2(corner.x, corner.z, size.x, size.z)
-		spot.y = box.global_position.y + size.y / 2.0
-		spot.node = box
-		places.append(spot)
+		var y: float = top[0]
+		var pieces: Array[Rect2] = []
+		for area: Rect2 in top[1]:
+			pieces.append_array(_uncovered(area, y, shape))
+		pieces = pieces.filter(func(area: Rect2) -> bool: return area.get_area() >= MIN_PLACE_AREA)
+		pieces.sort_custom(func(a: Rect2, b: Rect2) -> bool: return a.get_area() > b.get_area())
+		var root_shape := _csg_root(shape)
+		var base_name := str(shape.name) if shape == root_shape else "%s/%s" % [root_shape.name, shape.name]
+		for i in pieces.size():
+			var spot := Spot.new()
+			spot.name = base_name if i == 0 else "%s#%d" % [base_name, i + 1]
+			spot.area = pieces[i]
+			spot.y = y
+			spot.node = shape
+			places.append(spot)
+
+
+## Whether `shape` is part of something you can stand on: a CSG shape with
+## collision on its own, or one added into one (not a hole, nor in a hole).
+static func _is_part(shape: CSGShape3D) -> bool:
+	if shape.operation != CSGShape3D.OPERATION_UNION or not shape.is_visible_in_tree():
+		return false
+	var parent := shape.get_parent() as CSGShape3D
+	return shape.use_collision if parent == null else _is_part(parent)
+
+
+## The outermost CSG shape `shape` is part of (itself, on its own).
+static func _csg_root(shape: CSGShape3D) -> CSGShape3D:
+	while shape.get_parent() is CSGShape3D:
+		shape = shape.get_parent()
+	return shape
+
+
+## [height, the rectangles (from above) you can stand on] of `shape`'s top, or
+## [] if it hasn't one (a lying-down cylinder, a cone...).
+static func _top_of(shape: CSGShape3D) -> Array:
+	var scale := shape.global_basis.get_scale()
+	var at := shape.global_position
+	if shape is CSGBox3D:
+		var box := _bounds(shape)
+		return [box.end.y, [Rect2(box.position.x, box.position.z, box.size.x, box.size.z)]]
+	if shape is CSGCylinder3D:
+		var cylinder := shape as CSGCylinder3D
+		if cylinder.cone or not _upright(shape):
+			return []
+		var r := cylinder.radius * scale.x
+		var long := r * cos(PI / 8.0)
+		var short := r * sin(PI / 8.0)
+		return [at.y + cylinder.height * scale.y / 2.0,
+				[Rect2(at.x - long, at.z - short, 2.0 * long, 2.0 * short),
+				Rect2(at.x - short, at.z - long, 2.0 * short, 2.0 * long)]]
+	if shape is CSGSphere3D:
+		var r := (shape as CSGSphere3D).radius * scale.x
+		if r <= DOME_CROWN:
+			return []
+		var half := sqrt(r * r - (r - DOME_CROWN) * (r - DOME_CROWN)) / sqrt(2.0) # (A square in the crown's circle.)
+		return [at.y + r - DOME_CROWN, [Rect2(at.x - half, at.z - half, 2.0 * half, 2.0 * half)]]
+	return []
+
+
+static func _upright(shape: Node3D) -> bool:
+	return shape.global_basis.y.normalized().dot(Vector3.UP) > 0.99
+
+
+## The bits of `area` (a top at height `y`, of `shape`) not covered: by a hole
+## in its building cut down through it, or by another of the building's
+## shapes standing on it or rising past it (a tier, a turret, a taller wing;
+## not a dome: you run up that).
+func _uncovered(area: Rect2, y: float, shape: CSGShape3D) -> Array[Rect2]:
+	var pieces: Array[Rect2] = [area]
+	var root_shape := _csg_root(shape)
+	for node in [root_shape] + root_shape.find_children("*", "CSGShape3D", true, false):
+		var other := node as CSGShape3D
+		if other == shape or other is CSGSphere3D:
+			continue
+		var is_hole := other is CSGBox3D and other.operation == CSGShape3D.OPERATION_SUBTRACTION
+		if not is_hole and not _is_part(other):
+			continue
+		var bounds := _bounds(other)
+		if bounds.position.y > y + 0.05 or bounds.end.y <= y + 0.05:
+			continue # (Not through this height.)
+		var cut := Rect2(bounds.position.x, bounds.position.z, bounds.size.x, bounds.size.z)
+		var left: Array[Rect2] = []
+		for piece in pieces:
+			left.append_array(_minus(piece, cut))
+		pieces = left
+	return pieces
+
+
+## What's left of `a` with `b` taken out of it (up to four rectangles).
+static func _minus(a: Rect2, b: Rect2) -> Array[Rect2]:
+	if not a.intersects(b):
+		return [a]
+	var cut := a.intersection(b)
+	var left: Array[Rect2] = []
+	if cut.position.y > a.position.y: # (A strip the whole width, before it...)
+		left.append(Rect2(a.position.x, a.position.y, a.size.x, cut.position.y - a.position.y))
+	if cut.end.y < a.end.y: # (...and after it.)
+		left.append(Rect2(a.position.x, cut.end.y, a.size.x, a.end.y - cut.end.y))
+	if cut.position.x > a.position.x: # (And beside it, either side.)
+		left.append(Rect2(a.position.x, cut.position.y, cut.position.x - a.position.x, cut.size.y))
+	if cut.end.x < a.end.x:
+		left.append(Rect2(cut.end.x, cut.position.y, a.end.x - cut.end.x, cut.size.y))
+	return left.filter(func(r: Rect2) -> bool: return r.size.x > 0.01 and r.size.y > 0.01)
 
 
 ## A room cut out of a building (a "Room..." hole, see _find_solids()): its
 ## floor is a place, unless it goes right down to the ground (then the ground's
 ## the floor). Named "<building>/<room>".
 func _add_room_floor(hole: CSGBox3D) -> void:
-	var building := hole.get_parent() as CSGBox3D
+	var building := hole.get_parent() as CSGShape3D
 	if building == null:
 		return
-	var room := _aabb_of(hole)
-	if room.position.y <= _aabb_of(building).position.y + 0.1 or room.size.x * room.size.z < MIN_PLACE_AREA:
+	var room := _bounds(hole)
+	if room.position.y <= _bounds(building).position.y + 0.1 or room.size.x * room.size.z < MIN_PLACE_AREA:
 		return
 	var spot := Spot.new()
 	spot.name = "%s/%s" % [building.name, hole.name]
@@ -254,9 +368,10 @@ func _find_targets(root: Node) -> void:
 
 
 # --- Walls and ceilings in the way -------------------------------------------
-# Buildings (boxes in a "Buildings" node, or in the reach_solid group) are solid,
-# except for the holes cut out of them (rooms, doorways, windows: child boxes
-# that subtract). A link only counts if there's a way between its two spots
+# Buildings (CSG shapes in a "Buildings" node, or in the reach_solid group:
+# boxes, upright cylinders, spheres, and those added into them) are solid,
+# except for the holes cut out of them (rooms, doorways, windows, courtyards:
+# child boxes that subtract). A link only counts if there's a way between its two spots
 # that doesn't go through one (see path_clear()).
 
 ## Seen from above, the solids are sorted into squares this big (metres), for
@@ -267,9 +382,36 @@ const PATH_STEP := 0.4
 ## How far up off a place your middle is (what a path runs from and to).
 const PATH_MIDDLE := 0.9
 
+## Something solid: a building, its shapes joined, less its holes.
 class Solid:
-	var box: AABB
+	var parts: Array[Volume] = []
 	var holes: Array[AABB] = []
+	var bounds: AABB
+
+## One shape of a solid: a box, an upright cylinder or a sphere.
+class Volume:
+	var bounds: AABB
+	var kind := &"box"
+
+	static func of(shape: CSGShape3D) -> Volume:
+		if shape is CSGCylinder3D and ((shape as CSGCylinder3D).cone or not ReachMap._upright(shape)):
+			return null
+		if not (shape is CSGBox3D or shape is CSGCylinder3D or shape is CSGSphere3D):
+			return null
+		var volume := Volume.new()
+		volume.bounds = ReachMap._bounds(shape)
+		volume.kind = &"cylinder" if shape is CSGCylinder3D else (&"sphere" if shape is CSGSphere3D else &"box")
+		return volume
+
+	func has_point(point: Vector3) -> bool:
+		if not bounds.has_point(point):
+			return false
+		var middle := bounds.get_center()
+		var r := bounds.size.x / 2.0
+		match kind:
+			&"cylinder": return Vector2(point.x - middle.x, point.z - middle.z).length() < r
+			&"sphere": return point.distance_to(middle) < r
+		return true
 
 var _solids: Array[Solid] = []
 var _solid_cells := {}
@@ -278,7 +420,8 @@ var _solid_cells := {}
 ## Whether `point` is inside a building's solid part (not one of its holes).
 func is_solid(point: Vector3) -> bool:
 	for solid: Solid in _solid_cells.get(_cell(point), []):
-		if solid.box.has_point(point) and not solid.holes.any(func(hole: AABB) -> bool: return hole.has_point(point)):
+		if solid.parts.any(func(part: Volume) -> bool: return part.has_point(point)) \
+				and not solid.holes.any(func(hole: AABB) -> bool: return hole.has_point(point)):
 			return true
 	return false
 
@@ -319,15 +462,25 @@ func path_clear(from: Spot, to: Spot) -> bool:
 
 ## Where to set off from `from` toward `to`: the nearest point first, then
 ## along its edges (just inside and just past them), and round `to`'s
-## footprint where it's over `from` (only those within `near` of `to`).
+## footprint where it's over `from`, or round `from`'s where it's over `to`
+## (only those within `near` of `to`).
 func _samples(from: Spot, to: Spot, near: float) -> Array[Vector2]:
 	var points: Array[Vector2] = [_closest_in(from.area, to.area.get_center())]
 	for grow in [-0.25, 0.5]:
 		points.append_array(_round(from.area.grow(grow)))
-	for grow in [0.4, 2.0]:
+	# Onto something over `from` (a hatch, a tier, a dome's crown): from a
+	# little way out round it (further, round something on top of it).
+	for grow in [0.4, 2.0, 4.0, 6.0] if from.area.encloses(to.area) else [0.4, 2.0]:
 		for point in _round(to.area.grow(grow)):
 			if from.area.has_point(point):
 				points.append(point)
+	# And the other way: off something on top of `to`, landing a little way
+	# out from it (running or jumping off it).
+	if to.area.encloses(from.area):
+		for grow in [2.0, 4.0, 6.0]:
+			for point in _round(from.area.grow(grow)):
+				if to.area.has_point(point):
+					points.append(point)
 	return points.filter(func(point: Vector2) -> bool: return _distance_to(to.area, point) <= near)
 
 
@@ -359,23 +512,40 @@ func _cell(point: Vector3) -> Vector2i:
 
 
 func _find_solids(root: Node) -> void:
-	for node in root.find_children("*", "CSGBox3D", true, false):
-		var box := node as CSGBox3D
-		if not box.use_collision or not (box.get_parent().name == &"Buildings" or box.is_in_group(&"reach_solid")):
+	for node in root.find_children("*", "CSGShape3D", true, false):
+		var shape := node as CSGShape3D
+		if shape.get_parent() is CSGShape3D or not shape.use_collision \
+				or not (shape.get_parent().name == &"Buildings" or shape.is_in_group(&"reach_solid")):
 			continue
 		var solid := Solid.new()
-		solid.box = _aabb_of(box)
-		for child in box.get_children():
-			if child is CSGBox3D and (child as CSGBox3D).operation == CSGShape3D.OPERATION_SUBTRACTION:
-				solid.holes.append(_aabb_of(child))
+		for part_node in [shape] + shape.find_children("*", "CSGShape3D", true, false):
+			var part := part_node as CSGShape3D
+			if _is_part(part):
+				var volume := Volume.of(part)
+				if volume != null:
+					solid.parts.append(volume)
+					solid.bounds = volume.bounds if solid.parts.size() == 1 else solid.bounds.merge(volume.bounds)
+			elif part is CSGBox3D and part.operation == CSGShape3D.OPERATION_SUBTRACTION:
+				solid.holes.append(_bounds(part))
+		if solid.parts.is_empty():
+			continue
 		_solids.append(solid)
-		for x in range(floori(solid.box.position.x / SOLID_CELL), floori(solid.box.end.x / SOLID_CELL) + 1):
-			for z in range(floori(solid.box.position.z / SOLID_CELL), floori(solid.box.end.z / SOLID_CELL) + 1):
+		for x in range(floori(solid.bounds.position.x / SOLID_CELL), floori(solid.bounds.end.x / SOLID_CELL) + 1):
+			for z in range(floori(solid.bounds.position.z / SOLID_CELL), floori(solid.bounds.end.z / SOLID_CELL) + 1):
 				if not _solid_cells.has(Vector2i(x, z)):
 					_solid_cells[Vector2i(x, z)] = []
 				_solid_cells[Vector2i(x, z)].append(solid)
 
 
-static func _aabb_of(box: CSGBox3D) -> AABB:
-	var size := box.size * box.global_basis.get_scale()
-	return AABB(box.global_position - size / 2.0, size)
+## The box round `shape` (a box, an upright cylinder or a sphere), in the world.
+static func _bounds(shape: CSGShape3D) -> AABB:
+	var scale := shape.global_basis.get_scale()
+	var size := Vector3.ZERO
+	if shape is CSGBox3D:
+		size = (shape as CSGBox3D).size * scale
+	elif shape is CSGCylinder3D:
+		var r := (shape as CSGCylinder3D).radius * scale.x
+		size = Vector3(2.0 * r, (shape as CSGCylinder3D).height * scale.y, 2.0 * r)
+	elif shape is CSGSphere3D:
+		size = Vector3.ONE * 2.0 * (shape as CSGSphere3D).radius * scale.x
+	return AABB(shape.global_position - size / 2.0, size)

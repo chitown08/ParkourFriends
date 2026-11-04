@@ -62,7 +62,9 @@ func test_free_run_slides_and_hops_along_an_old_town_terrace() -> void:
 
 
 func test_free_run_crosses_a_sawtooth_shed_either_way() -> void:
-	var shed := _sawtooth_sheds()[0]
+	var sheds := _sawtooth_sheds()
+	sheds.sort_custom(func(a: CSGPolygon3D, b: CSGPolygon3D) -> bool: return _width(a) > _width(b))
+	var shed := sheds[0] # (The longest: room to land past the finish.)
 	var axis := shed.global_basis.x
 	var length := _width(shed)
 	var slid := false
