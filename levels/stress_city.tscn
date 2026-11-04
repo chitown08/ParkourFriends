@@ -1,0 +1,41 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://levels/stress_city.gd" id="1_city"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.22, 0.46, 0.85, 1)
+sky_horizon_color = Color(0.78, 0.86, 0.95, 1)
+ground_bottom_color = Color(0.5, 0.52, 0.56, 1)
+ground_horizon_color = Color(0.78, 0.86, 0.95, 1)
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("Sky_main")
+ambient_light_source = 2
+ambient_light_color = Color(0.85, 0.88, 0.92, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+ssao_enabled = true
+fog_enabled = true
+fog_light_color = Color(0.82, 0.88, 0.95, 1)
+fog_density = 0.0004
+
+[node name="StressCity" type="Node3D"]
+script = ExtResource("1_city")
+kill_height = -20.0
+music_folder = "res://audio/music/rooftop_test/"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.383, 0.3214, 0, 0.6428, 0.766, -0.5, -0.6634, 0.5567, 0, 400, 0)
+light_energy = 1.0
+shadow_enabled = true
+directional_shadow_max_distance = 300.0
+
+[node name="SpawnPoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 150.05, 12)

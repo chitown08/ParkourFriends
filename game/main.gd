@@ -21,6 +21,7 @@ const WORLDS := {
 	"rooftop_district": "res://levels/rooftop_district.tscn",
 	"free_run_line": "res://levels/free_run_line.tscn",
 	"test_course": "res://levels/test_course.tscn",
+	"stress_city": "res://levels/stress_city.tscn",
 }
 const DEFAULT_WORLD := "rooftop_district"
 ## What the start menu calls each world: the playground, then the training grounds.
@@ -28,6 +29,7 @@ const WORLD_NAMES := {
 	"rooftop_district": "Rooftop District",
 	"free_run_line": "Training: Free-Run Line",
 	"test_course": "Training: Test Course",
+	"stress_city": "Test: Stress City (3 km)",
 }
 ## Movement feels you can pick in the pause menu.
 const PROFILES := {

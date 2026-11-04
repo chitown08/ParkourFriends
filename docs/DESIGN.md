@@ -429,3 +429,26 @@ dome's crown, `DOME_CROWN` under its top), named after it or "Building/Part" (pi
 ...); cylinders and spheres are round when it checks a path is clear; and getting onto or off
 something on top of a place, it tries taking off or landing a few metres out round it (a dome's foot).
 Next: a church or cathedral (steep roofs, a spire), curvy walls (a museum), parking garages, hallways.
+
+## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
+
+How big can a one-load world go? A throwaway city built in code as it loads (in the start menu as
+"Test: Stress City"): the old town round the west rising to a 150 m round hub tower with a beacon,
+and a futuristic quarter to the east (40-200 m, two at 260 and 300 m, round, stepped, hollow ones
+with sky lobbies, glass bridges over the avenues, whole-block halls). Each 300 m chunk's buildings
+are joined and baked into one mesh and one collision shape (`CSGShape3D.bake_static_mesh()`).
+Measured 4 Nov 2026 (RTX 4070, Ryzen 9800X3D, 1920x1080, vsync off; worst view = the whole city from above):
+
+| Across | Buildings | Load (built + baked at load) | Worst view | Memory |
+|---|---|---|---|---|
+| 3 km | 4,100 | 5 s | 1,300 fps, 270 draw calls | 200 MB |
+| 6 km | 16,300 | 18 s | 900 fps, 1,100 draw calls | 460 MB |
+| 10 km | 44,900 | 51 s | 470 fps, 3,100 draw calls | 1.1 GB |
+
+Not baked (each building its own CSG shape, like the rooftop district), 3 km: 420 fps from above
+(4,400 draw calls), so baking matters as it grows. Occluders (hiding what's behind buildings) cost
+more than they saved here. What it means: drawing isn't the limit at any of these sizes (and these
+are plain boxes: real art will cost more, but there's lots of room). The limits are load time (bake
+ahead and ship the meshes, or load chunks as you go, rather than building at load), the
+reachability checker (it compares every place with every other: it needs sorting by area before a
+city this size), and how much there is to fill: 10 km is 11 minutes across at full flow.
