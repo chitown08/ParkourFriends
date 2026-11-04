@@ -184,3 +184,21 @@ func test_run_off_the_end_of_the_wall() -> void:
 	await ticks(30)
 	expect(player.state.name != &"PipeRun", "past the end of the tube you're off its wall (%s)" % player.state.name)
 	expect(player.global_position.z < pipe.global_position.z - pipe.length, "flying out of the end: z = %.1f" % player.global_position.z)
+
+
+## What you'd really do: free-run in along the tube at full flow, then turn
+## the camera across it.
+func test_run_in_along_it_then_turn_across_and_you_go_round() -> void:
+	await place(pipe.surface_point(2.0, 0.0) + Vector3.UP * 0.05, FACE_NORTH)
+	player.debug_full_flow = true
+	Input.action_press(&"free_run")
+	await ticks(60)
+	player.camera_rig.yaw = -PI / 2.0 + 0.4 # Turned across, still a little along it.
+	var most := 0.0
+	for i in 60 * 3:
+		await ticks(1)
+		if player.state.name == &"PipeRun":
+			most = maxf(most, absf(rad_to_deg(pipe.locate(player.global_position).y)))
+	release_all()
+	player.debug_full_flow = false
+	expect(most > 175.0, "turned across at full flow: over the top, %.0f°" % most)

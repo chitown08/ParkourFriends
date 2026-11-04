@@ -143,3 +143,16 @@ func _gates(gold: bool) -> Array[RunGate]:
 		if gate.gold == gold:
 			found.append(gate)
 	return found
+
+
+func test_finishing_gets_a_party() -> void:
+	await _start_run()
+	for gate in _gates(false):
+		await _go_through(gate)
+	await ticks(2)
+	var said: String = main.hud.get_node("Message").text
+	expect(said.begins_with("Run complete!"), "the crew's told: '%s'" % said)
+	var lights_before := get_viewport().find_children("*", "OmniLight3D", true, false).size()
+	expect(get_viewport().find_children("*", "CPUParticles3D", true, false).size() > 0, "confetti over the finish")
+	await ticks(90)
+	expect(get_viewport().find_children("*", "OmniLight3D", true, false).size() > lights_before, "and fireworks")

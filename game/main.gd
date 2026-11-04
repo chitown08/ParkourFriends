@@ -404,6 +404,7 @@ func _on_world_ready(new_level: Level) -> void:
 	for run: GroupRun in get_tree().get_nodes_in_group(&"group_runs"):
 		if level.is_ancestor_of(run):
 			run.rewards_earned.connect(_save_progress)
+			run.finished.connect(func(news: String) -> void: hud.show_message(news))
 	if multiplayer.is_server():
 		_load_progress()
 	_show_relics()

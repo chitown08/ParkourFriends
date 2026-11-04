@@ -46,6 +46,12 @@ func physics_update(delta: float) -> void:
 	var speed := Vector2(_along_speed, _round_speed)
 	if wish.length() > 0.3:
 		wish = wish.normalized()
+		# Turn the way you're steering, keeping your speed: run in along the
+		# tube, turn across it, and all that speed takes you round. (Not back
+		# round once you're sliding back down: that's gravity's.)
+		var turn := speed.angle_to(wish)
+		if speed.length() > 0.1 and absf(turn) < PI / 2.0:
+			speed = speed.rotated(clampf(turn, -Pipe.TURN * delta, Pipe.TURN * delta))
 		var going := speed.dot(wish)
 		var top := player.top_speed()
 		if going < top:

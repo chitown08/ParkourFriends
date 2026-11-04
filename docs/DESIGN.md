@@ -234,7 +234,7 @@ gates are the route: each of you goes through the lit one (it becomes your check
 only lights once the whole crew is through ("Waiting for Bo" over it). Gold gates are extras put
 somewhere hard: one of you through is enough. When the crew is all through the last white gate, the
 run's relics appear there (locked `WorldItem`s, `locked = true`, until then): one for finishing the
-first time, and one for each gold gate got this run that hadn't been before. Only finishing pays;
+first time, and one for each gold gate got this run that hadn't been before. Only finishing pays; finishing also sets off a party over the last gate for everyone (`celebrate()`: fireworks, lots if you got a gold gate) with "Run complete!" on screen;
 runs can be done again. Someone joining or leaving mid-run ends it (start again together). The host
 decides; each computer reports its own player going through gates. The reachability checker treats
 gates as targets: white gates must take one player, gold gates more (`tests/test_group_run.gd`). The
@@ -306,7 +306,7 @@ camera points, so point it across the tube to go round). Gravity round the wall 
 and running pushes you on at 3 m/s² (up to your top speed). You stay on while your speed round
 holds you there (v² / r >= g down the wall), so near the ceiling too slow and you drop off; slower
 still, you swing back down like a half-pipe. Jump: off the wall, in toward the middle. Your body
-leans with the wall (upside down on the ceiling) and the camera stays on your head's side.
+leans with the wall (upside down on the ceiling) and the camera stays on your head's side. Steering turns you on the wall (up to 3 rad/s, keeping your speed, not while sliding back down), so running in along the tube at full flow and turning the camera across takes you round.
 `Pipe.loop_speed()` is the speed round at the bottom to make it over the top (a calibration test
 plays either side of it): 11.8 m/s for the 4.5 m road tunnel (full flow only), 9.7 for a 3 m glass
 tube (free-running). The district has a glass tube across each avenue, between two roofs the same

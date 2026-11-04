@@ -17,6 +17,9 @@ const GRAVITY := 10.0
 ## ...and running pushes you on (m/s², while you steer the way you're going,
 ## up to your top speed).
 const PUSH := 3.0
+## ...and you turn the way you steer at up to this (radians a second), keeping
+## your speed (so running in along it and turning across takes you round).
+const TURN := 3.0
 ## You start running round it once you're this far up the side (degrees)...
 const ENTER_ANGLE := 25.0
 ## ...going at least this fast (m/s).

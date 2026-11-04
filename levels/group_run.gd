@@ -26,6 +26,9 @@ enum Phase { IDLE, COUNTDOWN, RUNNING }
 
 ## The crew finished and earned new relics (on the host).
 signal rewards_earned
+## The crew finished a run (on every computer), and what it said: "Run
+## complete!" and the relics earned.
+signal finished(news: String)
 
 ## The start ring: stand within this far (metres, across) of its middle.
 const RING_RADIUS := 4.0
@@ -132,7 +135,18 @@ func _finish() -> void:
 			earned += 1
 	if earned:
 		rewards_earned.emit()
-	_stop("Run complete! %s" % ("%d new relic%s" % [earned, "" if earned == 1 else "s"] if earned else "No new relics this time"))
+	var news := "Run complete! %s" % ("%d new relic%s" % [earned, "" if earned == 1 else "s"] if earned else "No new relics this time")
+	_stop(news)
+	celebrate.rpc(gold_got.size(), news)
+
+
+## Everyone's party over the last gate: fireworks, and lots of them if you
+## got a gold gate this run.
+@rpc("authority", "call_local", "reliable")
+func celebrate(golds: int, news: String) -> void:
+	if not _route.is_empty():
+		Celebration.play(self, _route.back().global_position, 4 if golds > 0 else 3)
+	finished.emit(news)
 
 
 func _stop(news: String) -> void:
