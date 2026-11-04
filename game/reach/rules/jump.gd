@@ -9,6 +9,9 @@ extends ReachRule
 
 ## Gaps wider than this aren't worth checking (nothing jumps them).
 const MAX_GAP := 20.0
+## Grabbing an edge from a jump, your hands meet the wall this far (metres)
+## under where they reach (see ReachMap.wall_up()).
+const GRAB_FACE := 1.5
 
 
 func add_links(map: ReachMap) -> void:
@@ -38,5 +41,7 @@ func add_links(map: ReachMap) -> void:
 				var need := rise - m.ledge_max_height if rise > 0.0 else rise
 				var distance := map.air_distance(jump[2], jump[1], need)
 				if distance >= 0.0 and (across == 0.0 or across + ReachMap.JUMP_MARGIN <= distance):
+					if rise > jump[2] and not map.wall_up(from, to, m.ledge_max_height + GRAB_FACE):
+						continue # (Grabbing the edge: not under a wall leaning out over you. A higher jump might clear it.)
 					map.add_link(from, to, jump[0] if rise > 0.0 or across > 0.0 else "drop", jump[3], 0, 0, jump[4])
 					break

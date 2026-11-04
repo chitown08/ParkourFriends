@@ -15,6 +15,8 @@ func add_links(map: ReachMap) -> void:
 			var rise := to.y - from.y
 			if from == to or rise <= 0.0 or ReachMap.gap(from, to) > NEXT_TO:
 				continue
+			if rise > map.scramble_height(hands(Player.MOST_BRACED) + m.leg_up_height) + m.ledge_max_height or not map.wall_up(from, to, rise):
+				continue # (Too tall, or it leans out over you.)
 			for braced in range(1, Player.MOST_BRACED + 1):
 				if rise <= map.scramble_height(hands(braced) + m.leg_up_height) + m.ledge_max_height:
 					map.add_link(from, to, "leg-up from %d" % braced, [], braced)

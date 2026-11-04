@@ -92,10 +92,9 @@ const TOOTH_RISE := 1.2 ## ...and this tall (low enough for free-run to flow-vau
 const GLASS_DEGREES := 75.0
 
 ## Shapes (b.roof, see _pick_shapes()): of the rest (not towers, not a block's
-## lowest, not a flat roof facing an avenue), this many aren't plain boxes or
-## sloped. Like sloped roofs, they get none of the flat roofs' things (fire
-## escapes, rails, clutter...).
-const SHAPE_CHANCE := 0.5
+## lowest, not a flat roof facing an avenue), some (STYLE_SHAPE_CHANCE) aren't
+## plain boxes or sloped. Like sloped roofs, they get none of the flat roofs'
+## things (fire escapes, rails, clutter...).
 ## "round": a rotunda (a cylinder) on a squarish lot, or rounded at both ends
 ## on a long one. Some rotundas have a dome.
 const ROTUNDA_ASPECT := 1.4
@@ -114,8 +113,33 @@ const COURT_RING := 8.0
 const ARCH := Vector2(6.0, 5.0)
 ## "winged": an L, a corner cut out, this much of each side.
 const NOTCH := 0.45
+## "turned": turned this much (degrees, either way) in its lot, as big as fits.
+const TURN_DEGREES := Vector2(12.0, 25.0)
+## "leaning": tilted this much (degrees) toward one of its sides: its top
+## slopes down that way (not enough to slide off: ReachMap.STAND_SLOPE) and that
+## wall leans out over the street (not too far to scramble up: ReachMap.WALL_LEAN).
+const LEAN_DEGREES := 6.0
+## "curved": its long sides wave in and out (this far, at most), this many
+## times along (a museum's curving walls).
+const WAVE := 3.5
+const WAVES := 1.5
+## "cantilever": its top storeys stick out this far over a street (not an
+## avenue, nor the road round the district: rails, tubes and the tunnel).
+const CANTILEVER := 3.0
+const CANTILEVER_STOREYS := 2
 ## Smallest lot (its shorter side) each shape needs.
-const SHAPE_MIN := {"round": 14.0, "domed": 16.0, "stepped": 18.0, "winged": 18.0, "courtyard": 26.0}
+const SHAPE_MIN := {"round": 14.0, "domed": 16.0, "stepped": 18.0, "winged": 18.0, "courtyard": 26.0,
+		"turned": 14.0, "leaning": 16.0, "curved": 18.0, "cantilever": 14.0}
+## Styles: the blocks in MODERN (the south-east quarter, past both avenues)
+## are modern (and denser: each split in four lots), the rest the old town. Each style has its own shapes (dealt out
+## in turn, see _pick_shapes()), and this much of its buildings that could
+## have one get one.
+const MODERN := Rect2i(3, 3, 2, 2)
+const STYLE_SHAPES := {
+	"old": ["round", "domed", "stepped", "winged", "courtyard"],
+	"modern": ["turned", "leaning", "curved", "cantilever", "round"],
+}
+const STYLE_SHAPE_CHANCE := {"old": 0.5, "modern": 1.0}
 
 ## The launch plaza: a launch roof in each avenue arm (a low building whose roof
 ## slopes down to a lip), its lip this far from the middle of the plaza, all
@@ -290,6 +314,7 @@ func _write_scene() -> String:
 		match b.roof:
 			"pitched": _write_terrace(b)
 			"round": _write_round(b)
+			"turned", "leaning", "curved": _write_modern(b)
 			_:
 				_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
 						b.w, b.storeys * STOREY, b.d, "4_building")
@@ -362,6 +387,8 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 	var whole := Rect2(_starts[bx] - _plaza_middle, _starts[bz] - _plaza_middle, BLOCK, BLOCK)
 	var parts: Array[Rect2] = []
 	var pattern := dice.randf()
+	if MODERN.has_point(Vector2i(bx, bz)):
+		pattern = 0.75 # (Modern blocks are denser: four lots each.)
 	if pattern < 0.15:
 		parts = [whole]
 	elif pattern < 0.4:
@@ -383,7 +410,8 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 				else dice.randi_range(MIN_STOREYS, MAX_STOREYS)
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
-				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false})
+				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false,
+				"style": "modern" if MODERN.has_point(Vector2i(bx, bz)) else "old", "turn": 0.0})
 	_limit_alley_steps(buildings)
 	var lowest := buildings[0]
 	for b in buildings:
@@ -402,37 +430,67 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 	return buildings
 
 
-## Gives SHAPE_CHANCE of the buildings that could have one (b.shapeable) a
-## shape other than a box, dealt out in turn (the next that fits the lot) so
+## Gives some of the buildings that could have one (b.shapeable: of each
+## style, STYLE_SHAPE_CHANCE of them) a shape other than a box, from their
+## style's STYLE_SHAPES, dealt out in turn (the next that fits the lot) so
 ## there's some of each; and works out each one's details: b.dome (the dome's
-## radius, 0 for none), b.tiers, b.side (the arch's or the cut-out corner's).
+## radius, 0 for none), b.tiers, b.side (the arch's, the cut-out corner's, the
+## side it leans or sticks out toward), b.turn (degrees).
 func _pick_shapes(buildings: Array[Dictionary]) -> void:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, "shapes"])
-	var shapeable := buildings.filter(func(b: Dictionary) -> bool: return b.shapeable)
-	_shuffle(shapeable, dice)
-	var kinds: Array = SHAPE_MIN.keys()
-	var turn := 0
-	for b: Dictionary in shapeable.slice(0, roundi(shapeable.size() * SHAPE_CHANCE)):
-		var shortest := minf(b.w, b.d)
-		for i in kinds.size():
-			var kind: String = kinds[(turn + i) % kinds.size()]
-			if shortest >= SHAPE_MIN[kind]:
-				b.roof = kind
-				turn += i + 1
-				break
-		match b.roof:
-			"round":
-				if maxf(b.w, b.d) / shortest <= ROTUNDA_ASPECT and dice.randf() < ROTUNDA_DOME_CHANCE:
-					b.dome = minf(_round_radius(b) - 1.5, DOME_MAX)
-			"domed":
-				b.dome = minf(shortest / 2.0 - 1.0, DOME_MAX)
-			"stepped":
-				b.tiers = 2 if shortest - 4.0 * SETBACK >= 10.0 else 1
-			"courtyard":
-				b.side = ["N", "S", "W", "E"][dice.randi() % 4]
-			"winged":
-				b.side = ["NW", "NE", "SW", "SE"][dice.randi() % 4]
+	for style: String in STYLE_SHAPES:
+		var shapeable := buildings.filter(func(b: Dictionary) -> bool: return b.shapeable and b.style == style)
+		_shuffle(shapeable, dice)
+		var kinds: Array = STYLE_SHAPES[style]
+		var turn := 0
+		for b: Dictionary in shapeable.slice(0, roundi(shapeable.size() * STYLE_SHAPE_CHANCE[style])):
+			var shortest := minf(b.w, b.d)
+			for i in kinds.size():
+				var kind: String = kinds[(turn + i) % kinds.size()]
+				if shortest >= SHAPE_MIN[kind] and (kind != "cantilever" or not _street_sides(b).is_empty()):
+					b.roof = kind
+					turn += i + 1
+					break
+			match b.roof:
+				"round":
+					if maxf(b.w, b.d) / shortest <= ROTUNDA_ASPECT and dice.randf() < ROTUNDA_DOME_CHANCE:
+						b.dome = minf(_round_radius(b) - 1.5, DOME_MAX)
+				"domed":
+					b.dome = minf(shortest / 2.0 - 1.0, DOME_MAX)
+				"stepped":
+					b.tiers = 2 if shortest - 4.0 * SETBACK >= 10.0 else 1
+				"courtyard":
+					b.side = ["N", "S", "W", "E"][dice.randi() % 4]
+				"winged":
+					b.side = ["NW", "NE", "SW", "SE"][dice.randi() % 4]
+				"turned":
+					b.turn = dice.randf_range(TURN_DEGREES.x, TURN_DEGREES.y) * (1.0 if dice.randf() < 0.5 else -1.0)
+				"leaning":
+					b.side = ["N", "S", "W", "E"][dice.randi() % 4]
+				"cantilever":
+					var sides := _street_sides(b)
+					b.side = sides[dice.randi() % sides.size()]
+
+
+## The sides of `b` ("N", "S", "W", "E": N is toward -z, W toward -x) on the
+## edge of its block facing a street between blocks (not an avenue, nor the
+## road round the district).
+func _street_sides(b: Dictionary) -> Array[String]:
+	var area := _block_rect(b.block)
+	var sides: Array[String] = []
+	var inner := func(index: int, after: bool) -> bool: # (Is there a street, not the avenue, after/before block `index`?)
+		var gap := index if after else index - 1
+		return gap >= 0 and gap < BLOCKS - 1 and gap != AVENUE_AFTER
+	if is_equal_approx(b.z, area.position.y) and inner.call(b.block.y, false):
+		sides.append("N")
+	if is_equal_approx(b.z + b.d, area.end.y) and inner.call(b.block.y, true):
+		sides.append("S")
+	if is_equal_approx(b.x, area.position.x) and inner.call(b.block.x, false):
+		sides.append("W")
+	if is_equal_approx(b.x + b.w, area.end.x) and inner.call(b.block.x, true):
+		sides.append("E")
+	return sides
 
 
 ## A round building's radius (or its rounded ends').
@@ -811,6 +869,15 @@ func _write_shape(b: Dictionary) -> void:
 			var x: float = b.x - 1.0 + cut.x / 2.0 if "W" in b.side else b.x + b.w + 1.0 - cut.x / 2.0
 			var z: float = b.z - 1.0 + cut.y / 2.0 if "N" in b.side else b.z + b.d + 1.0 - cut.y / 2.0
 			_cut(b, "Notch", Vector3(x, height / 2.0, z), Vector3(cut.x, height + 2.0, cut.y))
+		"cantilever":
+			# Its top storeys, from 1 m in from its wall to CANTILEVER out past it.
+			var drop := CANTILEVER_STOREYS * STOREY
+			var out: Vector3 = {"N": Vector3.FORWARD, "S": Vector3.BACK, "W": Vector3.LEFT, "E": Vector3.RIGHT}[b.side]
+			var along_x := absf(out.x) > 0.5
+			var size := Vector3(CANTILEVER + 1.0, drop, b.d) if along_x else Vector3(b.w, drop, CANTILEVER + 1.0)
+			var depth: float = b.w if along_x else b.d
+			_shape_node("CSGBox3D", "Overhang", "Buildings/" + b.name, out * (depth / 2.0 + CANTILEVER / 2.0 - 0.5) + Vector3(0, height / 2.0 - drop / 2.0, 0),
+					"size = Vector3(%s, %s, %s)" % [_num(size.x), _num(size.y), _num(size.z)])
 
 
 ## A round building (see ROTUNDA_ASPECT): a cylinder on a squarish lot (maybe
@@ -842,6 +909,86 @@ func _write_dome(b: Dictionary) -> void:
 	var height: float = b.storeys * STOREY
 	_shape_node("CSGSphere3D", "Dome", "Buildings/" + b.name, Vector3(0, height / 2.0 - DOME_SINK * b.dome, 0),
 			"radius = %s\nradial_segments = 48\nrings = 24" % _num(b.dome))
+
+
+## A modern building that isn't square in its lot (see _pick_shapes()):
+## - "turned" in it (b.turn degrees), as big as fits;
+## - "leaning" LEAN_DEGREES toward its b.side (its foot sunk into the ground,
+##   narrowed so its top still stays over its lot);
+## - "curved": an outline pushed up, its long sides waving in and out.
+func _write_modern(b: Dictionary) -> void:
+	var height: float = b.storeys * STOREY
+	var middle := _middle(b)
+	match b.roof:
+		"turned":
+			var angle := deg_to_rad(b.turn)
+			var room := Vector2(b.w - 1.0, b.d - 1.0)
+			var c := cos(absf(angle))
+			var s := sin(absf(angle))
+			var fit := minf(room.x / (room.x * c + room.y * s), room.y / (room.x * s + room.y * c))
+			_node("CSGBox3D", b.name, "Buildings", Transform3D(Basis(Vector3.UP, angle), Vector3(middle.x, height / 2.0, middle.y)),
+					"size = Vector3(%s, %s, %s)" % [_num(room.x * fit), _num(height), _num(room.y * fit)])
+		"leaning":
+			var lean := _leaning(b)
+			var size: Vector3 = lean.size
+			_node("CSGBox3D", b.name, "Buildings", lean.transform, "size = Vector3(%s, %s, %s)" % [_num(size.x), _num(size.y), _num(size.z)])
+		"curved":
+			var along_x: bool = b.w >= b.d
+			var length: float = (b.w if along_x else b.d) - 1.0
+			var breadth: float = (b.d if along_x else b.w) - 1.0
+			var dice := RandomNumberGenerator.new()
+			dice.seed = hash([SEED, b.name, "curved"])
+			var outline := PackedStringArray()
+			var points := 24
+			for side in [1.0, -1.0]:
+				var phase := dice.randf_range(0.0, TAU)
+				for i in points + 1:
+					var t := float(i) / points if side > 0.0 else 1.0 - float(i) / points
+					var inward := WAVE * (0.5 + 0.5 * sin(TAU * WAVES * t + phase))
+					var a := (t - 0.5) * length
+					var c: float = side * (breadth / 2.0 - inward)
+					var p := Vector2(a, c) if along_x else Vector2(c, a)
+					outline.append("%s, %s" % [_num(p.x), _num(p.y)])
+			# (Its outline's x, y are the world's x, z; it's pushed out along its -z: up.)
+			_node("CSGPolygon3D", b.name, "Buildings", Transform3D(Basis(Vector3.RIGHT, Vector3.BACK, Vector3.DOWN), Vector3(middle.x, 0.0, middle.y)),
+					"polygon = PackedVector2Array(%s)\ndepth = %s" % [", ".join(outline), _num(height)])
+	_mark_shape(b)
+
+
+## A leaning building's box: {transform, size, top (the middle of its top)}.
+## It leans LEAN_DEGREES toward b.side, pivoting under the ground (its foot
+## sunk all along), as deep that way as lets it span its lot from the foot of
+## its back wall to the top of its front one.
+func _leaning(b: Dictionary) -> Dictionary:
+	var height: float = b.storeys * STOREY
+	var middle := _middle(b)
+	var lean := deg_to_rad(LEAN_DEGREES)
+	var toward: Vector3 = {"N": Vector3.FORWARD, "S": Vector3.BACK, "W": Vector3.LEFT, "E": Vector3.RIGHT}[b.side]
+	var along_x := absf(toward.x) > 0.5
+	var depth: float = (b.w if along_x else b.d) - 1.0 # (Its lot, the way it leans.)
+	var across: float = (b.d if along_x else b.w) - 1.0
+	var thick := (depth - height * tan(lean)) * cos(lean)
+	var sink := thick / 2.0 * sin(lean) + 0.5
+	var length := (height + sink) / cos(lean)
+	var axis := Vector3.UP.cross(toward)
+	var up := Vector3.UP.rotated(axis, lean)
+	var pivot := Vector3(middle.x, -sink, middle.y) + toward * (-depth / 2.0 + thick / 2.0 / cos(lean) - sink * tan(lean))
+	return {"transform": Transform3D(Basis(axis, lean), pivot + up * length / 2.0),
+			"size": Vector3(thick, length, across) if along_x else Vector3(across, length, thick),
+			"top": pivot + up * length}
+
+
+## A CSG shape node on its own (with collision), anywhere and turned any way.
+func _node(type: String, name: String, parent: String, transform: Transform3D, properties: String) -> void:
+	var r := transform.basis
+	var o := transform.origin
+	var numbers := PackedStringArray()
+	for value: float in [r.x.x, r.y.x, r.z.x, r.x.y, r.y.y, r.z.y, r.x.z, r.y.z, r.z.z]:
+		numbers.append(str(snappedf(value, 0.0001)))
+	for value: float in [o.x, o.y, o.z]:
+		numbers.append(_num(value))
+	_out.append("\n[node name=\"%s\" type=\"%s\" parent=\"%s\"]\ntransform = Transform3D(%s)\nuse_collision = true\n%s\nmaterial = ExtResource(\"4_building\")" % [
+			name, type, parent, ", ".join(numbers), properties])
 
 
 ## A CSG shape node (`type`) at `at` (in its parent), with `properties`; on
@@ -1112,7 +1259,8 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 		if height > 0.0:
 			inside_ones.append({"name": "RelicInside" + b.name, "at": Vector3(inside.x, height, inside.y), "pillar": 0.0, "on": ""})
 	# On the shapes (next): over a dome's top, on the top tier, on a round
-	# roof, and hanging over a courtyard (jump out off the roof to it).
+	# roof, hanging over a courtyard (jump out off the roof to it), on the top
+	# of the modern ones (at the tip of a cantilever, out over the street).
 	var shape_ones := []
 	for b: Dictionary in buildings:
 		var middle := _middle(b)
@@ -1125,13 +1273,23 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 				"stepped": height = roof + b.tiers * TIER_STOREYS * STOREY + RELIC_HOVER
 				"round": height = roof + RELIC_HOVER
 				"courtyard": height = roof - 1.0
+				"turned", "curved": height = roof + RELIC_HOVER
+				"leaning":
+					var top: Vector3 = _leaning(b).top
+					middle = Vector2(top.x, top.z)
+					height = top.y + RELIC_HOVER
+				"cantilever":
+					var out: Vector3 = {"N": Vector3.FORWARD, "S": Vector3.BACK, "W": Vector3.LEFT, "E": Vector3.RIGHT}[b.side]
+					var depth: float = b.w if absf(out.x) > 0.5 else b.d
+					middle += Vector2(out.x, out.z) * (depth / 2.0 + CANTILEVER - 1.5)
+					height = roof + RELIC_HOVER
 		if height > 0.0:
 			shape_ones.append({"name": "RelicOn" + b.name, "at": Vector3(middle.x, height, middle.y), "pillar": 0.0, "on": b.name})
 		# And one high over its top: floating over a dome, else on a tall pillar.
 		if b.roof in SHAPE_MIN and b.roof != "courtyard":
 			var top := height - RELIC_HOVER if height > 0.0 else roof
-			var spot := middle + Vector2(2.0, 2.0) # (Off the middle: room round a pillar.)
-			if b.dome > 0.0 or b.roof == "winged":
+			var spot := _middle(b) + Vector2(2.0, 2.0) # (Off the middle: room round a pillar.)
+			if b.dome > 0.0 or b.roof in ["winged", "leaning"]:
 				shape_ones.append({"name": "RelicOver" + b.name, "at": Vector3(middle.x, top + FLOAT_HEIGHT, middle.y), "pillar": 0.0, "on": b.name})
 			else:
 				var pillar: float = PILLAR_HEIGHTS[3]

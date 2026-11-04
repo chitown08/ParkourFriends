@@ -428,7 +428,38 @@ and other parts standing on it, split into rectangles; a cylinder's as two recta
 dome's crown, `DOME_CROWN` under its top), named after it or "Building/Part" (pieces "#2", "#3"
 ...); cylinders and spheres are round when it checks a path is clear; and getting onto or off
 something on top of a place, it tries taking off or landing a few metres out round it (a dome's foot).
-Next: a church or cathedral (steep roofs, a spire), curvy walls (a museum), parking garages, hallways.
+
+### Angles and styles (groundwork for the museum and the futuristic quarter)
+
+The checker works each shape out in its own space, so a shape can be turned, tilted or stretched
+any way, and there's a fourth kind, a **prism** (a `CSGPolygon3D`: an outline pushed out, like a
+curved wall seen from above or a wedge seen side-on). Tops it can't take straight off a box,
+upright cylinder or round dome, it looks down on in 0.5 m squares (`_sloped_tops()`): where the top
+is no steeper than 10 degrees (`STAND_SLOPE`, the slope free-run starts sliding down), you can stand.
+Those squares are joined into the biggest rectangles of about the same height (a tilted roof is
+a few strips, a small step up from one to the next), leaving out any less than 1.5 m wide (a ridge,
+the top of a pipe). And walls: a scramble, a leg-up or grabbing an edge from a jump needs the wall
+under the edge to be within 15 degrees of upright (`WALL_LEAN`, `wall_up()`). In the game a face
+more than about 17 degrees off upright isn't a wall you can grab (`Player.find_ledge()`): leaning out
+over you, you hit it; leaning back, it's a steep slope. Tests: `tests/test_angles.gd` (a building
+turned 30 degrees, one leaning 6 and one 20, a curvy prism, a flattened dome, walls leaning out 6
+and 25 degrees and back 25, a "mushroom" overhanging all round, a thin wall's top), each checked
+in the game too.
+
+The generator has **styles**. The south-east quarter (past both avenues) is **modern**, with denser
+blocks (four lots each) and its own shapes, dealt out to every building there that can have one:
+- **Turned**: turned 12-25 degrees in its lot, as big as fits.
+- **Leaning**: tilted 6 degrees toward one side, its foot sunk in the ground, narrowed so its top
+  stays over its lot; its top is gently sloped strips and one wall leans out over you.
+- **Curved**: its long sides wave in and out (a museum's curving walls).
+- **Cantilever**: its top two storeys stick out 3 m over a street (never an avenue or the ring
+  road: rails, tubes, the tunnel), at least 7 m up; a relic sits at the tip.
+- **Round** (as in the old town).
+The rest is the **old town** (round, domed, stepped, courtyard, winged).
+Next: the curvy museum (curved prisms, flattened domes, sloped walls you run up), then the
+futuristic quarter itself (tall leaning and turned towers, glass bridges); a church or cathedral,
+parking garages, hallways. Not yet: running up slopes steeper than 10 degrees that aren't domes or
+launchers (a museum's sloped wall would need a rule for that).
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 

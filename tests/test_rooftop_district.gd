@@ -247,7 +247,13 @@ func test_street_clutter_stays_on_the_pavement_clear_of_fire_escapes() -> void:
 
 
 func test_free_run_vaults_a_roof_box_and_carries_on() -> void:
-	var box := _clutter_named("Vault")
+	# (One with room on its roof to run up to it and on past it.)
+	var box: CSGBox3D = _clutter().filter(func(thing: CSGBox3D) -> bool:
+			if not "Vault" in thing.name:
+				return false
+			var reach := _extent(thing, _short_way(thing)) + 9.0
+			var floor_at := thing.global_position + Vector3.DOWN * thing.size.y / 2.0
+			return _building_under(floor_at - _short_way(thing) * reach) != null and _building_under(floor_at + _short_way(thing) * reach) != null)[0]
 	expect(await _free_run_over(box, _short_way(box), 8.0), "should go over %s" % box.name)
 	expect(player.is_on_floor() and _building_under(player.global_position) != null,
 			"should be back on the roof past %s, at %v" % [box.name, player.global_position])
