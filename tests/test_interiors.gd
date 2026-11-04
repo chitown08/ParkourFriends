@@ -172,7 +172,7 @@ func test_run_through_a_top_floor_and_out_the_other_side() -> void:
 	Input.action_press(&"move_forward")
 	var north_wall := b.global_position.z - b.size.z / 2.0
 	var out := false
-	for i in 60 * 8:
+	for i in 60 * 12: # (Some are 60 m deep.)
 		await ticks(1)
 		if player.global_position.z < north_wall - 0.5:
 			out = true

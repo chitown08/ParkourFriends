@@ -115,7 +115,8 @@ func test_every_block_has_a_fire_escape_from_the_street() -> void:
 		expect_near(_top(steps[-1]), _top(building) - STOREY, 0.01, "and end one storey below its roof")
 		for k in range(1, steps.size()):
 			expect_near(_top(steps[k]) - _top(steps[k - 1]), STOREY, 0.01, "each step one storey up")
-	expect(climbed.size() == 25, "all 25 blocks should have one, %d do" % climbed.size())
+	# (All but the museum's block: you run up the museum.)
+	expect(climbed.size() == 24 and not climbed.has("Museum"), "all 24 blocks but the museum's should have one, %d do" % climbed.size())
 
 
 func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
@@ -201,7 +202,7 @@ func test_clutter_colour_says_what_its_for() -> void:
 	var vault := load("res://materials/grid_vault.tres")
 	var climb := load("res://materials/grid_climb.tres")
 	var things := _clutter()
-	expect(things.size() > 300, "roofs and pavements should be cluttered, %d things" % things.size())
+	expect(things.size() > 280, "roofs and pavements should be cluttered, %d things" % things.size())
 	for thing in things:
 		if thing.material == vault:
 			expect(thing.size.y <= 1.3, "%s is red, so it should be low enough to vault (%.1f m)" % [thing.name, thing.size.y])

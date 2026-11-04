@@ -141,6 +141,30 @@ const STYLE_SHAPES := {
 }
 const STYLE_SHAPE_CHANCE := {"old": 0.5, "modern": 1.0}
 
+## The museum (after the Canadian Museum of History: curved layers like rock
+## laid down by a glacier, a great hall, copper domes) fills block MUSEUM_BLOCK
+## (in the south-west quarter, facing the road round the district). Round its
+## hall (a drum MUSEUM_HALL across and tall, with a flattened dome on top) are
+## terraces, each an outline spun round the hall: from the street (or the
+## terrace below) a slope you can run up curves over into a flat top. Each
+## terrace: [name, which way it faces (degrees: 0 east, -90 south), how far
+## round it goes (degrees), its foot (out from the hall's middle), the run of
+## its slope in, how high it rises, its base].
+const MUSEUM_BLOCK := Vector2i(1, 4)
+const MUSEUM_MIDDLE := Vector2(30.0, 12.0) ## The hall's middle, in the block.
+const MUSEUM_HALL := Vector2(7.0, 24.0) ## (Radius, height.)
+const MUSEUM_DOME := Vector2(6.5, 4.0) ## (Radius across, up.)
+const MUSEUM_DOME_SINK := 2.6 ## Its middle this far under the hall's top: never steeper than you can run up.
+const MUSEUM_TERRACES := [
+	["Gallery", -90.0, 76.0, 46.0, 16.6, 10.0, 0.0],
+	["Upper", -90.0, 56.0, 26.0, 13.3, 8.0, 10.0],
+	["WestWing", 180.0, 50.0, 26.0, 9.0, 5.0, 0.0],
+	["EastWing", 0.0, 50.0, 26.0, 9.0, 5.0, 0.0],
+]
+## A terrace's slope is steepest at its foot, this much of the way up, then
+## curves over into its top.
+const MUSEUM_CURVE_FROM := 0.65
+
 ## The launch plaza: a launch roof in each avenue arm (a low building whose roof
 ## slopes down to a lip), its lip this far from the middle of the plaza, all
 ## launching toward the middle (see levels/ramp.gd).
@@ -315,6 +339,7 @@ func _write_scene() -> String:
 			"pitched": _write_terrace(b)
 			"round": _write_round(b)
 			"turned", "leaning", "curved": _write_modern(b)
+			"museum": _write_museum(b)
 			_:
 				_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
 						b.w, b.storeys * STOREY, b.d, "4_building")
@@ -389,7 +414,7 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 	var pattern := dice.randf()
 	if MODERN.has_point(Vector2i(bx, bz)):
 		pattern = 0.75 # (Modern blocks are denser: four lots each.)
-	if pattern < 0.15:
+	if pattern < 0.15 or Vector2i(bx, bz) == MUSEUM_BLOCK:
 		parts = [whole]
 	elif pattern < 0.4:
 		parts = _split(whole, dice.randf_range(0.35, 0.65), true)
@@ -412,6 +437,9 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
 				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false,
 				"style": "modern" if MODERN.has_point(Vector2i(bx, bz)) else "old", "turn": 0.0})
+	if Vector2i(bx, bz) == MUSEUM_BLOCK:
+		buildings[0].merge({"name": "Museum", "roof": "museum", "tower": false, "storeys": ceili(MUSEUM_HALL.y / STOREY)}, true)
+		return buildings
 	_limit_alley_steps(buildings)
 	var lowest := buildings[0]
 	for b in buildings:
@@ -978,6 +1006,66 @@ func _leaning(b: Dictionary) -> Dictionary:
 			"top": pivot + up * length}
 
 
+## The museum (see MUSEUM_TERRACES): its hall (the building itself, a drum),
+## the dome on it and the terraces round it (added into it).
+func _write_museum(b: Dictionary) -> void:
+	var hall := _museum_middle(b)
+	_node("CSGCylinder3D", b.name, "Buildings", Transform3D(Basis.IDENTITY, Vector3(hall.x, MUSEUM_HALL.y / 2.0, hall.y)),
+			"radius = %s\nheight = %s\nsides = 48" % [_num(MUSEUM_HALL.x), _num(MUSEUM_HALL.y)])
+	_mark_shape(b)
+	var inside: String = "Buildings/" + b.name
+	_out.append("\n[node name=\"Dome\" type=\"CSGSphere3D\" parent=\"%s\"]\ntransform = Transform3D(1, 0, 0, 0, %s, 0, 0, 0, 1, 0, %s, 0)\nradius = %s\nradial_segments = 48\nrings = 24\nmaterial = ExtResource(\"4_building\")" % [
+			inside, _num(MUSEUM_DOME.y / MUSEUM_DOME.x), _num(MUSEUM_HALL.y / 2.0 - MUSEUM_DOME_SINK), _num(MUSEUM_DOME.x)])
+	for terrace: Array in MUSEUM_TERRACES:
+		# Spun from its x toward its -z: turned so it's centred on the way it faces.
+		var turn := deg_to_rad(float(terrace[1]) - float(terrace[2]) / 2.0)
+		var points := PackedStringArray()
+		for p in _terrace_outline(terrace):
+			points.append("%s, %s" % [_num(p.x), _num(p.y)])
+		var basis := Basis(Vector3.UP, turn)
+		var numbers := PackedStringArray()
+		for value: float in [basis.x.x, basis.y.x, basis.z.x, basis.x.y, basis.y.y, basis.z.y, basis.x.z, basis.y.z, basis.z.z]:
+			numbers.append(str(snappedf(value, 0.0001)))
+		_out.append("\n[node name=\"%s\" type=\"CSGPolygon3D\" parent=\"%s\"]\ntransform = Transform3D(%s, 0, %s, 0)\npolygon = PackedVector2Array(%s)\nmode = 1\nspin_degrees = %s\nspin_sides = %d\nmaterial = ExtResource(\"4_building\")" % [
+				terrace[0], inside, ", ".join(numbers), _num(-MUSEUM_HALL.y / 2.0), ", ".join(points), _num(terrace[2]), ceili(terrace[2] / 3.0)])
+
+
+## The museum hall's middle (x, z).
+func _museum_middle(b: Dictionary) -> Vector2:
+	return Vector2(b.x, b.z) + MUSEUM_MIDDLE
+
+
+## A terrace's outline, side-on (x: out from the hall's middle, y: up): its
+## slope from its foot, steepest there (no steeper than a slope you can run
+## up), curving over into its top from MUSEUM_CURVE_FROM of the way in, then
+## flat in to the hall.
+func _terrace_outline(terrace: Array) -> PackedVector2Array:
+	var foot: float = terrace[3]
+	var run: float = terrace[4]
+	var rise: float = terrace[5]
+	var base: float = terrace[6]
+	var bend := MUSEUM_CURVE_FROM
+	var whole := bend + (1.0 - bend) / 2.0 # (How far up it'd get at its steepest all the way: its shape, rise 1.)
+	# (Into the hall a little, and on a terrace below, down into it.)
+	var bottom := base - 0.5 if base > 0.0 else 0.0
+	var outline := PackedVector2Array([Vector2(MUSEUM_HALL.x - 1.0, bottom), Vector2(foot, bottom)])
+	if bottom < base:
+		outline.append(Vector2(foot, base))
+	var steps := 16
+	for i in range(1, steps + 1):
+		var t := float(i) / steps
+		var up := t if t <= bend else bend + ((1.0 - bend) * (1.0 - bend) - (1.0 - t) * (1.0 - t)) / (2.0 * (1.0 - bend))
+		outline.append(Vector2(foot - t * run, base + rise * up / whole))
+	outline.append(Vector2(MUSEUM_HALL.x - 1.0, base + rise))
+	return outline
+
+
+## The steepest a museum terrace's slope gets (degrees).
+static func terrace_steepest(terrace: Array) -> float:
+	var whole := MUSEUM_CURVE_FROM + (1.0 - MUSEUM_CURVE_FROM) / 2.0
+	return rad_to_deg(atan(terrace[5] / (terrace[4] * whole)))
+
+
 ## A CSG shape node on its own (with collision), anywhere and turned any way.
 func _node(type: String, name: String, parent: String, transform: Transform3D, properties: String) -> void:
 	var r := transform.basis
@@ -1283,13 +1371,22 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 					var depth: float = b.w if absf(out.x) > 0.5 else b.d
 					middle += Vector2(out.x, out.z) * (depth / 2.0 + CANTILEVER - 1.5)
 					height = roof + RELIC_HOVER
+				"museum":
+					# On the dome's crown; and on a terrace's top, either side.
+					middle = _museum_middle(b)
+					height = MUSEUM_HALL.y + MUSEUM_DOME.y - MUSEUM_DOME_SINK + RELIC_HOVER
+					for terrace: Array in MUSEUM_TERRACES.slice(0, 2):
+						var crest: float = terrace[3] - terrace[4]
+						var angle := deg_to_rad(terrace[1] + terrace[2] / 2.0 - 5.0) # (Near its end: clear of the terrace on it.)
+						var at := middle + Vector2(cos(angle), -sin(angle)) * (crest + MUSEUM_HALL.x) / 2.0
+						shape_ones.append({"name": "RelicMuseum" + terrace[0], "at": Vector3(at.x, terrace[6] + terrace[5] + RELIC_HOVER, at.y), "pillar": 0.0, "on": ""})
 		if height > 0.0:
 			shape_ones.append({"name": "RelicOn" + b.name, "at": Vector3(middle.x, height, middle.y), "pillar": 0.0, "on": b.name})
 		# And one high over its top: floating over a dome, else on a tall pillar.
-		if b.roof in SHAPE_MIN and b.roof != "courtyard":
+		if b.roof in SHAPE_MIN and b.roof != "courtyard" or b.roof == "museum":
 			var top := height - RELIC_HOVER if height > 0.0 else roof
 			var spot := _middle(b) + Vector2(2.0, 2.0) # (Off the middle: room round a pillar.)
-			if b.dome > 0.0 or b.roof in ["winged", "leaning"]:
+			if b.dome > 0.0 or b.roof in ["winged", "leaning", "museum"]:
 				shape_ones.append({"name": "RelicOver" + b.name, "at": Vector3(middle.x, top + FLOAT_HEIGHT, middle.y), "pillar": 0.0, "on": b.name})
 			else:
 				var pillar: float = PILLAR_HEIGHTS[3]
@@ -1431,7 +1528,8 @@ func _num(value: float) -> String:
 
 
 ## The group runs (see levels/group_run.gd). For now one, "Warm-up": its start
-## ring on the free roof nearest the spawn; then a white gate on each of the
+## ring on the free roof nearest the spawn (or the next nearest, if that
+## one's route runs out of roofs: see _run_route()); then a white gate on each of the
 ## next RUN_GATES roofs, hopping across alleys and streets (up two storeys at
 ## most: a readied leap), each just in from the edge you land on; two gold gates floating
 ## high over roofs on the way; and its relics at the finish. Returns how many.
@@ -1442,26 +1540,23 @@ func _write_runs(buildings: Array[Dictionary]) -> int:
 			return not _marker_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).grow(2.0).has_point(spot)) \
 				and not _pillar_spots.any(func(spot: Vector2) -> bool: return Rect2(b.x, b.z, b.w, b.d).has_point(spot)))
 	var spawn_roof := _nearest(flat, _marker_spots[0]) # (The spawn is the first marker.)
-	var start: Dictionary = _nearest(free.filter(func(b: Dictionary) -> bool: return b != spawn_roof), _marker_spots[0])
-	var route: Array[Dictionary] = [start]
-	var gates: Array[Vector3] = []
-	for i in RUN_GATES:
-		var here: Dictionary = route.back()
-		var best: Dictionary = {}
-		var best_score := -INF
-		for b: Dictionary in flat:
-			if b in route or b.storeys - here.storeys > MAX_ALLEY_STEP or here.storeys - b.storeys > 3:
-				continue
-			var across := _gap_between(here, b)
-			if across < 3.0 or across > STREET + 0.5:
-				continue
-			var score: float = _middle(b).distance_to(_middle(start)) - across # On and away, by short hops.
-			if score > best_score:
-				best_score = score
-				best = b
-		if best.is_empty():
+	# Starting from the free roof nearest the spawn, or the next nearest if
+	# that one's route runs out of roofs before it has all its gates.
+	var starts := free.filter(func(b: Dictionary) -> bool: return b != spawn_roof)
+	starts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return _middle(a).distance_to(_marker_spots[0]) < _middle(b).distance_to(_marker_spots[0]))
+	var route: Array[Dictionary] = []
+	for start: Dictionary in starts:
+		var tried := _run_route(start, flat)
+		if tried.size() > route.size():
+			route = tried
+		if route.size() > RUN_GATES:
 			break
-		route.append(best)
+	var start: Dictionary = route[0]
+	var gates: Array[Vector3] = []
+	for i in range(1, route.size()):
+		var here: Dictionary = route[i - 1]
+		var best: Dictionary = route[i]
 		# Just in from the edge you land on, over the roof.
 		var r := Rect2(best.x, best.z, best.w, best.d).grow(-GATE_IN)
 		var spot := Vector2(clampf(_middle(here).x, r.position.x, r.end.x), clampf(_middle(here).y, r.position.y, r.end.y))
@@ -1493,6 +1588,31 @@ func _write_runs(buildings: Array[Dictionary]) -> int:
 	for gate: Vector3 in gates + golds:
 		_marker_spots.append(Vector2(gate.x, gate.z))
 	return 1
+
+
+## A group run's roofs from `start`: up to RUN_GATES more, each the one (of
+## `flat`) across an alley or street from the last (up two storeys at most,
+## down three) that goes furthest on and away from the start by a short hop.
+func _run_route(start: Dictionary, flat: Array) -> Array[Dictionary]:
+	var route: Array[Dictionary] = [start]
+	for i in RUN_GATES:
+		var here: Dictionary = route.back()
+		var best: Dictionary = {}
+		var best_score := -INF
+		for b: Dictionary in flat:
+			if b in route or b.storeys - here.storeys > MAX_ALLEY_STEP or here.storeys - b.storeys > 3:
+				continue
+			var across := _gap_between(here, b)
+			if across < 3.0 or across > STREET + 0.5:
+				continue
+			var score: float = _middle(b).distance_to(_middle(start)) - across # On and away, by short hops.
+			if score > best_score:
+				best_score = score
+				best = b
+		if best.is_empty():
+			break
+		route.append(best)
+	return route
 
 
 ## A gate at `at` (from its run's start), facing along `along`.

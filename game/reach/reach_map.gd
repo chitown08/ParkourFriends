@@ -72,6 +72,8 @@ var moves: MovementProfile
 var places: Array[Spot] = []
 var targets: Array[Spot] = []
 var links: Array[Link] = []
+## Slopes you can run up (or down): see _find_slopes().
+var slopes: Array[Slope] = []
 ## Rising and falling gravity of a jump (from the profile).
 var rise_gravity: float
 var fall_gravity: float
@@ -86,6 +88,7 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 	map.fall_gravity = 2.0 * profile.jump_height / (profile.jump_time_to_fall * profile.jump_time_to_fall)
 	map._find_places(level_)
 	map._find_solids(level_)
+	map._find_slopes()
 	map._find_targets(level_)
 	for file in DirAccess.get_files_at(RULES_DIR):
 		if file.ends_with(".gd"):
@@ -94,12 +97,14 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 	return map
 
 
-func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0, together := 0) -> void:
+## Adds a link (if there's a way through: see path_clear(); unless `check_path`
+## is false, for a way along a surface that's already known clear).
+func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0, together := 0, check_path := true) -> void:
 	if from == null or to == null or from == to:
 		return
 	if &"flow" in needs and maxf(from.area.size.x, from.area.size.y) < FLOW_RUN_UP:
 		return # No room to get up to speed.
-	if not path_clear(from, to):
+	if check_path and not path_clear(from, to):
 		return # A wall or ceiling in the way.
 	var link := Link.new()
 	link.from = from
@@ -191,8 +196,9 @@ func scramble_height(takeoff_height: float) -> float:
 
 # --- Places: the tops of things ----------------------------------------------
 # Anything solid is made of shapes: a box, a cylinder (a round building, a
-# turret), a sphere (a dome), or a prism (an outline pushed out: a curved wall
-# seen from above, a wedge seen side-on), turned or tilted any way. A building
+# turret), a sphere (a dome), a prism (an outline pushed out: a curved wall
+# seen from above, a wedge seen side-on) or a spun outline (a ring, an arc of
+# terraces), turned or tilted any way. A building
 # can be several of them joined (a wing, a tier set back on top, a dome on the
 # roof: shapes added into it), with holes cut out (see _find_solids()). Each
 # shape's top is a place:
@@ -202,8 +208,10 @@ func scramble_height(takeoff_height: float) -> float:
 # - an upright cylinder's: two rectangles crossed, about filling its circle;
 # - a dome's: just its crown, DOME_CROWN below the very top (lower down it's
 #   too steep to stand, or you'd slide down to the roof it's on anyway);
-# - anything else's (turned, leaning, stretched, a prism): wherever it's flat
-#   enough to stand, in rectangles (see _sloped_tops()).
+# - anything else's (turned, leaning, stretched, a prism, spun): wherever it's
+#   flat enough to stand and nothing else of its building is just over it, in
+#   rectangles (see _sloped_tops(), _covered()). Steeper, it may be a slope you
+#   run up (see _find_slopes()).
 # Named after the shape, or "<building>/<shape>" for one added into a building;
 # a top split in pieces gives "#2", "#3"... to the smaller ones.
 
@@ -221,7 +229,15 @@ func _find_places(root: Node) -> void:
 			continue
 		# [height, rectangle] of each bit of its top that's left uncovered.
 		var pieces: Array = []
-		for top: Array in _tops(shape):
+		var tops := _tops(shape)
+		if tops.is_empty():
+			var volume := Volume.of(shape)
+			if volume != null:
+				var grid := _top_grid(volume)
+				var covered := _covered(grid, shape)
+				_grids.append([shape, grid, covered])
+				pieces = _sloped_tops(grid, covered) # (Already less what covers it.)
+		for top: Array in tops:
 			for area in _uncovered(top[1], top[0], shape):
 				if area.get_area() >= MIN_PLACE_AREA:
 					pieces.append([top[0], area])
@@ -253,8 +269,9 @@ static func _csg_root(shape: CSGShape3D) -> CSGShape3D:
 	return shape
 
 
-## The tops of `shape` you can stand on: [height, a rectangle (from above)]
-## for each, or none (a lying-down cylinder, a steep roof...).
+## The tops of `shape` you can stand on, if it's square on (a box, an upright
+## cylinder, a round dome): [height, a rectangle (from above)] for each. None
+## for any other (see _sloped_tops()).
 static func _tops(shape: CSGShape3D) -> Array:
 	var scale := shape.global_basis.get_scale()
 	var at := shape.global_position
@@ -275,8 +292,7 @@ static func _tops(shape: CSGShape3D) -> Array:
 			return []
 		var half := sqrt(r * r - (r - DOME_CROWN) * (r - DOME_CROWN)) / sqrt(2.0) # (A square in the crown's circle.)
 		return [[at.y + r - DOME_CROWN, Rect2(at.x - half, at.z - half, 2.0 * half, 2.0 * half)]]
-	var volume := Volume.of(shape)
-	return [] if volume == null else _sloped_tops(volume)
+	return []
 
 
 ## Whether `shape` is square on to the world (not turned or tilted at all).
@@ -287,7 +303,7 @@ static func _square_on(shape: Node3D) -> bool:
 
 
 # Any other shape (turned in its lot, leaning, a stretched dome, a prism: a
-# curved wall, a wedge), seen from above in squares TOP_CELL across: where its
+# curved wall, a wedge; spun: terraces in an arc), seen from above in squares TOP_CELL across: where its
 # top is all no steeper than STAND_SLOPE (any steeper and you slide off it)
 # and no more than TOP_BAND higher at one side of the square than the other,
 # you can stand. Those squares are joined into rectangles of about the same
@@ -301,34 +317,19 @@ const TOP_WIDTH := 1.5
 const NO_BAND := -1000000
 
 
-static func _sloped_tops(volume: Volume) -> Array:
-	var b := volume.bounds
-	var across := Vector2i(floori(b.size.x / TOP_CELL), floori(b.size.z / TOP_CELL))
+static func _sloped_tops(grid: Dictionary, covered: PackedByteArray) -> Array:
+	var across: Vector2i = grid.across
+	var origin: Vector2 = grid.origin
+	var high: PackedFloat32Array = grid.high
+	var low: PackedFloat32Array = grid.low
+	var upright: PackedFloat32Array = grid.upright
 	var flat_enough := cos(deg_to_rad(STAND_SLOPE))
-	var corners := {}
-	var at := func(x: float, z: float) -> Array:
-		var hit := volume.top_at(x, z)
-		return [] if hit.is_empty() or (hit[1] as Vector3).y < flat_enough else hit
 	# Each square's height (its highest), or NAN where you can't stand.
 	var heights := PackedFloat32Array()
-	heights.resize(across.x * across.y)
-	for j in across.y:
-		for i in across.x:
-			var samples: Array = []
-			for corner in [Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i, j + 1), Vector2i(i + 1, j + 1)]:
-				if not corners.has(corner):
-					corners[corner] = at.call(b.position.x + corner.x * TOP_CELL, b.position.z + corner.y * TOP_CELL)
-				samples.append(corners[corner])
-			samples.append(at.call(b.position.x + (i + 0.5) * TOP_CELL, b.position.z + (j + 0.5) * TOP_CELL))
-			var high := -INF
-			var low := INF
-			for sample: Array in samples:
-				if sample.is_empty():
-					high = NAN
-					break
-				high = maxf(high, sample[0])
-				low = minf(low, sample[0])
-			heights[j * across.x + i] = high if not is_nan(high) and high - low <= TOP_BAND else NAN
+	heights.resize(high.size())
+	for k in high.size():
+		var standing := not is_nan(high[k]) and covered[k] == 0 and upright[k] >= flat_enough and high[k] - low[k] <= TOP_BAND
+		heights[k] = high[k] if standing else NAN
 	# Joined into rectangles: the biggest there is of squares at about the same
 	# height, then the biggest of what's left, and so on.
 	var bands := PackedInt32Array()
@@ -346,9 +347,92 @@ static func _sloped_tops(volume: Volume) -> Array:
 			for i in range(best.position.x, best.end.x):
 				bands[j * across.x + i] = NO_BAND
 				y = maxf(y, heights[j * across.x + i])
-		tops.append([y, Rect2(b.position.x + best.position.x * TOP_CELL, b.position.z + best.position.y * TOP_CELL,
+		tops.append([y, Rect2(origin.x + best.position.x * TOP_CELL, origin.y + best.position.y * TOP_CELL,
 				best.size.x * TOP_CELL, best.size.y * TOP_CELL)])
 	return tops
+
+
+## `volume`'s top seen from above in TOP_CELL squares (from its bounds'
+## corner, `origin`; `across` each way), sampled at each square's corners and
+## middle: for each square its top's highest and lowest point, its middle's
+## height, and how upright its steepest bit is (the normal's y). NAN where the
+## volume isn't under all of the square.
+static func _top_grid(volume: Volume) -> Dictionary:
+	var b := volume.bounds
+	var across := Vector2i(floori(b.size.x / TOP_CELL), floori(b.size.z / TOP_CELL))
+	var count := across.x * across.y
+	var grid := {"origin": Vector2(b.position.x, b.position.z), "across": across}
+	for key in ["high", "low", "middle", "upright"]:
+		var values := PackedFloat32Array()
+		values.resize(count)
+		values.fill(NAN)
+		grid[key] = values
+	var high: PackedFloat32Array = grid.high
+	var low: PackedFloat32Array = grid.low
+	var middle: PackedFloat32Array = grid.middle
+	var upright: PackedFloat32Array = grid.upright
+	var corners := {}
+	for j in across.y:
+		for i in across.x:
+			var samples: Array = []
+			for corner in [Vector2i(i, j), Vector2i(i + 1, j), Vector2i(i, j + 1), Vector2i(i + 1, j + 1)]:
+				if not corners.has(corner):
+					corners[corner] = volume.top_at(b.position.x + corner.x * TOP_CELL, b.position.z + corner.y * TOP_CELL)
+				samples.append(corners[corner])
+			samples.append(volume.top_at(b.position.x + (i + 0.5) * TOP_CELL, b.position.z + (j + 0.5) * TOP_CELL))
+			if samples.any(func(sample: Array) -> bool: return sample.is_empty()):
+				continue
+			var k := j * across.x + i
+			high[k] = -INF
+			low[k] = INF
+			upright[k] = 1.0
+			for sample: Array in samples:
+				high[k] = maxf(high[k], sample[0])
+				low[k] = minf(low[k], sample[0])
+				upright[k] = minf(upright[k], (sample[1] as Vector3).y)
+			middle[k] = samples[4][0]
+	return grid
+
+
+## Which squares of `grid` (`shape`'s top, see _top_grid()) are covered, 1
+## for each: something else of its building just over it (a tier standing on
+## it, a tower rising past it), or a hole cut down through it.
+func _covered(grid: Dictionary, shape: CSGShape3D) -> PackedByteArray:
+	var across: Vector2i = grid.across
+	var origin: Vector2 = grid.origin
+	var middle: PackedFloat32Array = grid.middle
+	var covered := PackedByteArray()
+	covered.resize(middle.size())
+	var root_shape := _csg_root(shape)
+	var others: Array[Volume] = []
+	var holes: Array[Volume] = []
+	var mine := Volume.of(shape)
+	for node in [root_shape] + root_shape.find_children("*", "CSGShape3D", true, false):
+		var other := node as CSGShape3D
+		if other == shape:
+			continue
+		var volume := Volume.of(other)
+		if volume == null or not volume.bounds.intersects(mine.bounds.grow(0.5)):
+			continue
+		if other is CSGBox3D and other.operation == CSGShape3D.OPERATION_SUBTRACTION:
+			holes.append(volume)
+		elif _is_part(other):
+			others.append(volume)
+	if others.is_empty() and holes.is_empty():
+		return covered
+	for j in across.y:
+		for i in across.x:
+			var k := j * across.x + i
+			if is_nan(middle[k]):
+				continue
+			var x := origin.x + (i + 0.5) * TOP_CELL
+			var z := origin.y + (j + 0.5) * TOP_CELL
+			var over := Vector3(x, middle[k] + 0.3, z)
+			var under := Vector3(x, middle[k] - 0.1, z)
+			if others.any(func(other: Volume) -> bool: return other.has_point(over)) \
+					or holes.any(func(hole: Volume) -> bool: return hole.has_point(under)):
+				covered[k] = 1
+	return covered
 
 
 ## The biggest rectangle (in squares, at least `least` each way) of squares
@@ -496,8 +580,9 @@ class Solid:
 	var holes: Array[Volume] = []
 	var bounds: AABB
 
-## One shape of a solid: a box, a cylinder, a sphere, or a prism (an outline
-## pushed out: a curved wall, a wedge). Worked out in its own space, so it can
+## One shape of a solid: a box, a cylinder, a sphere, a prism (an outline
+## pushed out: a curved wall, a wedge), or a spun outline (round an upright
+## line: a ring, an arc of terraces). Worked out in its own space, so it can
 ## be turned, tilted or stretched any way (a building turned in its lot, a
 ## leaning tower, a flattened dome).
 class Volume:
@@ -508,9 +593,12 @@ class Volume:
 	var to_local: Transform3D
 	## Box: its size. Cylinder: radius in x, height in y. Sphere: radius in x.
 	var size: Vector3
-	## Prism: its outline (x, y), pushed out from z = 0 to z = -depth.
+	## Prism: its outline (x, y), pushed out from z = 0 to z = -depth. Spun:
+	## its outline (x: out from the middle, y: up), spun round its y from its
+	## x toward its -z by `spin` (radians).
 	var outline: PackedVector2Array
 	var depth := 0.0
+	var spin := 0.0
 
 	static func of(shape: CSGShape3D) -> Volume:
 		var volume := Volume.new()
@@ -526,10 +614,23 @@ class Volume:
 			volume.kind = &"prism"
 			volume.outline = (shape as CSGPolygon3D).polygon
 			volume.depth = (shape as CSGPolygon3D).depth
+		elif shape is CSGPolygon3D and (shape as CSGPolygon3D).mode == CSGPolygon3D.MODE_SPIN and (shape as CSGPolygon3D).polygon.size() >= 3 \
+				and shape.global_basis.y.normalized().dot(Vector3.UP) > 0.999:
+			volume.kind = &"spin"
+			volume.outline = (shape as CSGPolygon3D).polygon
+			volume.spin = deg_to_rad((shape as CSGPolygon3D).spin_degrees)
 		else:
-			return null # (A cone, a spun or swept shape: not yet.)
+			return null # (A cone, a swept shape, one spun round a line that isn't upright: not yet.)
 		volume.to_local = shape.global_transform.affine_inverse()
-		volume.bounds = shape.global_transform * volume.local_box()
+		if volume.kind == &"spin":
+			# (Round the arc itself: the box round its box, turned, would be too big.)
+			var points := volume._spin_points()
+			volume.bounds = AABB(shape.global_transform * points[0], Vector3.ZERO)
+			for p in points:
+				volume.bounds = volume.bounds.expand(shape.global_transform * p)
+			volume.bounds = volume.bounds.grow(0.05)
+		else:
+			volume.bounds = shape.global_transform * volume.local_box()
 		return volume
 
 	## The box round it in its own space.
@@ -544,6 +645,25 @@ class Volume:
 				return AABB(Vector3(r.position.x, r.position.y, -depth), Vector3(r.size.x, r.size.y, depth))
 		return AABB(-size / 2.0, size)
 
+	## Spun: points round its outside (in its own space): at each end, and
+	## every couple of degrees round, in and out, top and bottom.
+	func _spin_points() -> PackedVector3Array:
+		var r := Rect2(outline[0], Vector2.ZERO)
+		for p in outline:
+			r = r.expand(p)
+		var points := PackedVector3Array()
+		var steps := maxi(1, ceili(rad_to_deg(spin) / 2.0))
+		for i in steps + 1:
+			var angle := spin * i / steps
+			for out in [maxf(r.position.x, 0.0), r.end.x]:
+				for y in [r.position.y, r.end.y]:
+					points.append(Vector3(out * cos(angle), y, -out * sin(angle)))
+		return points
+
+	## Spun: how far round (0 to TAU) a point in its own space is.
+	static func _round_by(p: Vector3) -> float:
+		return fposmod(atan2(-p.z, p.x), TAU)
+
 	func has_point(point: Vector3) -> bool:
 		if not bounds.has_point(point):
 			return false
@@ -552,6 +672,7 @@ class Volume:
 			&"cylinder": return absf(p.y) <= size.y / 2.0 and Vector2(p.x, p.z).length() < size.x
 			&"sphere": return p.length() < size.x
 			&"prism": return p.z < 0.0 and p.z > -depth and Geometry2D.is_point_in_polygon(Vector2(p.x, p.y), outline)
+			&"spin": return _round_by(p) <= spin and Geometry2D.is_point_in_polygon(Vector2(Vector2(p.x, p.z).length(), p.y), outline)
 		return absf(p.x) <= size.x / 2.0 and absf(p.y) <= size.y / 2.0 and absf(p.z) <= size.z / 2.0
 
 	## Where its top is straight under (x, z): [height, its surface's normal
@@ -577,6 +698,14 @@ class Volume:
 			&"prism":
 				_slab(inside, o.z, d.z, -depth, 0.0, Vector3.BACK)
 				_outline(inside, Vector2(o.x, o.y), Vector2(d.x, d.y))
+			&"spin":
+				# (Upright: the line stays the same way out and round.)
+				if _round_by(o) > spin:
+					return []
+				_outline(inside, Vector2(Vector2(o.x, o.z).length(), o.y), Vector2(0.0, d.y))
+				var n := inside[2] as Vector3
+				var angle := _round_by(o)
+				inside[2] = Vector3(cos(angle), 0.0, -sin(angle)) * n.x + Vector3.UP * n.y
 		if inside[0] > inside[1] or inside[1] < 0.0 or inside[0] == -INF:
 			return []
 		var normal: Vector3 = (to_local.basis.transposed() * (inside[2] as Vector3)).normalized()
@@ -759,6 +888,112 @@ func wall_up(from: Spot, to: Spot, depth: float) -> bool:
 			if upright:
 				return true
 	return false
+
+
+# --- Slopes ------------------------------------------------------------------
+# A top steeper than you can stand around on (STAND_SLOPE) but no steeper than
+# RUN_SLOPE is a slope you can run up (or down). Each stretch of a shape's top
+# that's all like that (or flat), uncovered, with headroom over it, is a
+# Slope; rules/run_up.gd links the places it meets, at its foot and its top.
+
+## In the game you can run up a slope up to about 45° (steeper and you slide
+## back: tests/test_slopes.gd); this leaves some margin.
+const RUN_SLOPE := 40.0
+## Room you need over a slope to run up it (metres).
+const SLOPE_HEADROOM := 1.6
+## Squares further apart in height than this aren't one surface (it's a step);
+## a place's this close in height to a square beside it meets it.
+const SLOPE_STEP := 0.6
+
+class Slope:
+	## Its squares (TOP_CELL across): each one's middle (x, height there, z),
+	## and its lowest and highest points.
+	var squares := PackedVector3Array()
+	var low := PackedFloat32Array()
+	var high := PackedFloat32Array()
+	## From above, round all of it.
+	var area: Rect2
+	var node: Node
+
+
+var _grids: Array = [] # [shape, its top's grid, which squares are covered] (see _find_places()).
+
+
+func _find_slopes() -> void:
+	var steep_enough := cos(deg_to_rad(RUN_SLOPE))
+	var flat := cos(deg_to_rad(STAND_SLOPE))
+	for entry: Array in _grids:
+		var grid: Dictionary = entry[1]
+		var covered: PackedByteArray = entry[2]
+		var across: Vector2i = grid.across
+		var origin: Vector2 = grid.origin
+		var middle: PackedFloat32Array = grid.middle
+		var upright: PackedFloat32Array = grid.upright
+		var middle_of := func(k: int) -> Vector3:
+			return Vector3(origin.x + (k % across.x + 0.5) * TOP_CELL, middle[k], origin.y + (floori(float(k) / across.x) + 0.5) * TOP_CELL)
+		var runnable := PackedByteArray()
+		runnable.resize(middle.size())
+		for k in middle.size():
+			if is_nan(middle[k]) or covered[k] != 0 or upright[k] < steep_enough - 1e-4:
+				continue
+			var at: Vector3 = middle_of.call(k)
+			var top: float = grid.high[k]
+			var clear := true
+			var up := 0.3
+			while clear and up < SLOPE_HEADROOM + 0.2: # (Every 0.4 m up to SLOPE_HEADROOM.)
+				clear = not is_solid(Vector3(at.x, top + minf(up, SLOPE_HEADROOM), at.z))
+				up += 0.4
+			runnable[k] = 1 if clear else 0
+		# Joined: squares side by side, about level where they meet.
+		for start in middle.size():
+			if runnable[start] != 1:
+				continue
+			var slope := Slope.new()
+			slope.node = entry[0]
+			var steep := false
+			var stack: Array[int] = [start]
+			runnable[start] = 2
+			while not stack.is_empty():
+				var k: int = stack.pop_back()
+				var at: Vector3 = middle_of.call(k)
+				slope.squares.append(at)
+				slope.low.append(grid.low[k])
+				slope.high.append(grid.high[k])
+				slope.area = Rect2(at.x, at.z, 0.0, 0.0) if slope.squares.size() == 1 else slope.area.expand(Vector2(at.x, at.z))
+				steep = steep or upright[k] < flat
+				var i := k % across.x
+				var j := floori(float(k) / across.x)
+				for next: Vector2i in [Vector2i(i - 1, j), Vector2i(i + 1, j), Vector2i(i, j - 1), Vector2i(i, j + 1)]:
+					if next.x < 0 or next.y < 0 or next.x >= across.x or next.y >= across.y:
+						continue
+					var n := next.y * across.x + next.x
+					if runnable[n] == 1 and absf(middle[n] - middle[k]) <= SLOPE_STEP:
+						runnable[n] = 2
+						stack.append(n)
+			if steep: # (All flat: just a top, its places are all there is to it.)
+				slope.area = slope.area.grow(TOP_CELL / 2.0)
+				slopes.append(slope)
+
+
+## The places `slope` meets: beside one of its squares (or under it), at
+## about the height of its middle (not just its highest: a square at the foot
+## of a step up has the step's top in it).
+func places_at(slope: Slope) -> Array[Spot]:
+	var low := INF
+	var high := -INF
+	for k in slope.squares.size():
+		low = minf(low, slope.low[k])
+		high = maxf(high, slope.high[k])
+	var met: Array[Spot] = []
+	for place in places:
+		if place.y < low - SLOPE_STEP or place.y > high + SLOPE_STEP or not place.area.grow(TOP_CELL).intersects(slope.area):
+			continue
+		for k in slope.squares.size():
+			var at := slope.squares[k]
+			if absf(place.y - at.y) <= SLOPE_STEP and _distance_to(place.area, Vector2(at.x, at.z)) <= TOP_CELL:
+				met.append(place)
+				break
+	return met
 
 
 ## Where to set off from `from` toward `to`: the nearest point first, then

@@ -456,10 +456,30 @@ blocks (four lots each) and its own shapes, dealt out to every building there th
   road: rails, tubes, the tunnel), at least 7 m up; a relic sits at the tip.
 - **Round** (as in the old town).
 The rest is the **old town** (round, domed, stepped, courtyard, winged).
-Next: the curvy museum (curved prisms, flattened domes, sloped walls you run up), then the
-futuristic quarter itself (tall leaning and turned towers, glass bridges); a church or cathedral,
-parking garages, hallways. Not yet: running up slopes steeper than 10 degrees that aren't domes or
-launchers (a museum's sloped wall would need a rule for that).
+Next: the futuristic quarter itself (tall leaning and turned towers, glass bridges); a church or
+cathedral, parking garages, hallways.
+
+### Slopes and the museum
+
+**Slopes you run up.** In the game you can run up anything up to about 45 degrees (the physics'
+floor limit; steeper and you slide back down). The checker says 40 (`RUN_SLOPE`, a little margin):
+every stretch of a shape's top between 10 and 40 degrees, uncovered and with 1.6 m of headroom, is a
+**slope** (`ReachMap.Slope`, `_find_slopes()`), and `rules/run_up.gd` links the places it meets at
+its foot and its top, both ways ("run up", "run down"). Nothing is jumped, so no jump path to clear.
+Pitched old-town roofs (28-36 degrees) count too: run up one to a taller roof at its ridge. The
+checker also reads **spun** shapes (a `CSGPolygon3D` outline spun round an upright line: a ring, or
+an arc of terraces), and covered bits of a sloped or curved top are worked out exactly (anything
+else of the building just over it), not by boxes. Tests: `tests/test_slopes.gd` (30, 40 and 46
+degree slopes, run up in the game: 40 yes, 46 no; one with a slab over it; terraces spun round).
+
+**The museum** (after the Canadian Museum of History: curved layers like rock laid down by a
+glacier, a great hall, copper domes) fills the south-west block on the road round the district
+(`MUSEUM_*` in the generator). In the middle, a round hall 24 m tall with a flattened dome on top
+you run up to its crown. Round it, terraces spun in arcs, each a slope (36 degrees at its steepest,
+curving over into its top) you run straight up from the street: the gallery (to 10 m), the upper
+terrace on it (to 18 m), and a low wing (5 m) either side. Relics on the terraces' tops and floating
+over the dome. Tests: `tests/test_museum.gd` (keeps to its block; slopes runnable; every top
+reachable alone; in the game, up both terraces from the street, and up the dome).
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 
