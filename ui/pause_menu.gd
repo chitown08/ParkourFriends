@@ -41,6 +41,9 @@ func _ready() -> void:
 	_sensitivity.value_changed.connect(_on_sensitivity_changed)
 	_invert_y.toggled.connect(_on_invert_y_toggled)
 	_fullscreen.toggled.connect(_on_fullscreen_toggled)
+	%LightTrails.toggled.connect(func(pressed: bool) -> void:
+		Settings.light_trails = pressed
+		Settings.save_to_disk())
 	for profile_id: String in ["superhuman", "human"]:
 		_movement.add_item(profile_id.capitalize())
 		_movement.set_item_metadata(_movement.item_count - 1, profile_id)
@@ -65,6 +68,7 @@ func open(can_invite := false) -> void:
 	_sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
 	_invert_y.set_pressed_no_signal(Settings.invert_y)
 	_fullscreen.set_pressed_no_signal(Settings.fullscreen)
+	%LightTrails.set_pressed_no_signal(Settings.light_trails)
 	_free_run.set_pressed_no_signal(Settings.free_run_enabled)
 	%SaveProgress.set_pressed_no_signal(Settings.save_progress)
 	%ForgetProgress.text = "Forget saved progress"

@@ -88,6 +88,10 @@ text = "Invert camera up/down"
 unique_name_in_owner = true
 text = "Fullscreen (F11)"
 
+[node name="LightTrails" type="CheckBox" parent="Center/Panel/Margin/Items/Columns/Settings"]
+unique_name_in_owner = true
+text = "Light trails (where friends have run)"
+
 [node name="MasterRow" type="HBoxContainer" parent="Center/Panel/Margin/Items/Columns/Settings"]
 
 [node name="Label" type="Label" parent="Center/Panel/Margin/Items/Columns/Settings/MasterRow"]

@@ -33,6 +33,8 @@ static var music_volume := 0.5
 static var effects_volume := 1.0
 ## M switches the music off and on.
 static var music_on := true
+## Everyone's light trail (player/light_trail.gd): where your friends have run.
+static var light_trails := true
 ## Save what the crew's done (relics delivered and earned) between sessions
 ## (see Progress). Only developers can switch it off.
 static var save_progress := true
@@ -53,6 +55,7 @@ static func load_from_disk() -> void:
 	movement_profile = file.get_value("movement", "profile", movement_profile)
 	free_run_enabled = file.get_value("movement", "free_run", free_run_enabled)
 	fullscreen = file.get_value("display", "fullscreen", fullscreen)
+	light_trails = file.get_value("display", "light_trails", light_trails)
 	master_volume = file.get_value("audio", "master_volume", master_volume)
 	music_volume = file.get_value("audio", "music_volume", music_volume)
 	effects_volume = file.get_value("audio", "effects_volume", effects_volume)
@@ -69,6 +72,7 @@ static func save_to_disk() -> void:
 	file.set_value("movement", "profile", movement_profile)
 	file.set_value("movement", "free_run", free_run_enabled)
 	file.set_value("display", "fullscreen", fullscreen)
+	file.set_value("display", "light_trails", light_trails)
 	file.set_value("audio", "master_volume", master_volume)
 	file.set_value("audio", "music_volume", music_volume)
 	file.set_value("audio", "effects_volume", effects_volume)

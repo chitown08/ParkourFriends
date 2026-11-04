@@ -29,7 +29,7 @@ const WORLD_NAMES := {
 	"rooftop_district": "Rooftop District",
 	"free_run_line": "Training: Free-Run Line",
 	"test_course": "Training: Test Course",
-	"stress_city": "Test: Stress City (3 km)",
+	"stress_city": "Test: Stress City (4 km)",
 }
 ## Movement feels you can pick in the pause menu.
 const PROFILES := {

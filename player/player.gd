@@ -229,6 +229,8 @@ var _jump_buffer_timer := 0.0
 var _outfit_index := 0
 ## The name over your head, for friends to see (not shown for your own).
 var _name_tag: Label3D
+## Where you've run, in light (see LightTrail).
+var _light_trail: LightTrail
 ## How high above your feet the name floats (metres).
 const NAME_TAG_HEIGHT := 2.3
 
@@ -368,6 +370,10 @@ func _ready() -> void:
 		sync_outfit = Cosmetics.tidy(Settings.outfit)
 	elif is_bot:
 		sync_player_name = "Buddy"
+	_light_trail = LightTrail.new()
+	_light_trail.name = "LightTrail"
+	_light_trail.player = self
+	add_child(_light_trail)
 	_apply_color()
 	_apply_outfit()
 
@@ -766,6 +772,8 @@ func _apply_color() -> void:
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
 	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
 	_body_mesh.material_override = material
+	if _light_trail:
+		_light_trail.color = material.albedo_color
 	if _name_tag:
 		_name_tag.modulate = material.albedo_color.lightened(0.5)
 

@@ -452,3 +452,15 @@ are plain boxes: real art will cost more, but there's lots of room). The limits 
 ahead and ship the meshes, or load chunks as you go, rather than building at load), the
 reachability checker (it compares every place with every other: it needs sorting by area before a
 city this size), and how much there is to fill: 10 km is 11 minutes across at full flow.
+
+## Light trails (`player/light_trail.gd`, `materials/light_trail*.gdshader`, Nov 2026)
+
+For a city kilometres across: how you find your friends when they're too far off to see. Every
+player leaves a ribbon of light in their colour along where they've run (a point every 0.75 m at
+their middle), each bit lasting 20 s and fading over its last 5; a respawn starts a new one. The
+shader turns it to face the camera and keeps it at least `screen_width` of the view wide however far
+off (about 8 pixels at 1080p), so it isn't big up close but reads from across the city; it's unshaded,
+ignores the haze, is faint right by the camera, and is drawn again at half strength through walls.
+Every screen draws everyone's from where it sees them (nothing extra on the network). A setting
+turns them off. The cloth trails (banners, scarves: `player/trail.gd`) are still cosmetics up close.
+The stress city is now 4 km across by default.

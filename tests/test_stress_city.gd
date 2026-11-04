@@ -15,4 +15,4 @@ func test_you_land_on_the_hub_and_can_run() -> void:
 	var start := player.global_position
 	await hold(&"move_forward", 60)
 	expect(player.global_position.distance_to(start) > 3.0 and player.global_position.y > StressCity.HUB_HEIGHT - 0.5, "running across it (at %s)" % player.global_position)
-	StressCity.size = 3000.0
+	StressCity.size = 4000.0

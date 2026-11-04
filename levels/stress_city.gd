@@ -18,7 +18,7 @@ extends Level
 static var mode := "baked"
 static var occluders := true
 ## How far across (metres).
-static var size := 3000.0
+static var size := 4000.0
 
 const SEED := 7
 const BLOCK := 60.0
