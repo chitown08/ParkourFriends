@@ -134,6 +134,15 @@ const WALL_RAMP := Vector2(12.0, 5.0)
 const WALL_RAMP_STOREYS := Vector2i(4, 5)
 const QUARTER_PIPES := 2
 const QUARTER_PIPE_STOREYS := 4
+## Pipes (levels/pipe.gd): a glass tube across each avenue, joining two roofs
+## the same height (where the rails can't: they need one higher), this far
+## into each roof and this wide (one you can loop free-running); and one big
+## road tunnel on the ring road round the district, with a relic on its
+## ceiling (a loop at full flow).
+const TUBE_IN := 3.0
+const TUBE_RADIUS := 3.0
+const TUBE_MIN_STOREYS := 5
+const TUNNEL := Vector2(40.0, 4.5) ## (Length, radius.)
 
 # Ways back up: every flat-roofed building without a fire escape (towers
 # aside) gets a yellow drainpipe or a column of window sills up one wall, and
@@ -242,11 +251,12 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	var launchers := _write_launchers(buildings)
+	var pipes := _write_pipes(buildings)
 	_write_ramps()
 	_write_markers(buildings)
 	var runs := _write_runs(buildings) # (Before the relics: a run takes its roofs first.)
 	_write_relics(buildings)
-	var relics := 5 + _write_extra_relics(buildings)
+	var relics := 6 + _write_extra_relics(buildings) # (The five fixed ones and the tunnel's.)
 	var items := _write_items(buildings)
 	_write_relic_board(buildings)
 	var roof_things := 0
@@ -260,9 +270,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d relics, %d items, %d group runs, %d roof things, %d street things (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, launchers, relics, items, runs, roof_things, street_things, SEED]
+			staircases, ways_up, vents, rails, launchers, pipes, relics, items, runs, roof_things, street_things, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -727,6 +737,7 @@ func _write_header() -> void:
 [ext_resource type="Script" path="res://levels/run_gate.gd" id="24_gate"]
 [ext_resource type="Script" path="res://levels/relic_board.gd" id="25_board"]
 [ext_resource type="Script" path="res://levels/launcher.gd" id="26_launcher"]
+[ext_resource type="Script" path="res://levels/pipe.gd" id="27_pipe"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -796,7 +807,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Runs" type="Node3D" parent="."]
 
-[node name="Launchers" type="Node3D" parent="."]""")
+[node name="Launchers" type="Node3D" parent="."]
+
+[node name="Pipes" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -907,7 +920,7 @@ func _relic_candidates(buildings: Array[Dictionary]) -> Array:
 ## takes, by name): enough of each to make up RELICS_WANTED with the fixed five.
 func _pick_relics(needed: Dictionary) -> Array:
 	var have := {}
-	for fixed in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway"]:
+	for fixed in ["RelicSky", "RelicRail", "RelicFarCorner", "RelicHighRoof", "RelicSubway", "RelicTunnel"]:
 		have[needed[fixed]] = have.get(needed[fixed], 0) + 1
 	var picked := []
 	for candidate: Dictionary in _extra_relics:
@@ -1177,3 +1190,70 @@ func _write_launchers(buildings: Array[Dictionary]) -> int:
 				pipes += 1
 			break
 	return ramps + pipes
+
+
+## The glass tubes across the avenues and the road tunnel (see TUBE_IN and
+## TUNNEL). Returns how many pipes.
+func _write_pipes(buildings: Array[Dictionary]) -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "pipes"])
+	var count := 0
+	for across_x in [true, false]:
+		var rows := range(BLOCKS)
+		_shuffle(rows, dice)
+		var done := false
+		for i: int in rows:
+			var near := Vector2i(AVENUE_AFTER, i) if across_x else Vector2i(i, AVENUE_AFTER)
+			var far := near + (Vector2i.RIGHT if across_x else Vector2i.DOWN)
+			var side := -AVENUE / 2.0
+			var lane_start := _block_rect(near).position.y if across_x else _block_rect(near).position.x
+			for attempt in 8:
+				var lane := lane_start + dice.randf_range(RAIL_MARGIN + TUBE_RADIUS, BLOCK - RAIL_MARGIN - TUBE_RADIUS)
+				var a := _facing(buildings, near, side, lane, across_x)
+				var b := _facing(buildings, far, -side, lane, across_x)
+				if a.is_empty() or b.is_empty() or a.storeys != b.storeys or a.storeys < TUBE_MIN_STOREYS:
+					continue
+				# Clear of the rails across here (and their run-ups).
+				var from := Vector2(side - TUBE_IN, lane) if across_x else Vector2(lane, side - TUBE_IN)
+				var to := Vector2(-side + TUBE_IN, lane) if across_x else Vector2(lane, -side + TUBE_IN)
+				var footprint := Rect2(from, Vector2.ZERO).expand(to).grow(TUBE_RADIUS + 1.0)
+				if _rail_paths.any(func(path: Array) -> bool: return footprint.grow(RAIL_CLEAR_WIDTH).intersects(Rect2(path[0], Vector2.ZERO).expand(path[1]))):
+					continue
+				var y: float = a.storeys * STOREY
+				_write_pipe("Tube%s%d" % ["EW" if across_x else "NS", i], from, to, y, TUBE_RADIUS, true)
+				# Keep the roofs' clutter out of the way in (and a run-up to it).
+				var way := (to - from).normalized()
+				_rail_paths.append([from - way * RAIL_RUN_UP, to + way * RAIL_RUN_UP])
+				count += 1
+				done = true
+				break
+			if done:
+				break
+	# The road tunnel: along the ring road, clear of anything on the pavement.
+	var low := _starts[0] - _plaza_middle - EDGE
+	var high := _starts[BLOCKS - 1] + BLOCK - _plaza_middle + EDGE
+	for attempt in 20:
+		var start_x := dice.randf_range(low + EDGE + 5.0, high - EDGE - 5.0 - TUNNEL.x)
+		var z := high - EDGE / 2.0 # (The south side.)
+		var from := Vector2(start_x, z)
+		var to := Vector2(start_x + TUNNEL.x, z)
+		var footprint := Rect2(from, Vector2.ZERO).expand(to).grow(TUNNEL.y + 1.0)
+		if _fire_escapes.any(func(r: Rect2) -> bool: return r.intersects(footprint)):
+			continue
+		_write_pipe("RoadTunnel", from, to, 0.0, TUNNEL.y, false)
+		_fire_escapes.append(footprint) # (Keeps the pavement clutter clear.)
+		var middle := (from + to) / 2.0
+		_relic("RelicTunnel", Vector3(middle.x, 2.0 * TUNNEL.y - 1.2, middle.y))
+		count += 1
+		break
+	return count
+
+
+## A pipe from `from` to `to` (seen from above), its floor at `y`.
+func _write_pipe(name: String, from: Vector2, to: Vector2, y: float, radius: float, glass: bool) -> void:
+	var heading := (to - from).normalized() # (A pipe runs along its -Z.)
+	var yaw := atan2(-heading.x, -heading.y)
+	var c := cos(yaw)
+	var s := sin(yaw)
+	_out.append("\n[node name=\"%s\" type=\"Node3D\" parent=\"Pipes\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"27_pipe\")\nlength = %s\nradius = %s\nglass = %s" % [
+			name, _num(c), _num(s), _num(-s), _num(c), _num(from.x), _num(y), _num(from.y), _num(from.distance_to(to)), _num(radius), "true" if glass else "false"])

@@ -111,6 +111,12 @@ func animate(state: StringName, speed: float, rising: bool, lean: float,
 	match state:
 		&"Ground":
 			_run(speed, &"carry" if carrying else &"idle")
+		&"PipeRun":
+			# (Round a tube you're mostly not moving across the ground: run flat out.)
+			if _variants.has("pipe_run"):
+				_play(&"pipe_run")
+			else:
+				_run(maxf(speed, RUN_ANIM_SPEED), &"idle")
 		&"Linked", &"Whipped":
 			if _variants.has(STATE_MOVES[state]):
 				_play(STATE_MOVES[state], maxf(speed, 1.0) / RUN_ANIM_SPEED)

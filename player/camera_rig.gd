@@ -21,6 +21,10 @@ extends Node3D
 ## How quickly it eases in and out (higher: quicker).
 @export var distance_ease := 1.5
 
+## Which way is up for the body it follows (eased): straight up, except
+## running round the inside of a tube (Player.body_up), where the camera
+## stays on your head's side of you, inside the tube.
+var _up := Vector3.UP
 var yaw := 0.0
 var pitch := -0.25
 ## False while a menu is open, so the camera ignores the mouse and keys.
@@ -70,6 +74,7 @@ func _process(delta: float) -> void:
 
 	rotation = Vector3(0.0, yaw, 0.0)
 	_spring_arm.rotation = Vector3(pitch, 0.0, 0.0)
+	_up = _up.slerp(_target.body_up if _target is Player else Vector3.UP, 1.0 - exp(-10.0 * delta))
 	_follow_target()
 
 
@@ -84,4 +89,4 @@ func _y_direction() -> float:
 
 
 func _follow_target() -> void:
-	global_position = _target.get_global_transform_interpolated().origin + Vector3.UP * follow_height
+	global_position = _target.get_global_transform_interpolated().origin + _up * follow_height

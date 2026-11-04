@@ -27,6 +27,7 @@
 [ext_resource type="Script" path="res://player/states/whipped.gd" id="25_whipped"]
 [ext_resource type="Script" path="res://player/states/catch.gd" id="26_catch"]
 [ext_resource type="Script" path="res://player/states/caught.gd" id="27_caught"]
+[ext_resource type="Script" path="res://player/states/pipe_run.gd" id="28_pipe_run"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -163,6 +164,9 @@ script = ExtResource("13_grind")
 
 [node name="Glide" type="Node" parent="States"]
 script = ExtResource("15_glide")
+
+[node name="PipeRun" type="Node" parent="States"]
+script = ExtResource("28_pipe_run")
 
 [node name="FreeRun" type="Node" parent="."]
 script = ExtResource("11_free_run")

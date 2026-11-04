@@ -251,6 +251,10 @@ const NAME_TAG_HEIGHT := 2.3
 var is_crouched := false
 ## Sideways body lean in radians (wall running, banking a glide). Reset whenever the state changes.
 var lean := 0.0
+## Which way your body's up is: straight up, except running round a tube
+## (PipeRun), where it's in toward the tube's middle (the camera follows it).
+## Reset whenever the state changes.
+var body_up := Vector3.UP
 
 # --- Looks: animations (see CharacterModel), plus squash and stretch, tilts and swings on top.
 ## States you're in the air in, and landing states (for the landing thud).
@@ -623,6 +627,7 @@ func show_effect(effect: StringName, args: Array) -> void:
 ## Switches to the state (child of the States node) with this name.
 func change_state(state_name: StringName, data: Dictionary = {}) -> void:
 	lean = 0.0
+	body_up = Vector3.UP
 	if state:
 		state.exit()
 	state = _states.get_node(NodePath(state_name))
@@ -732,7 +737,7 @@ func _update_flow(delta: float) -> void:
 	if debug_full_flow:
 		flow = 1.0
 		return
-	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeClimb", &"ChainHang", &"Caught", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
+	if state.name in [&"Climb", &"Vault", &"Grind", &"PipeRun", &"PipeClimb", &"ChainHang", &"Caught", &"ChainClimb", &"LegUp", &"Linked", &"Whip", &"Whipped"]:
 		return # A vault, a pull-up, a drainpipe or a rail grind doesn't break your flow.
 	if not input.free_run_held:
 		# Flow is free-running's: without it you ease back down to running speed.
@@ -1348,6 +1353,8 @@ func control_hints() -> Array:
 			hints.append([&"crouch", "Let go"])
 		&"Grind":
 			hints.append([&"crouch", "Step off"])
+		&"PipeRun":
+			hints.append([&"jump", "Jump off the wall"])
 		_:
 			_friend_hints(hints)
 	hints.append_array(items.control_hints())

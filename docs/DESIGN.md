@@ -297,6 +297,25 @@ wall) and two quarter-pipes (at the foot of 4-storey walls); the checker's `laun
 the street to the roof beside the launch's top (`tests/test_launchers.gd` plays it for real).
 Two quarter-pipes facing each other make a half-pipe (none placed yet).
 
+## Pipes (`levels/pipe.gd`, `player/states/pipe_run.gd`, Nov 2026)
+
+Big round tubes: storm drains, road tunnels, glass tubes between towers. Walk or run through on the
+floor; run up the side fast enough (past 25°, at 5 m/s or more) and you're running round the inside
+(`PipeRun`), like a loop-the-loop. Controls work on the tube unrolled flat (free-running: where the
+camera points, so point it across the tube to go round). Gravity round the wall is a gentler 10 m/s²,
+and running pushes you on at 3 m/s² (up to your top speed). You stay on while your speed round
+holds you there (v² / r >= g down the wall), so near the ceiling too slow and you drop off; slower
+still, you swing back down like a half-pipe. Jump: off the wall, in toward the middle. Your body
+leans with the wall (upside down on the ceiling) and the camera stays on your head's side.
+`Pipe.loop_speed()` is the speed round at the bottom to make it over the top (a calibration test
+plays either side of it): 11.8 m/s for the 4.5 m road tunnel (full flow only), 9.7 for a 3 m glass
+tube (free-running). The district has a glass tube across each avenue, between two roofs the same
+height (where rails can't go: they need one higher), and a 40 m road tunnel on the south ring road
+with a relic on its ceiling. The checker's `pipe` rule joins a tube's two end places (if level with
+its floor) and links them to targets your middle passes going round, needing flow if free-running
+isn't fast enough. (Fixing it turned up a launch roof rule that ignored distance: it now only
+reaches targets within its flight.)
+
 ## Delivery celebrations (`game/celebration.gd`, Nov 2026)
 
 A party at the drop-off when a relic comes in, all particles made in code: confetti (tumbling paper);

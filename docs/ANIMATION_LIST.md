@@ -51,6 +51,7 @@ animation on the same rigged character, so they all share one skeleton.
 | `wall_run_left` 🔁 / `wall_run_right` 🔁 | wall running | ✅ | |
 | `pipe_climb` 🔁 | climbing a drainpipe | 🟡 `wall_scramble` | |
 | `grind` 🔁 | riding a rail, side on | ✅ | `grind-crouch`, `grind-arms_out` |
+| `pipe_run` 🔁 | running round the inside of a tube (the body is rolled to the wall in code) | 🟡 `run` | `pipe_run-arms_out` (balancing) |
 
 ## With friends
 

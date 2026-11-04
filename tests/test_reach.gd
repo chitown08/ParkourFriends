@@ -358,3 +358,30 @@ func test_every_launcher_gets_you_onto_its_building() -> void:
 		var building := str(launcher.name).get_slice("_", 0) + "_" + str(launcher.name).get_slice("_", 1)
 		var up := map.links.any(func(link: ReachMap.Link) -> bool: return link.how == "launcher" and link.to.name == building)
 		expect(up, "%s should get you onto %s" % [launcher.name, building])
+
+
+func test_the_districts_pipes_go_where_they_should() -> void:
+	await _load_district()
+	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var tubes := 0
+	for pipe: Pipe in main.level.get_node("Pipes").get_children():
+		if not pipe.glass:
+			continue
+		tubes += 1
+		expect(map.links.any(func(link: ReachMap.Link) -> bool: return link.how == "pipe" and _beside_end(pipe, link.from) and _beside_end(pipe, link.to)),
+				"%s should join two roofs" % pipe.name)
+	expect(tubes == 2, "a glass tube across each avenue, %d" % tubes)
+	var tunnel: Pipe = main.level.get_node("Pipes/RoadTunnel")
+	var ceiling := map.target_named("RelicTunnel")
+	expect(tunnel != null and ceiling != null and tunnel.contains(ceiling.middle()), "the road tunnel has a relic on its ceiling")
+	var start := map.place_under(main.level.get_node("SpawnPoint").global_position + Vector3.UP)
+	expect(map.players_needed(ceiling, start, [&"flow"]) == 1, "you can loop up to it alone, at full flow")
+	expect(map.players_needed(ceiling, start, [], 1) == 0, "but not without full flow")
+
+
+## Whether `spot` is a roof just outside one end of `pipe`.
+func _beside_end(pipe: Pipe, spot: ReachMap.Spot) -> bool:
+	for end in [pipe.surface_point(0.0, 0.0), pipe.surface_point(pipe.length, 0.0)]:
+		if spot.area.grow(0.5).has_point(Vector2(end.x, end.z)) and absf(spot.y - end.y) < 0.6:
+			return true
+	return false
