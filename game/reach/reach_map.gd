@@ -85,6 +85,7 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 	map.rise_gravity = 2.0 * profile.jump_height / (profile.jump_time_to_peak * profile.jump_time_to_peak)
 	map.fall_gravity = 2.0 * profile.jump_height / (profile.jump_time_to_fall * profile.jump_time_to_fall)
 	map._find_places(level_)
+	map._find_solids(level_)
 	map._find_targets(level_)
 	for file in DirAccess.get_files_at(RULES_DIR):
 		if file.ends_with(".gd"):
@@ -98,6 +99,8 @@ func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], 
 		return
 	if &"flow" in needs and maxf(from.area.size.x, from.area.size.y) < FLOW_RUN_UP:
 		return # No room to get up to speed.
+	if not path_clear(from, to):
+		return # A wall or ceiling in the way.
 	var link := Link.new()
 	link.from = from
 	link.to = to
@@ -189,6 +192,9 @@ func scramble_height(takeoff_height: float) -> float:
 func _find_places(root: Node) -> void:
 	for node in root.find_children("*", "CSGBox3D", true, false):
 		var box := node as CSGBox3D
+		if box.operation == CSGShape3D.OPERATION_SUBTRACTION and box.name.begins_with("Room"):
+			_add_room_floor(box)
+			continue
 		if not box.use_collision or not box.is_visible_in_tree():
 			continue
 		var size := box.size * box.global_basis.get_scale()
@@ -201,6 +207,24 @@ func _find_places(root: Node) -> void:
 		spot.y = box.global_position.y + size.y / 2.0
 		spot.node = box
 		places.append(spot)
+
+
+## A room cut out of a building (a "Room..." hole, see _find_solids()): its
+## floor is a place, unless it goes right down to the ground (then the ground's
+## the floor). Named "<building>/<room>".
+func _add_room_floor(hole: CSGBox3D) -> void:
+	var building := hole.get_parent() as CSGBox3D
+	if building == null:
+		return
+	var room := _aabb_of(hole)
+	if room.position.y <= _aabb_of(building).position.y + 0.1 or room.size.x * room.size.z < MIN_PLACE_AREA:
+		return
+	var spot := Spot.new()
+	spot.name = "%s/%s" % [building.name, hole.name]
+	spot.area = Rect2(room.position.x, room.position.z, room.size.x, room.size.z)
+	spot.y = room.position.y
+	spot.node = hole
+	places.append(spot)
 
 
 func _find_targets(root: Node) -> void:
@@ -227,3 +251,127 @@ func _find_targets(root: Node) -> void:
 		spot.reach = RunGate.RADIUS
 		spot.node = gate
 		targets.append(spot)
+
+
+# --- Walls and ceilings in the way -------------------------------------------
+# Buildings (boxes in a "Buildings" node, or in the reach_solid group) are solid,
+# except for the holes cut out of them (rooms, doorways, windows: child boxes
+# that subtract). A link only counts if there's a way between its two spots
+# that doesn't go through one (see path_clear()).
+
+## Seen from above, the solids are sorted into squares this big (metres), for
+## quick lookup.
+const SOLID_CELL := 10.0
+## How finely a path is checked (metres between points along it).
+const PATH_STEP := 0.4
+## How far up off a place your middle is (what a path runs from and to).
+const PATH_MIDDLE := 0.9
+
+class Solid:
+	var box: AABB
+	var holes: Array[AABB] = []
+
+var _solids: Array[Solid] = []
+var _solid_cells := {}
+
+
+## Whether `point` is inside a building's solid part (not one of its holes).
+func is_solid(point: Vector3) -> bool:
+	for solid: Solid in _solid_cells.get(_cell(point), []):
+		if solid.box.has_point(point) and not solid.holes.any(func(hole: AABB) -> bool: return hole.has_point(point)):
+			return true
+	return false
+
+
+## Whether a straight line from `a` to `b` stays clear of solids.
+func segment_clear(a: Vector3, b: Vector3) -> bool:
+	var steps := maxi(1, ceili(a.distance_to(b) / PATH_STEP))
+	for i in steps + 1:
+		if is_solid(a.lerp(b, float(i) / steps)):
+			return false
+	return true
+
+
+## Whether there's a way from spot `from` to spot `to` that doesn't go through
+## walls or ceilings: from somewhere along its edges (or just past them: you
+## move as you jump), straight up to above the higher of the two, across, and
+## down onto the other. Tries a few ways (along the edges facing each other,
+## round the other's footprint when one is over the other).
+func path_clear(from: Spot, to: Spot) -> bool:
+	if _solids.is_empty():
+		return true
+	var start_y := from.y + (0.0 if from.is_target else PATH_MIDDLE)
+	var end_y := to.y + (0.0 if to.is_target else PATH_MIDDLE)
+	var peak := maxf(start_y, end_y) + 0.5
+	var near := gap(from, to) + 8.0
+	for s in _samples(from, to, near):
+		var t := _closest_in(to.area, s) # (Coming down on the nearest bit of it.)
+		if segment_clear(Vector3(s.x, start_y, s.y), Vector3(s.x, peak, s.y)) \
+				and segment_clear(Vector3(s.x, peak, s.y), Vector3(t.x, peak, t.y)) \
+				and segment_clear(Vector3(t.x, peak, t.y), Vector3(t.x, end_y, t.y)):
+			return true
+	return false
+
+
+## Where to set off from `from` toward `to`: the nearest point first, then
+## along its edges (just inside and just past them), and round `to`'s
+## footprint where it's over `from` (only those within `near` of `to`).
+func _samples(from: Spot, to: Spot, near: float) -> Array[Vector2]:
+	var points: Array[Vector2] = [_closest_in(from.area, to.area.get_center())]
+	for grow in [-0.25, 0.5]:
+		points.append_array(_round(from.area.grow(grow)))
+	for grow in [0.4, 2.0]:
+		for point in _round(to.area.grow(grow)):
+			if from.area.has_point(point):
+				points.append(point)
+	return points.filter(func(point: Vector2) -> bool: return _distance_to(to.area, point) <= near)
+
+
+## Points round the edge of `area`, about every 3 m (a point's area: itself).
+static func _round(area: Rect2) -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	if area.size.x <= 0.0 or area.size.y <= 0.0:
+		return [area.get_center()]
+	var corners := [area.position, Vector2(area.end.x, area.position.y), area.end, Vector2(area.position.x, area.end.y)]
+	for i in 4:
+		var a: Vector2 = corners[i]
+		var b: Vector2 = corners[(i + 1) % 4]
+		var count := maxi(1, ceili(a.distance_to(b) / 3.0))
+		for k in count:
+			points.append(a.lerp(b, float(k) / count))
+	return points
+
+
+static func _closest_in(area: Rect2, point: Vector2) -> Vector2:
+	return Vector2(clampf(point.x, area.position.x, area.end.x), clampf(point.y, area.position.y, area.end.y))
+
+
+static func _distance_to(area: Rect2, point: Vector2) -> float:
+	return _closest_in(area, point).distance_to(point)
+
+
+func _cell(point: Vector3) -> Vector2i:
+	return Vector2i(floori(point.x / SOLID_CELL), floori(point.z / SOLID_CELL))
+
+
+func _find_solids(root: Node) -> void:
+	for node in root.find_children("*", "CSGBox3D", true, false):
+		var box := node as CSGBox3D
+		if not box.use_collision or not (box.get_parent().name == &"Buildings" or box.is_in_group(&"reach_solid")):
+			continue
+		var solid := Solid.new()
+		solid.box = _aabb_of(box)
+		for child in box.get_children():
+			if child is CSGBox3D and (child as CSGBox3D).operation == CSGShape3D.OPERATION_SUBTRACTION:
+				solid.holes.append(_aabb_of(child))
+		_solids.append(solid)
+		for x in range(floori(solid.box.position.x / SOLID_CELL), floori(solid.box.end.x / SOLID_CELL) + 1):
+			for z in range(floori(solid.box.position.z / SOLID_CELL), floori(solid.box.end.z / SOLID_CELL) + 1):
+				if not _solid_cells.has(Vector2i(x, z)):
+					_solid_cells[Vector2i(x, z)] = []
+				_solid_cells[Vector2i(x, z)].append(solid)
+
+
+static func _aabb_of(box: CSGBox3D) -> AABB:
+	var size := box.size * box.global_basis.get_scale()
+	return AABB(box.global_position - size / 2.0, size)
