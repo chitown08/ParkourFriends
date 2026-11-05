@@ -343,6 +343,12 @@ const ZIP_LINES := Vector2i(5, 3)
 ## each this big (along, out) with its top this high: over the window ledges'
 ## first row, under the second.
 const AWNING_CHANCE := 0.75
+## Balconies (downtown, iron): in pairs facing each other across this many
+## alleys, at these storeys (as many as fit), each this big (along the wall,
+## out from it): a short jump from one to the other, partway up.
+const BALCONY_PAIRS := 14
+const BALCONY_STOREYS: Array[int] = [8, 16, 24]
+const BALCONY := Vector2(4.0, 1.5)
 const AWNING_SPACING := 5.6
 const AWNING := Vector2(5.0, 2.2)
 const AWNING_TOP := 4.4
@@ -1532,8 +1538,44 @@ func _write_downtown(buildings: Array[Dictionary]) -> String:
 	var gondolas := 0
 	for b: Dictionary in towers:
 		gondolas += 1 if _write_gondola(b, gaps, gondola_dice) else 0
-	return "%d towers, %d scaffolds, %d gondolas, %d drainpipes, %d rails, %d rope bridges, %d catch nets, %d walkways" % [
-			towers.size(), scaffolds, gondolas, pipes, rails, bridges, nets, walkways]
+	var balcony_dice := RandomNumberGenerator.new() # (Its own too.)
+	balcony_dice.seed = hash([SEED, "balconies"])
+	var balconies := _write_balconies(gaps, balcony_dice)
+	return "%d towers, %d scaffolds, %d gondolas, %d drainpipes, %d rails, %d rope bridges, %d catch nets, %d walkways, %d balcony pairs" % [
+			towers.size(), scaffolds, gondolas, pipes, rails, bridges, nets, walkways, balconies]
+
+
+## Balconies (see BALCONY): in pairs facing each other across alleys, partway
+## up both towers (each tower going on up at least two storeys over it), clear
+## of what's in the gaps already. Not on towers with insides (their openings).
+## Says how many pairs.
+func _write_balconies(gaps: Array, dice: RandomNumberGenerator) -> int:
+	var order := gaps.filter(func(gap: Dictionary) -> bool:
+			return gap.to - gap.from <= ALLEY + 0.1 and gap.a.interior == "" and gap.b.interior == "")
+	_shuffle(order, dice)
+	var count := 0
+	for gap: Dictionary in order:
+		if count >= BALCONY_PAIRS:
+			break
+		var along := _gap_spot(gap, BALCONY.x / 2.0 + 0.5, dice, func(at: float) -> bool:
+				return _wall_level(gap, "a", at, BALCONY.x / 2.0) and _wall_level(gap, "b", at, BALCONY.x / 2.0) \
+						and mini(_wall_storeys(gap, "a", at), _wall_storeys(gap, "b", at)) >= BALCONY_STOREYS[0] + 2)
+		if is_nan(along):
+			continue
+		var highest := mini(_wall_storeys(gap, "a", along), _wall_storeys(gap, "b", along)) - 2
+		for storeys: int in BALCONY_STOREYS:
+			if storeys > highest:
+				break
+			for side: String in ["a", "b"]:
+				var wall := _gap_point(gap, gap.from if side == "a" else gap.to, along)
+				var out := _gap_point(gap, 1.0 if side == "a" else -1.0, 0.0)
+				var middle := wall + out * BALCONY.y / 2.0
+				var size := _gap_point(gap, BALCONY.y, BALCONY.x)
+				_box("Balcony%s_%s_%d" % [gap.a.name, gap.b.name, storeys] + side.to_upper(), "Balconies",
+						middle.x, storeys * STOREY - 0.15, middle.y, size.x, 0.3, size.y, "35_iron")
+		_gap_things.append(_gap_strip(gap, along, BALCONY.x / 2.0))
+		count += 1
+	return count
 
 
 ## A window-washer's gondola (levels/lift.gd) up glass tower `t` from the
@@ -2077,7 +2119,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Ledges" type="Node3D" parent="."]
 
-[node name="Awnings" type="Node3D" parent="."]""")
+[node name="Awnings" type="Node3D" parent="."]
+
+[node name="Balconies" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.

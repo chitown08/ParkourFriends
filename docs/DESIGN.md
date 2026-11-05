@@ -588,10 +588,15 @@ through the middle, with mistakes caught partway. First pieces:
   street; drop onto one from high and it gives back half the drop (up to 6.5 m). Getting onto
   one from the street is a jump and a grab. The checker counts a bounce like a jump (with a
   scramble up a wall from its top), at its least bounce.
+- **Balconies** (downtown, iron): in pairs facing each other across alleys, at storeys 8, 16
+  and 24 (as many as fit, with both towers going on up at least two storeys over them), 4 m
+  along the wall and 1.5 m out: a 2 m jump from one to the other. Places to land partway up, to
+  catch yourself on (they're just ledges deep enough to stand on), and to cross the alley in
+  the middle of the towers. Not on towers with insides (their openings). Nine alleys have them.
 - **Kicking off a wall from a hang**: hold back (you let go) and press jump: the wall jump pushes
   you out and away, so you don't catch every ledge on the way down.
 
-Next ideas for the middle (not built): setback terraces and balconies every 8-10 storeys, alley
+Next ideas for the middle (not built): alley
 wall-jumps between towers.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)

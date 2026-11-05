@@ -121,6 +121,8 @@ directional_shadow_max_distance = 250.0
 
 [node name="Awnings" type="Node3D" parent="."]
 
+[node name="Balconies" type="Node3D" parent="."]
+
 [node name="Ground" type="CSGBox3D" parent="Street"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.0, -1.0, -35.0)
 use_collision = true
@@ -4816,6 +4818,162 @@ script = ExtResource("37_lift")
 kind = "gondola"
 height = 66.5
 
+[node name="BalconyTower3_2_Tower3_3_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281.07, 27.85, -72.93)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_2_Tower3_3_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281.07, 27.85, -69.43)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_2_Tower3_3_16A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281.07, 55.85, -72.93)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_2_Tower3_3_16B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 281.07, 55.85, -69.43)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_0_Tower1_1_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 209.8, 27.85, -119.09)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_0_Tower1_1_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 209.8, 27.85, -115.59)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_5_Tower3_6_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 274.41, 27.85, 3.06)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_5_Tower3_6_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 274.41, 27.85, 6.56)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_5_Tower3_6_16A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 274.41, 55.85, 3.06)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_5_Tower3_6_16B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 274.41, 55.85, 6.56)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_0_Tower2_1_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 237.62, 27.85, -119.09)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_0_Tower2_1_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 237.62, 27.85, -115.59)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower0_2_Tower0_3_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 173.97, 27.85, -72.93)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower0_2_Tower0_3_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 173.97, 27.85, -69.43)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_1_Tower3_2_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 270.95, 27.85, -95.08)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower3_1_Tower3_2_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 270.95, 27.85, -91.58)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower0_6_Tower0_7_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 173.33, 27.85, 26.85)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower0_6_Tower0_7_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 173.33, 27.85, 30.35)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_6_Tower2_7_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 247.71, 27.85, 26.85)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_6_Tower2_7_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 247.71, 27.85, 30.35)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_6_Tower2_7_16A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 247.71, 55.85, 26.85)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower2_6_Tower2_7_16B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 247.71, 55.85, 30.35)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_2_Tower1_3_8A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.57, 27.85, -72.93)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_2_Tower1_3_8B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.57, 27.85, -69.43)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_2_Tower1_3_16A" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.57, 55.85, -72.93)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
+[node name="BalconyTower1_2_Tower1_3_16B" type="CSGBox3D" parent="Balconies"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 215.57, 55.85, -69.43)
+use_collision = true
+size = Vector3(4.0, 0.3, 1.5)
+material = ExtResource("35_iron")
+
 [node name="RailEW0" parent="GrindRails" instance=ExtResource("8_rail")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.0, 17.1, -167.61)
 end_point = Vector3(26.0, -2.4, 0.0)
@@ -5449,7 +5607,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 166.0, 0.0, -73.68)
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0)
-gaps = PackedVector2Array(11.53, 20.53)
+gaps = PackedVector2Array(11.53, 20.53, 5.47, 10.47)
 top = 59.5
 
 [node name="Tower0_2_Ledges46" type="Node3D" parent="Ledges"]
@@ -5473,7 +5631,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 189.5, 0.0, -68.68)
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5)
-gaps = PackedVector2Array(2.96, 11.96)
+gaps = PackedVector2Array(2.96, 11.96, 13.03, 18.03)
 top = 63.0
 
 [node name="Tower0_3_Ledges49" type="Node3D" parent="Ledges"]
@@ -5609,7 +5767,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 166.0, 0.0, 26.1)
 script = ExtResource("33_ledges")
 length = 9.94
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(4.83, 9.83)
 top = 42.0
 
 [node name="Tower0_6_Ledges66" type="Node3D" parent="Ledges"]
@@ -5649,7 +5807,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 177.08, 0.0, 31.1)
 script = ExtResource("33_ledges")
 length = 11.08
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(1.24, 6.24)
 top = 42.0
 
 [node name="Tower0_7_Ledges71" type="Node3D" parent="Ledges"]
@@ -5713,7 +5871,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 199.5, 0.0, -119.84)
 script = ExtResource("33_ledges")
 length = 22.09
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(7.8, 12.8)
 top = 52.5
 
 [node name="Tower1_0_Ledges79" type="Node3D" parent="Ledges"]
@@ -5737,7 +5895,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 221.59, 0.0, -114.8
 script = ExtResource("33_ledges")
 length = 22.09
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5, 70.0, 73.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(9.28, 14.28)
 top = 77.0
 
 [node name="Tower1_1_Ledges82" type="Node3D" parent="Ledges"]
@@ -5817,7 +5975,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 212.43, 0.0, -73.68)
 script = ExtResource("33_ledges")
 length = 9.16
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5, 70.0, 73.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(0.64, 5.64)
 top = 77.0
 
 [node name="Tower1_2_Ledges92" type="Node3D" parent="Ledges"]
@@ -5849,7 +6007,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 221.59, 0.0, -68.68
 script = ExtResource("33_ledges")
 length = 22.09
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(12.73, 16.73, 12.73, 16.73)
+gaps = PackedVector2Array(12.73, 16.73, 12.73, 16.73, 3.52, 8.52)
 top = 91.0
 
 [node name="Tower1_3_Ledges96" type="Node3D" parent="Ledges"]
@@ -5985,7 +6143,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 231.59, 0.0, -119.84)
 script = ExtResource("33_ledges")
 length = 11.46
 heights = PackedFloat32Array(14.0, 28.0, 42.0)
-gaps = PackedVector2Array(10.56, 11.96)
+gaps = PackedVector2Array(10.56, 11.96, 3.53, 8.53)
 top = 56.0
 
 [node name="Tower2_0_Ledges113" type="Node3D" parent="Ledges"]
@@ -6025,7 +6183,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 255.03, 0.0, -114.8
 script = ExtResource("33_ledges")
 length = 23.44
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0)
-gaps = PackedVector2Array(8.88, 12.88, 8.88, 12.88)
+gaps = PackedVector2Array(8.88, 12.88, 8.88, 12.88, 14.91, 19.91)
 top = 77.0
 
 [node name="Tower2_1_Ledges118" type="Node3D" parent="Ledges"]
@@ -6161,7 +6319,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 231.59, 0.0, 26.1)
 script = ExtResource("33_ledges")
 length = 23.44
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(6.85, 10.85, 6.85, 10.85)
+gaps = PackedVector2Array(6.85, 10.85, 6.85, 10.85, 13.63, 18.63)
 top = 91.0
 
 [node name="Tower2_6_Ledges135" type="Node3D" parent="Ledges"]
@@ -6193,7 +6351,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 255.03, 0.0, 31.1)
 script = ExtResource("33_ledges")
 length = 10.39
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(4.82, 9.82)
 top = 63.0
 
 [node name="Tower2_7_Ledges139" type="Node3D" parent="Ledges"]
@@ -6281,7 +6439,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, -95.83)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0)
-gaps = PackedVector2Array(12.68, 16.68, 12.18, 17.18)
+gaps = PackedVector2Array(12.68, 16.68, 12.18, 17.18, 3.42, 8.42)
 top = 49.0
 
 [node name="Tower3_1_Ledges150" type="Node3D" parent="Ledges"]
@@ -6329,7 +6487,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, -90.83
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5)
-gaps = PackedVector2Array(6.38, 11.38)
+gaps = PackedVector2Array(6.38, 11.38, 15.14, 20.14)
 top = 70.0
 
 [node name="Tower3_2_Ledges156" type="Node3D" parent="Ledges"]
@@ -6337,7 +6495,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, -73.68)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5)
-gaps = PackedVector2Array(3.69, 12.69)
+gaps = PackedVector2Array(3.69, 12.69, 13.54, 18.54)
 top = 70.0
 
 [node name="Tower3_2_Ledges157" type="Node3D" parent="Ledges"]
@@ -6361,7 +6519,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, -68.68
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(10.87, 19.87)
+gaps = PackedVector2Array(10.87, 19.87, 5.02, 10.02)
 top = 70.0
 
 [node name="Tower3_3_Ledges160" type="Node3D" parent="Ledges"]
@@ -6449,7 +6607,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, 2.31)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(13.2, 17.2, 13.2, 17.2)
+gaps = PackedVector2Array(13.2, 17.2, 13.2, 17.2, 6.88, 11.88)
 top = 91.0
 
 [node name="Tower3_5_Ledges171" type="Node3D" parent="Ledges"]
@@ -6473,7 +6631,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, 7.31)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5, 70.0, 73.5)
-gaps = PackedVector2Array(6.36, 10.36)
+gaps = PackedVector2Array(6.36, 10.36, 11.68, 16.68)
 top = 77.0
 
 [node name="Tower3_6_Ledges174" type="Node3D" parent="Ledges"]
