@@ -581,12 +581,18 @@ through the middle, with mistakes caught partway. First pieces:
   across, 7-35° down, clear of every building under them. Jump up and grab the cable (or catch it
   falling past), and you whizz down hanging from it (8 m/s at least, up to 24), flung off the end
   onto the roof; jump to let go early.
+- **Awnings** (`levels/awning.gd`, orange, `rules/awning.gd`): along some of the old town's shop
+  fronts (not stone ones: in the way of their ledges; nor ones with insides: their doors), 4.4 m
+  up, 5 m wide, in runs along a wall a hand's breadth apart. Springy: land on one and it bounces
+  you 3.5 m up, keeping your speed along the street, so you bounce from one to the next down a
+  street; drop onto one from high and it gives back half the drop (up to 6.5 m). Getting onto
+  one from the street is a jump and a grab. The checker counts a bounce like a jump (with a
+  scramble up a wall from its top), at its least bounce.
 - **Kicking off a wall from a hang**: hold back (you let go) and press jump: the wall jump pushes
   you out and away, so you don't catch every ledge on the way down.
 
 Next ideas for the middle (not built): setback terraces and balconies every 8-10 storeys, alley
-wall-jumps between towers, awnings that bounce you down a street, zip lines down from a tall tower
-to a lower roof.
+wall-jumps between towers.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 

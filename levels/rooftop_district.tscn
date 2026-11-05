@@ -37,6 +37,7 @@
 [ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
 [ext_resource type="Script" path="res://levels/lift.gd" id="37_lift"]
 [ext_resource type="Script" path="res://levels/zip_line.gd" id="38_zip"]
+[ext_resource type="Script" path="res://levels/awning.gd" id="39_awning"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -117,6 +118,8 @@ directional_shadow_max_distance = 250.0
 [node name="Nets" type="Node3D" parent="."]
 
 [node name="Ledges" type="Node3D" parent="."]
+
+[node name="Awnings" type="Node3D" parent="."]
 
 [node name="Ground" type="CSGBox3D" parent="Street"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.0, -1.0, -35.0)
@@ -4940,6 +4943,146 @@ end = Vector3(-67.27, -45.5, 42.86)
 transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 168.5, 63.0, -104.41)
 script = ExtResource("38_zip")
 end = Vector3(-30.5, -35.0, -78.01)
+
+[node name="Block02_1_Awning0" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -168.17, 4.4, -12.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block02_1_Awning1" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -162.57, 4.4, -12.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block10_0_Awning2" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -125.3, 4.4, -212.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning3" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -136.5, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning4" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -130.9, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning5" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -125.3, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning6" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -119.7, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning7" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -102.9, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning8" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -97.3, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning9" type="Node3D" parent="Awnings"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -91.7, 4.4, -142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning10" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -142.0, 4.4, -130.9)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block11_0_Awning11" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -142.0, 4.4, -125.3)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block12_1_Awning12" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -136.5, 4.4, -12.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning13" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -66.5, 4.4, 142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning14" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -60.9, 4.4, 142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning15" type="Node3D" parent="Awnings"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -55.3, 4.4, 142.0)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning16" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -72.0, 4.4, 122.33)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning17" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -72.0, 4.4, 127.93)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_1_Awning18" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, -72.0, 4.4, 133.53)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_2_Awning19" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, -12.0, 4.4, 87.5)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_2_Awning20" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, -12.0, 4.4, 93.1)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block24_2_Awning21" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, -12.0, 4.4, 98.7)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block32_1_Awning22" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 12.0, 4.4, -39.63)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block32_1_Awning23" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 12.0, 4.4, -34.03)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block32_1_Awning24" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 12.0, 4.4, -28.43)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block32_1_Awning25" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 12.0, 4.4, -22.83)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block41_0_Awning26" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 142.0, 4.4, -136.5)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
+
+[node name="Block41_0_Awning27" type="Node3D" parent="Awnings"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 142.0, 4.4, -130.9)
+script = ExtResource("39_awning")
+size = Vector2(5.0, 2.2)
 
 [node name="Block02_0_Ledges0" type="Node3D" parent="Ledges"]
 transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -178.67, 0.0, -72.0)

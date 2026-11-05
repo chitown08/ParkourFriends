@@ -338,6 +338,14 @@ const GONDOLA_CLEAR := 4.0
 ## the roof's edge (the low one with this much roof beyond it to land on);
 ## clear of everything this far under the cable (you hanging from it).
 const ZIP_LINES := Vector2i(5, 3)
+## Awnings (levels/awning.gd): on some of the old town's street fronts (this
+## share of them), a run along the wall this far apart (middle to middle),
+## each this big (along, out) with its top this high: over the window ledges'
+## first row, under the second.
+const AWNING_CHANCE := 0.75
+const AWNING_SPACING := 5.6
+const AWNING := Vector2(5.0, 2.2)
+const AWNING_TOP := 4.4
 const ZIP_LENGTH := Vector2(25.0, 90.0)
 const ZIP_SLOPE := Vector2(0.12, 0.7)
 const ZIP_IN := 2.5
@@ -475,6 +483,7 @@ func _write_scene() -> String:
 	var launchers := _write_launchers(buildings)
 	var hoists := _write_hoists(buildings)
 	var zip_lines := _write_zip_lines(buildings)
+	var awnings := _write_awnings(buildings)
 	var ledges := _write_facades(buildings) # (After the ways up and launchers: the rows keep clear of them.)
 	var pipes := _write_pipes(buildings)
 	# (After the ways up the outside: openings keep clear of them.)
@@ -501,9 +510,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d hoists, %d zip lines, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d hoists, %d zip lines, %d awnings, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, ledges, hoists, zip_lines, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
+			staircases, ways_up, ledges, hoists, zip_lines, awnings, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -1566,6 +1575,36 @@ func _write_gondola(t: Dictionary, gaps: Array, dice: RandomNumberGenerator) -> 
 	return true
 
 
+## Awnings (levels/awning.gd, see AWNING_TOP) along some of the old town's
+## street fronts, a run of them along a wall: clear of fire escapes, vents,
+## launchers, hoists and drainpipes. Not on buildings with insides (their
+## doors), nor stone ones (in the way of leaping up their ledges). Says how many.
+func _write_awnings(buildings: Array[Dictionary]) -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "awnings"])
+	var count := 0
+	for b: Dictionary in buildings:
+		if b.style != "old" or b.tower or b.interior != "" or b.facade == "stone" or not b.roof in ["flat", "pitched"] or b.block == Vector2i(-1, -1):
+			continue
+		var area := _block_rect(b.block)
+		for wall: Array in _walls(b):
+			var outside: Vector2 = wall[0] + wall[1] * wall[3] / 2.0 + wall[2] * 3.0
+			if area.has_point(outside) or dice.randf() > AWNING_CHANCE:
+				continue # (Only onto a street, and only some.)
+			var out: Vector2 = wall[2]
+			var at := WAY_UP_CORNER + AWNING.x / 2.0
+			while at <= wall[3] - WAY_UP_CORNER - AWNING.x / 2.0:
+				var middle: Vector2 = wall[0] + wall[1] * at
+				var footprint := Rect2(middle - wall[1] * AWNING.x / 2.0, Vector2.ZERO).expand(middle + wall[1] * AWNING.x / 2.0 + out * AWNING.y)
+				if not _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(1.0).intersects(footprint)) \
+						and not _way_up_spots.any(func(spot: Vector2) -> bool: return footprint.grow(2.0).has_point(spot)):
+					_wall_node("%s_Awning%d" % [b.name, count], "Awnings", "39_awning", Vector3(middle.x, AWNING_TOP, middle.y), out,
+							"size = Vector2(%s, %s)" % [_num(AWNING.x), _num(AWNING.y)])
+					count += 1
+				at += AWNING_SPACING
+	return count
+
+
 ## Zip lines (levels/zip_line.gd, see ZIP_LINES): from a tower down to a lower
 ## one downtown, and from towers by the boulevard down across it into the old
 ## town; each well clear of every building between. Says how many.
@@ -1956,6 +1995,7 @@ func _write_header() -> void:
 [ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
 [ext_resource type="Script" path="res://levels/lift.gd" id="37_lift"]
 [ext_resource type="Script" path="res://levels/zip_line.gd" id="38_zip"]
+[ext_resource type="Script" path="res://levels/awning.gd" id="39_awning"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -2035,7 +2075,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Nets" type="Node3D" parent="."]
 
-[node name="Ledges" type="Node3D" parent="."]""")
+[node name="Ledges" type="Node3D" parent="."]
+
+[node name="Awnings" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
