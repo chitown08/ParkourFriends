@@ -81,7 +81,8 @@ built and the details the code relies on.
   generators), then plays every track in `audio/music/` shuffled (`game/playlist.gd`: each once a
   round, never the same twice running); add music by copying files there. **Layered songs** (`game/layered_song.gd`): a folder made by
   `tools/mix_song.sh` from Suno stems plays all its layers in step (an `AudioStreamSynchronized`), each
-  faded (1.5 s) by how many friends are pack-running with you: base always, pack1 with one, pack2 with
+  faded (1.5 s) by how many friends are pack-running with you, or holding hands with you in a line
+  (`Player.together_size()`: as together as it gets): base always, pack1 with one, pack2 with
   two, all the `extra-*` with three (otherwise one or two, picked as the song starts). Alone, a
   low-pass filter on the Music channel muffles it a little (3.5 kHz), opening as a friend joins. The
   district starts with its layered song (`Level.music_folder`). M mutes it and the pause menu has a volume slider (both saved in Settings).
@@ -551,7 +552,9 @@ through the middle, with mistakes caught partway. First pieces:
   decks 1.5 m deep at every storey along one or two walls (round a corner), and outside them
   flights of stairs (5 m, one storey each) with a landing between, climbing from the street along
   the walls to a landing level with the roof. You run straight up; the decks are paths round the
-  building at every floor. Replaces the old solid yellow staircases.
+  building at every floor. Replaces the old solid yellow staircases. No wall runs under a low
+  ceiling (`wall_run_headroom`, 2 m over your head): running along a deck, the next deck up is
+  too close, so you don't wall-run by accident.
 - Rules: `rules/ledges.gd` (from beside the wall, a ledge in jump-and-grab reach, each a ledge leap
   above the last up to the roof; or a ledge caught from a running jump or readied leap across a
   gap), `rules/stairs.gd` (each flight joins the deck or street at its foot to the deck at its top).

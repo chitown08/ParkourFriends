@@ -95,6 +95,75 @@ func test_banners_and_streamers_fly_from_a_pole_and_scarves_from_your_neck() -> 
 	expect(_trails().size() == 2, "and has two tails, %d" % _trails().size())
 
 
+func test_every_kite_flies_high_behind_you_standing_or_running() -> void:
+	var kites := Cosmetics.available(&"trail").filter(func(item: String) -> bool: return item.begins_with("kite/"))
+	expect(kites.size() >= 5, "kites to fly, %d" % kites.size())
+	for item: String in kites:
+		await place(Vector3(0, 0.05, 0), FACE_NORTH)
+		_wear(item)
+		await ticks(150)
+		var kite := _kite()
+		expect(kite != null, "%s: worn" % item)
+		if kite == null:
+			continue
+		var out := kite.kite_position() - kite.anchor.global_position
+		expect(out.y > Kite.STRING_LENGTH * 0.7, "%s: standing, it flies high (%.1f m up on %.0f m of string)" % [item, out.y, Kite.STRING_LENGTH])
+		expect(out.length() <= Kite.STRING_LENGTH + 0.01, "%s: on its string (%.1f m)" % [item, out.length()])
+		Input.action_press(&"move_forward")
+		await ticks(120)
+		out = kite.kite_position() - kite.anchor.global_position
+		release_all()
+		expect(out.y > Kite.STRING_LENGTH * 0.6, "%s: running, it still flies high (%.1f m up)" % [item, out.y])
+		expect(out.dot(-player.facing_direction()) > 1.0, "%s: out behind you (%.1f m)" % [item, out.dot(-player.facing_direction())])
+		expect(kite.size >= 2.5, "%s: big, to be seen from afar (%.1f m)" % [item, kite.size])
+
+
+func test_a_kite_stays_under_a_ceiling() -> void:
+	var roof := CSGBox3D.new()
+	roof.size = Vector3(40, 1, 40)
+	roof.use_collision = true
+	main.level.add_child(roof)
+	roof.global_position = Vector3(0, 5.5, 0)
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	_wear("kite/" + _first("kite"))
+	await ticks(150)
+	var kite := _kite()
+	expect(kite.kite_position().y < 5.0 - kite.size / 2.0 + 0.3, "it stays under the ceiling, at %.1f m" % kite.kite_position().y)
+	roof.free()
+	await ticks(150)
+	expect(kite.kite_position().y > 7.0, "and flies up again in the open, at %.1f m" % kite.kite_position().y)
+
+
+func test_a_kite_in_front_of_the_camera_turns_see_through() -> void:
+	await place(Vector3(0, 0.05, 0), FACE_NORTH)
+	_wear("kite/" + _first("kite"))
+	await ticks(150)
+	var kite := _kite()
+	expect(kite.alpha() > 0.99, "out of the way, it's solid (%.2f)" % kite.alpha())
+	# Look at yourself from right behind the kite.
+	var game_camera := get_viewport().get_camera_3d()
+	var camera := Camera3D.new()
+	main.add_child(camera)
+	camera.make_current()
+	var from_behind := kite.kite_position() + (kite.kite_position() - kite.anchor.global_position).normalized() * 4.0
+	for i in 40:
+		camera.look_at_from_position(from_behind, player.global_position + Vector3.UP)
+		await ticks(1)
+	expect(kite.alpha() < 0.5, "between the camera and you, it fades (%.2f)" % kite.alpha())
+	game_camera.make_current()
+	camera.free()
+	for i in 40:
+		await ticks(1)
+	expect(kite.alpha() > 0.99, "and back to solid once it's out of the way (%.2f)" % kite.alpha())
+
+
+func _kite() -> Kite:
+	for node in _skeleton().get_children():
+		if node is Kite:
+			return node
+	return null
+
+
 func _wear(item: String) -> void:
 	var outfit := PackedStringArray(["", "", "", "", item])
 	player.sync_outfit = outfit

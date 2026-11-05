@@ -31,8 +31,8 @@ class ErrorCatcher:
 		return taken
 
 
-## In game seconds: run_tests.cmd runs the game flat out (--fixed-fps 60), so
-## the whole suite's ~15 game minutes take about half a minute for real.
+## In game seconds: run_tests.cmd runs the game flat out (--fixed-fps 60), as
+## fast as the computer can (each test says how long it took for real).
 const TIME_LIMIT_SECONDS := 1200.0
 
 
@@ -58,6 +58,9 @@ func _run_all() -> void:
 	var passed := 0
 	var failed := 0
 	var only := OS.get_cmdline_user_args()
+	# How long each test and each file took (real seconds), for the slowest lists at the end.
+	var timings := []
+	var file_times := []
 
 	for file in DirAccess.get_files_at(TEST_DIR):
 		if not (file.begins_with("test_") and file.ends_with(".gd")):
@@ -74,31 +77,43 @@ func _run_all() -> void:
 			continue
 		var suite: GameTest = script.new()
 		root.add_child(suite)
+		var file_time := 0.0
 		for method in suite.get_method_list():
 			var test_name: String = method.name
 			if not test_name.begins_with("test_"):
 				continue
 			suite.failures.clear()
 			catcher.take_errors()
+			var started := Time.get_ticks_msec()
 			await suite.before_each()
 			if suite.failures.is_empty():
 				await suite.call(test_name)
 			await suite.after_each()
 			for error in catcher.take_errors():
 				suite.failures.append("error: " + error)
+			var took := (Time.get_ticks_msec() - started) / 1000.0
+			timings.append([took, "%s %s" % [file.get_basename(), test_name]])
+			file_time += took
 			if suite.failures.is_empty():
 				passed += 1
-				print("  PASS  %s" % test_name)
+				print("  PASS  %s (%.1f s)" % [test_name, took])
 			else:
 				failed += 1
-				print("  FAIL  %s" % test_name)
+				print("  FAIL  %s (%.1f s)" % [test_name, took])
 				for failure in suite.failures:
 					print("          - %s" % failure)
 		suite.queue_free()
+		file_times.append([file_time, file.get_basename()])
+		print("  (%.0f s)" % file_time)
 
 	if catcher.take_errors().size() > 0 or (passed == 0 and failed == 0):
 		failed += 1
 		print("\nErrors outside of tests, or no tests found.")
+	if timings.size() > 10:
+		timings.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+		file_times.sort_custom(func(a: Array, b: Array) -> bool: return a[0] > b[0])
+		print("\nSlowest files: %s" % ", ".join(file_times.slice(0, 8).map(func(t: Array) -> String: return "%s %.0f s" % [t[1], t[0]])))
+		print("Slowest tests: %s" % ", ".join(timings.slice(0, 10).map(func(t: Array) -> String: return "%s %.0f s" % [t[1], t[0]])))
 	print("\n%d passed, %d failed" % [passed, failed])
 	# Give the audio server a moment to let go of the last sounds, so quitting
 	# doesn't report them as leaks. (A real pause: with --fixed-fps, frames alone

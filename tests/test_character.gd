@@ -118,7 +118,8 @@ func test_every_cosmetic_has_a_fit() -> void:
 		for item in Cosmetics.available(slot):
 			expect(fits.has_section("%s/%s" % [slot, item]), "%s/%s should be fitted in %s" % [slot, item, Cosmetics.FITS])
 	for item in Cosmetics.available(&"trail"):
-		for key in ["along", "up", "length"]:
+		# (A kite flies whole: which way it faces, its top, its size.)
+		for key in (["facing", "up", "size"] if item.begins_with("kite/") else ["along", "up", "length"]):
 			expect(fits.has_section_key("trail/" + item, key), "trail/%s should say its %s" % [item, key])
 		if item.begins_with("scarf/") and ResourceLoader.exists("res://cosmetics/trail/%s_neck.glb" % item):
 			expect(fits.has_section("trail/%s_neck" % item), "%s's neck should be fitted" % item)

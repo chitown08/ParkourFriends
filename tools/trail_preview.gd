@@ -74,8 +74,10 @@ func _build() -> void:
 					(model.find_children("*", "AnimationPlayer", true, false)[0] as AnimationPlayer).play(&"moves/run")
 				model.position += Vector3.FORWARD * speed * delta
 			var view: Vector3 = cameras[i].get_meta(&"view")
-			var middle := model.position + Vector3(0, 1.6, 1.0)
-			cameras[i].look_at_from_position(middle + view.normalized() * 7.0, middle)
+			# (Kites fly high: pull back to see the whole string.)
+			var kite: bool = trails[i / (VIEWS.size() * 2)].begins_with("kite/")
+			var middle := model.position + (Vector3(0, 5.5, 4.0) if kite else Vector3(0, 1.6, 1.0))
+			cameras[i].look_at_from_position(middle + view.normalized() * (20.0 if kite else 7.0), middle)
 		started_running = time > STAND_TIME
 	var sheet := Image.create(CELL.x * VIEWS.size() * 2, CELL.y * trails.size(), false, Image.FORMAT_RGBA8)
 	for i in viewports.size():

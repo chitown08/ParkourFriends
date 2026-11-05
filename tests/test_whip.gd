@@ -38,6 +38,17 @@ func test_the_toss_button_in_a_pack_takes_a_friends_hand() -> void:
 	expect(Array(player.line()) == [player, buddy], "a line of two, you leading")
 
 
+func test_holding_hands_keeps_the_music_big() -> void:
+	# Hand in hand is as together as it gets: the song stays swollen.
+	main._play_layered("res://audio/music/rooftop_test/")
+	await _line_up()
+	await ticks(180)
+	release_all()
+	expect(buddy.state.name == &"Linked", "test setup: still hand in hand")
+	expect(player.together_size() == 1, "moving together with one friend, %d" % player.together_size())
+	expect(main.layered != null and main.layered.volume("pack1") > 0.9, "the synth stays in: %.2f" % (main.layered.volume("pack1") if main.layered else -1.0))
+
+
 func test_no_hand_to_take_out_of_a_pack() -> void:
 	await tap(&"toss") # Standing still: no pack.
 	expect(buddy.state.name != &"Linked", "standing about, the toss button doesn't take a hand")

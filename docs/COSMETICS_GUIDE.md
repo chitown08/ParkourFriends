@@ -72,7 +72,7 @@ There are four kinds. Each goes in its own folder, so I know how to hang it:
 | Banner | `cosmetics/trail/banner/` | **Just the cloth**: flag, pennant, war banner, tapestry, sashimono. One short edge is the edge that hangs on the pole. | On a pole from a back harness. I make one shared pole and harness. |
 | Streamer | `cosmetics/trail/streamer/` | A long creature or ribbon, **straight**: dragon, carp, snake, neon ribbons. The head (or the front end) is the end that attaches. | Ripples out from the top of the back pole. |
 | Scarf | `cosmetics/trail/scarf/` | **Two files**: `<name>_neck.glb` (just the wrap around the neck, like a short tube or ring) and `<name>_tail.glb` (one long straight strip with fringe). | The neck wrap sits on the neck and the tail streams out behind. If you only want one tail, I'll use it twice. |
-| Kite | `cosmetics/trail/kite/` | The kite itself (diamond, box kite, bird, fish, dragon face), **flat and still**. Any tail ribbon should be straight. | Flies up behind you on a string. I draw the string. |
+| Kite | `cosmetics/trail/kite/` | The kite itself (diamond, box kite, bird, fish, dragon face), **flat and still**. Any tail ribbon should be straight. | Flies high behind you on an 11 m string from your back (`player/kite.gd`), about 3 m tall so it's seen from afar, turned to face whoever's looking. It stays under ceilings and goes see-through when it's between the camera and you. Its fit says which way its face looks, which end is its top, and its size. |
 
 Glowing bits (like the neon streamer or the cyber visor): Meshy doesn't usually
 export glow, so tell me which parts should glow and I'll add it.

@@ -671,9 +671,10 @@ func _play_layered(folder: String) -> void:
 	music.play()
 
 
-## The layered song swells with your pack, and alone it's a little muffled.
+## The layered song swells with your pack (or the line you're holding hands
+## in), and alone it's a little muffled.
 func _process(delta: float) -> void:
-	var pack := local_player.pack_size() if local_player else 0
+	var pack := local_player.together_size() if local_player else 0
 	if layered:
 		layered.set_pack(pack, delta)
 	var cutoff := MUFFLED_HZ if layered and pack == 0 else OPEN_HZ

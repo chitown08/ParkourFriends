@@ -137,6 +137,8 @@ func _try_wall_run() -> void:
 	var wish_dir := input.move_direction
 	if wish_dir.length() < 0.3 or player.is_near_ground(player.wall_run_min_height):
 		return
+	if player.is_under_ceiling(player.wall_run_headroom):
+		return # (Too low to run up the wall: a fire escape's next deck, say.)
 	var wall := player.find_wall(true)
 	if wall.is_empty() or not player.can_use_wall(wall.normal):
 		return

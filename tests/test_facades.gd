@@ -9,6 +9,9 @@ const STONE := preload("res://materials/stone.tres")
 const CLIMB := preload("res://materials/grid_climb.tres")
 const IRON := preload("res://materials/iron.tres")
 
+## Running along a fire escape deck this far out from the middle of it, toward the wall.
+const DECK_HUG := 0.3
+
 var states_entered: Array[StringName] = []
 
 
@@ -257,6 +260,39 @@ func test_run_up_a_fire_escape_to_the_roof() -> void:
 				b.name, _flights_of(b).size(), ", free-running" if run[1] else "", player.global_position])
 		expect(not &"WallRun" in states_entered and not &"Hang" in states_entered, "just running up the stairs, went %s" % [states_entered.slice(0, 10)])
 		expect(player.global_position.y > roof - 0.2, "on the roof")
+
+
+func test_no_wall_running_along_a_fire_escape_deck() -> void:
+	# Free-running along a deck beside the wall, the next deck just overhead:
+	# no room to run up the wall, so you just run (or jump) along it.
+	var tried := 0
+	for deck: Node in main.level.get_node("FireEscapes").get_children():
+		if not (deck is CSGBox3D and deck.name.contains("_Deck") and deck.name.ends_with("_2")) or tried >= 3:
+			continue
+		var box := deck as CSGBox3D
+		var b := main.level.get_node("Buildings/" + str(deck.name).get_slice("_Deck", 0)) as CSGShape3D
+		var along_x := box.size.x > box.size.z
+		var along := Vector3.RIGHT if along_x else Vector3.BACK
+		var to_wall := _flat(b.global_position - box.global_position)
+		to_wall = (Vector3(0, 0, signf(to_wall.z)) if along_x else Vector3(signf(to_wall.x), 0, 0))
+		var length: float = box.size.x if along_x else box.size.z
+		if length < 14.0:
+			continue
+		tried += 1
+		var top := box.global_position.y + box.size.y / 2.0
+		var start := box.global_position - along * (length / 2.0 - 2.0) + to_wall * (DECK_HUG)
+		await place(Vector3(start.x, top + 0.05, start.z), yaw_for(along))
+		states_entered.clear()
+		Input.action_press(&"free_run")
+		# Drifting into the wall a little, and jumping along the way.
+		player.camera_rig.yaw = yaw_for(along.rotated(Vector3.UP, deg_to_rad(8.0) * signf(along.cross(to_wall).y)))
+		for i in 75:
+			await ticks(1)
+			if i == 30:
+				Input.action_press(&"jump")
+		release_all()
+		expect(not &"WallRun" in states_entered, "%s: no wall run along the deck, went %s" % [deck.name, states_entered.slice(0, 10)])
+	expect(tried >= 2, "fire escape decks long enough to run along, %d" % tried)
 
 
 # --- Helpers -----------------------------------------------------------------

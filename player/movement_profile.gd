@@ -80,6 +80,7 @@ extends Resource
 @export var wall_run_min_height := 1.0 ## Must be at least this high off the ground to start.
 @export var wall_run_lean_degrees := 20.0 ## How far the body leans away from the wall.
 @export var wall_run_runway := 2.5 ## A wall run needs this much clear way ahead (else you climb what's in the way instead).
+@export var wall_run_headroom := 2.0 ## ...and this much room over your head (not under a low ceiling, like a fire escape's next deck).
 @export var wall_scramble_speed := 7.0 ## Running straight up a too-tall wall: how fast (m/s)...
 @export var wall_scramble_time := 0.5 ## ...and for how long (seconds). 7 x 0.5 = 3.5 m.
 

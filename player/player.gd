@@ -174,6 +174,7 @@ var wall_run_max_time: float
 var wall_run_min_height: float
 var wall_run_lean_degrees: float
 var wall_run_runway: float
+var wall_run_headroom: float
 var wall_scramble_speed: float
 var wall_scramble_time: float
 var pipe_climb_speed: float
@@ -667,6 +668,13 @@ func get_horizontal_speed() -> float:
 ## How many friends are pack-running with you right now.
 func pack_size() -> int:
 	return _free_run.pack_size
+
+
+## How many friends you're moving together with, for the music (and how much
+## it swells): your pack, or everyone in the line if you're holding hands
+## (crack the whip): as together as it gets. (Only the pack drafts.)
+func together_size() -> int:
+	return maxi(pack_size(), line().size() - 1)
 
 
 func hands_busy() -> bool:
@@ -1590,6 +1598,13 @@ func wall_run_blocked(direction: Vector3) -> bool:
 
 
 ## True if there's ground within `distance` below your feet.
+## True if there's a ceiling (anything overhead) within `distance` of the top
+## of your head.
+func is_under_ceiling(distance: float) -> bool:
+	var head := global_position + Vector3.UP * (_stand_shape.height - 0.05)
+	return not raycast(head, head + Vector3.UP * (distance + 0.05)).is_empty()
+
+
 func is_near_ground(distance: float) -> bool:
 	var from := global_position + Vector3.UP * 0.05
 	return not raycast(from, from + Vector3.DOWN * (distance + 0.05)).is_empty()

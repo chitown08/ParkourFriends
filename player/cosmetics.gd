@@ -20,6 +20,9 @@ class_name Cosmetics
 ## is up (`up`), and how long it is when worn (`length`, metres). Banners and
 ## streamers fly from a pole on your back; a scarf is two files, <name>_neck
 ## (fitted like a body item) and <name>_tail (worn twice, from the back of the neck).
+## A kite (player/kite.gd) flies on a string from your back; its entry says
+## which way its face looks (`facing`), which way is its top (`up`), and how
+## big it is across (`size`, metres).
 
 const DIR := "res://cosmetics/"
 const FITS := "res://cosmetics/fits.cfg"
@@ -46,6 +49,8 @@ const POLE_COLOR := Color(0.32, 0.22, 0.14)
 const NECK_BONE := "Neck"
 const SCARF_TAILS_FROM := Vector3(0, 1.33, -0.38)
 const SCARF_TAILS_APART := 0.14
+## A kite's string is tied on here, between your shoulder blades (body space).
+const KITE_FROM := Vector3(0, 1.15, -0.3)
 
 static var _fits: ConfigFile
 
@@ -111,6 +116,16 @@ static func _wear_trail(skeleton: Skeleton3D, item: String) -> void:
 	var path := DIR + "trail/%s/%s.glb" % [kind, item_name + ("_tail" if kind == &"scarf" else "")]
 	if not ResourceLoader.exists(path):
 		push_warning("No cosmetic %s" % path)
+		return
+	_load_fits()
+	if kind == &"kite":
+		var kite := Kite.new()
+		kite.name = PREFIX + "trail_kite"
+		kite.size = _fits.get_value("trail/" + item, "size", 2.4)
+		kite.anchor = _attach(skeleton, PREFIX + "trail_anchor", POLE_BONE, Node3D.new(), Transform3D(Basis(), KITE_FROM))
+		kite.body = skeleton
+		skeleton.add_child(kite)
+		kite.build(load(path), _fits.get_value("trail/" + item, "facing", Vector3.BACK), _fits.get_value("trail/" + item, "up", Vector3.UP))
 		return
 	var anchors: Array[Node3D] = []
 	if kind == &"scarf":
