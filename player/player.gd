@@ -305,6 +305,16 @@ const PEAK_WINDOW := 3.0
 ## The wall last jumped or run off. You can't use the same wall again until
 ## you land (so you can't climb a single wall forever). Zero = none.
 var last_wall_normal := Vector3.ZERO
+## A chimney (see air.gd _try_chimney()) is two walls facing each other at
+## most this far apart. Each kick across it takes this long and comes out
+## this much higher, however wide it is: a steady climb.
+const CHIMNEY_WIDTH := 6.0
+const CHIMNEY_HOP_TIME := 0.4
+const CHIMNEY_HOP_RISE := 1.5
+## Going along the wall faster than this (m/s), you're running down the gap, not climbing it.
+const CHIMNEY_ALONG := 4.0
+## How many chimney kicks you've made (for tests).
+var chimney_kicks := 0
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
@@ -1583,6 +1593,59 @@ func wall_jump(wall_normal: Vector3, along: Vector3) -> void:
 	last_wall_normal = wall_normal
 	refresh_air_moves()
 	change_state(&"Air", {"jumped": true, "control_lock": wall_jump_control_lock})
+
+
+## In a chimney (free-running with jump held, at a wall with another facing
+## it across a narrow gap, not running along it): kicks across. True if it did.
+func try_chimney_kick() -> bool:
+	if not (input.free_run_held and input.jump_held):
+		return false
+	var wall := find_wall()
+	if wall.is_empty():
+		return false
+	var along := velocity - (wall.normal as Vector3) * velocity.dot(wall.normal)
+	if Vector2(along.x, along.z).length() > CHIMNEY_ALONG:
+		return false # (Running along it, down an alley: not climbing.)
+	var from := global_position + Vector3.UP * 1.0
+	var across := raycast(from, from + (wall.normal as Vector3) * CHIMNEY_WIDTH)
+	if across.is_empty() or (across.normal as Vector3).dot(wall.normal) > -0.9:
+		return false # (No wall facing it across a narrow gap.)
+	if is_under_ceiling(CHIMNEY_HOP_RISE + 1.0):
+		return false # (No room to go up: under a roof, say.)
+	var over_head := global_position + Vector3.UP * (_stand_shape.height + 1.0)
+	if raycast(over_head, over_head - (wall.normal as Vector3) * (body_radius + wall_detect_distance + 0.3)).is_empty():
+		return false # (Its wall stops about here: the top of it, or just a slab's edge. Grab it instead.)
+	var distance: float = ((across.position as Vector3) - from).dot(wall.normal) - body_radius - 0.05
+	chimney_kick(wall.normal, maxf(distance, 0.5))
+	return true
+
+
+## Kicks off a chimney's wall (`wall_normal`) straight across to the one
+## facing it, `distance` away: there in CHIMNEY_HOP_TIME, CHIMNEY_HOP_RISE higher.
+func chimney_kick(wall_normal: Vector3, distance: float) -> void:
+	chimney_kicks += 1
+	velocity = wall_normal * (distance / CHIMNEY_HOP_TIME) + Vector3.UP * chimney_up_speed()
+	last_wall_normal = wall_normal
+	refresh_air_moves()
+	change_state(&"Air", {"jumped": true, "control_lock": CHIMNEY_HOP_TIME})
+
+
+## The upward speed a chimney kick needs to come out CHIMNEY_HOP_RISE higher
+## after CHIMNEY_HOP_TIME (rising, then maybe falling, gravity as in a jump).
+func chimney_up_speed() -> float:
+	var low := 0.0
+	var high := 60.0
+	for i in 40:
+		var speed := (low + high) / 2.0
+		var peak_time := speed / _rise_gravity
+		var t := CHIMNEY_HOP_TIME
+		var height := speed * t - _rise_gravity * t * t / 2.0 if peak_time >= t \
+				else speed * speed / (2.0 * _rise_gravity) - _fall_gravity * pow(t - peak_time, 2.0) / 2.0
+		if height < CHIMNEY_HOP_RISE:
+			low = speed
+		else:
+			high = speed
+	return high
 
 
 ## True if something stands in the way of a wall run heading `direction`

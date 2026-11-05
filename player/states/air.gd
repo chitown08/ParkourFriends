@@ -58,7 +58,9 @@ func physics_update(delta: float) -> void:
 	if _try_land_on_rail():
 		return
 	# Ledges and scrambles need your hands free of bulky items.
-	if not player.hands_busy() and (_try_get_caught() or _try_grab_friend() or _try_grab_zip_line() or _try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
+	# (In a chimney you kick across rather than scramble up the wall you meet;
+	# but a ledge in reach you grab.)
+	if not player.hands_busy() and (_try_get_caught() or _try_grab_friend() or _try_grab_zip_line() or _try_grab_pipe() or _try_grab_ledge() or _try_chimney() or _try_wall_scramble()):
 		return
 	_try_wall_run()
 
@@ -109,6 +111,13 @@ func _try_grab_pipe() -> bool:
 		return false
 	player.change_state(&"PipeClimb", {"pipe": pipe})
 	return true
+
+
+## Climbing a chimney (a narrow gap between two walls, like an alley between
+## towers): free-running with jump held, each wall you come to kicks you
+## straight across to the one facing it, a little higher each time.
+func _try_chimney() -> bool:
+	return player.try_chimney_kick()
 
 
 func _try_wall_jump() -> bool:

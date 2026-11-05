@@ -593,11 +593,19 @@ through the middle, with mistakes caught partway. First pieces:
   along the wall and 1.5 m out: a 2 m jump from one to the other. Places to land partway up, to
   catch yourself on (they're just ledges deep enough to stand on), and to cross the alley in
   the middle of the towers. Not on towers with insides (their openings). Nine alleys have them.
+- **Chimneys** (alley wall-jumps: `Player.try_chimney_kick()`, `rules/chimney.gd`): free-running
+  with jump held between two walls facing each other at most 6 m apart (an alley between
+  buildings), each wall you come to kicks you straight across to the other, crossing in 0.4 s and
+  coming out 1.5 m higher whatever the width: a steady climb (about 4-5 m a second in a 5 m
+  alley) up to the top of the lower wall, where you grab its edge or are carried over onto its
+  roof. Not while you're running along the gap (more than 4 m/s along the wall: running down an
+  alley with a leap readied), not under a ceiling, and not off a wall that stops just over your
+  head (its top, or a slab's edge like a roof hatch's): grab that instead. (Kicks of their own,
+  not wall jumps: a fixed wall jump climbed a 3 m gap like a lift and fell out of a 5 m one.)
 - **Kicking off a wall from a hang**: hold back (you let go) and press jump: the wall jump pushes
   you out and away, so you don't catch every ledge on the way down.
 
-Next ideas for the middle (not built): alley
-wall-jumps between towers.
+The middle layer's first set is built (Nov 2026). The sky and times of day are next.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 
