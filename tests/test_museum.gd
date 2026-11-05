@@ -42,7 +42,7 @@ func test_its_slopes_can_be_run_up() -> void:
 
 
 func test_up_it_alone() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var ground := map.place_named("Ground")
 	var alone := map.solve(ground, 1)
 	var places := map.places.filter(func(spot: ReachMap.Spot) -> bool: return spot.name.begins_with("Museum"))

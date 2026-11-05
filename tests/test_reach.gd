@@ -16,7 +16,7 @@ var states_entered: Array[StringName] = []
 
 func test_scramble_heights_match_the_game() -> void:
 	await _build_floor_and_walls([30.0])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for leap in [false, true]:
 		await place(Vector3(0, FLOOR_Y + 0.05, WALL_FACE_Z + 20.0), FACE_NORTH)
 		Input.action_press(&"free_run")
@@ -34,7 +34,7 @@ func test_scramble_heights_match_the_game() -> void:
 func test_leg_up_heights_match_the_game() -> void:
 	# One friend braced at the foot of a tall wall, then two (one on the other's shoulders).
 	await _build_floor_and_walls([30.0])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var leg_up: GDScript = load("res://game/reach/rules/leg_up.gd")
 	var bracers: Array[Player] = []
 	for braced in [1, 2]:
@@ -63,7 +63,7 @@ func test_leg_up_heights_match_the_game() -> void:
 
 func test_a_running_jump_goes_as_far_as_the_checker_says() -> void:
 	await _build_floor_and_walls([])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	await place(Vector3(0, FLOOR_Y + 0.05, 40.0), FACE_NORTH)
 	Input.action_press(&"move_forward")
 	for i in 60:
@@ -107,7 +107,7 @@ func test_walls_one_player_can_and_cannot_climb() -> void:
 	# 10 m: alone, but only with a readied leap. 11.5 m: not alone (two can: a
 	# leg-up; see test_leg_up.gd).
 	await _build_floor_and_walls([10.0, 11.5])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var start := _floor(map)
 	expect(map.players_needed(_wall(map, 0), start) == 1, "the checker should say one player gets up 10 m")
 	expect(map.players_needed(_wall(map, 1), start) == 2, "and two get up 11.5 m, says %d" % map.players_needed(_wall(map, 1), start))
@@ -119,7 +119,7 @@ func test_a_toss_then_a_hanging_chain_gets_everyone_up() -> void:
 	# 10.5 m: too tall alone. A toss gets one of two up; they hang down and the
 	# tosser climbs them.
 	await _build_floor_and_walls([10.5])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var start := _floor(map)
 	expect(map.players_needed(_wall(map, 0), start) == 2, "the checker should say 10.5 m needs two, says %d" % map.players_needed(_wall(map, 0), start))
 	expect(map.solve(start, 2).get(_wall(map, 0), 0) == 2, "and that both of them get up")
@@ -158,7 +158,7 @@ func test_bigger_walls_need_bigger_groups() -> void:
 	# gets the third up, but the two left below need two hanging to reach them.
 	# With four, two run up the stack in turn, hang down, and everyone's up.
 	await _build_floor_and_walls([12.5])
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var start := _floor(map)
 	expect(map.players_needed(_wall(map, 0), start) == 3, "the checker should say 12.5 m needs three, says %d" % map.players_needed(_wall(map, 0), start))
 	expect(map.solve(start, 3).get(_wall(map, 0), 0) == 1, "three get one of them up")
@@ -170,7 +170,7 @@ func test_the_glider_reaches_a_far_lower_roof() -> void:
 	await _build_floor_and_walls([30.0])
 	_box("ReachFarRoof", Vector3(0, FLOOR_Y + 10.0, WALL_FACE_Z - 80.0), Vector3(20, 20, 20))
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var far := map.place_named("ReachFarRoof")
 	expect(not map.solve(_wall(map, 0), 1).has(far), "without a glider you can't get across")
 	expect(map.solve(_wall(map, 0), 1, [&"flow", &"glider"]).has(far), "with one you can")
@@ -182,7 +182,7 @@ func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	# still get everyone across: crack the whip to fling one over, and they catch
 	# the rest, leaping short.)
 	player.set_profile(SUPERHUMAN)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var leap := func(pack: int) -> float:
 		return map.air_distance(SUPERHUMAN.leap_height, SUPERHUMAN.flow_speed * Player.drafting(pack - 1) + SUPERHUMAN.leap_boost, 0.0)
 	var gap: float = (leap.call(3) + leap.call(4)) / 2.0 - ReachMap.JUMP_MARGIN
@@ -190,7 +190,7 @@ func test_a_pack_jumps_further_than_anyone_alone() -> void:
 	_box("ReachNear", Vector3(0, FLOOR_Y + 10.0, 0), Vector3(20, 20, 20))
 	_box("ReachFar", Vector3(0, FLOOR_Y + 10.0, -20.0 - gap), Vector3(20, 20, 20))
 	await ticks(3)
-	map = ReachMap.build(main.level, SUPERHUMAN)
+	map = ReachMap.build(main.level, SUPERHUMAN) # (Its own: it takes links away.)
 	var near := map.place_named("ReachNear")
 	var far := map.place_named("ReachFar")
 	expect(map.solve(near, 4).get(far, 0) == 4, "a pack of four gets all four across a %.1f m gap" % gap)
@@ -207,7 +207,7 @@ func test_a_pack_jumps_further_than_anyone_alone() -> void:
 
 func test_every_ordinary_roof_can_be_reached_alone() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var reached := map.solve(_spawn(map), 1)
 	var street := map.place_under(Vector3(0, 0.5, 0))
 	var from_street := map.solve(street, 1)
@@ -221,7 +221,7 @@ func test_every_ordinary_roof_can_be_reached_alone() -> void:
 
 func test_every_drainpipe_sill_column_and_vent_is_a_way_up() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var ways := {"drainpipe": 0, "window sills": 0}
 	for link in map.links:
 		if ways.has(link.how) and link.to.y > link.from.y + 10.0:
@@ -240,7 +240,7 @@ func test_every_drainpipe_sill_column_and_vent_is_a_way_up() -> void:
 
 func test_you_can_climb_every_tower_from_the_inside() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for b: CSGShape3D in main.level.get_node("Buildings").get_children():
 		if ReachMap._bounds(b).size.y < 30.0 or b.name.begins_with("Tower") or b.name == "Spire": # (Downtown's aren't hollow.)
 			continue
@@ -255,7 +255,7 @@ func test_you_can_climb_every_tower_from_the_inside() -> void:
 
 func test_what_each_relic_takes() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for target in map.targets:
 		if not target.node is WorldItem or (target.node as WorldItem).locked:
 			continue # (Group runs' gates and rewards: see test_group_run.gd.)
@@ -357,7 +357,7 @@ func _free_run_and_jump(friend: Player = null) -> Array:
 
 func test_every_launcher_gets_you_onto_its_building() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var launchers: Array = main.level.get_node("Launchers").get_children()
 	expect(launchers.size() == 6, "four wall ramps and two quarter-pipes, %d" % launchers.size())
 	for launcher: Launcher in launchers:
@@ -368,7 +368,7 @@ func test_every_launcher_gets_you_onto_its_building() -> void:
 
 func test_the_districts_pipes_go_where_they_should() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tubes := 0
 	for pipe: Pipe in main.level.get_node("Pipes").get_children():
 		if not pipe.glass:

@@ -32,7 +32,7 @@ func test_the_warm_up_run_has_its_gates_and_relics() -> void:
 
 
 func test_the_checker_says_white_gates_take_one_of_you_and_gold_gates_more() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var start := map.place_under(main.level.get_node("SpawnPoint").global_position + Vector3.UP)
 	for target in map.targets:
 		if not target.node is RunGate:

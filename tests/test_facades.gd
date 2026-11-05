@@ -66,7 +66,7 @@ func test_glass_towers_have_a_ledge_every_few_storeys_and_scaffolding() -> void:
 
 
 func test_every_stone_roof_is_reachable_up_its_ledges() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var up_ledges := {}
 	for link in map.links:
 		if link.how.begins_with("ledges") and link.to.y - link.from.y > 6.0:
@@ -133,7 +133,7 @@ func test_fall_past_a_wall_of_ledges_and_catch_one() -> void:
 
 
 func test_botch_a_jump_at_a_tall_wall_and_catch_a_ledge() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	# A running jump across an alley downtown, at a stone wall far too tall to grab the top of.
 	var picked: ReachMap.Link
 	var row: Ledges
@@ -192,7 +192,7 @@ func test_ledges_a_ledge_leap_apart_and_no_further() -> void:
 	for case: Array in [[[3.5, near, near, near, near], true], [[far, far, far, far, far], false], [[3.5, 3.5, far, 3.5, 3.5], false]]:
 		var spacing := "%s" % [case[0]]
 		var wall: Node3D = await _test_wall(case[0])
-		var map := ReachMap.build(main.level, SUPERHUMAN)
+		var map := ReachMap.build(wall, SUPERHUMAN) # (Just the test wall and its floor.)
 		var floor_place := map.place_under(Vector3(0.0, 501.0, 506.0))
 		var top := map.place_under(Vector3(0.0, 600.0, 500.0))
 		var linked := map.links.any(func(l: ReachMap.Link) -> bool: return l.from == floor_place and l.to == top and l.how == "ledges")
@@ -240,7 +240,7 @@ func test_every_block_has_a_fire_escape_round_its_walls() -> void:
 
 
 func test_fire_escape_stairs_are_a_way_up() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var stairs := map.links.filter(func(l: ReachMap.Link) -> bool: return l.how == "fire escape stairs")
 	var flights: Array = main.level.get_node("FireEscapes").find_children("*", "Stairs", false, false)
 	expect(stairs.size() == flights.size(), "each of the %d flights leads up a storey, %d do" % [flights.size(), stairs.size()])

@@ -75,7 +75,7 @@ func test_nothing_sci_fi() -> void:
 
 
 func test_every_tower_top_alone() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var alone := map.solve(map.place_under(main.level.get_node("SpawnPoint").global_position + Vector3.UP), 1)
 	for tower in _towers():
 		var top: CSGShape3D = tower.get_node("Upper") if tower.has_node("Upper") else tower
@@ -86,7 +86,7 @@ func test_every_tower_top_alone() -> void:
 
 func test_scaffolding_up_every_glass_tower_from_the_street() -> void:
 	# (Stone towers have rows of ledges instead: tests/test_facades.gd.)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var ground := map.place_named("Ground")
 	var grabbed := 0
 	var stone := load("res://materials/stone.tres")
@@ -112,7 +112,7 @@ func test_scaffolding_up_every_glass_tower_from_the_street() -> void:
 
 
 func test_jump_across_a_gap_onto_scaffolding_and_climb_it() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	# A running jump (not a leap) from a roof across an alley, too low to grab the top from.
 	var picked: ReachMap.Link
 	var scaffold: Scaffold
@@ -154,7 +154,7 @@ func test_jump_across_a_gap_onto_scaffolding_and_climb_it() -> void:
 func test_grind_rails_run_down_across_gaps() -> void:
 	var rails: Array = main.level.get_node("GrindRails").get_children().filter(func(r: Node) -> bool: return r.name.begins_with("RailTower") or r.name.begins_with("RailSpire"))
 	expect(rails.size() == GENERATOR.RAILS, "%d grind rails downtown" % rails.size())
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for rail: GrindRail in rails:
 		var drop := rail.top().y - rail.bottom().y
 		expect(drop >= GENERATOR.RAIL_DROP.x * GENERATOR.STOREY - 0.1 and drop <= GENERATOR.RAIL_DROP.y * GENERATOR.STOREY + 0.1, "%s drops %.1f m" % [rail.name, drop])
@@ -164,7 +164,7 @@ func test_grind_rails_run_down_across_gaps() -> void:
 
 
 func test_rope_bridges_join_towers_across_streets() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var decks := _rope_bridges()
 	expect(decks.size() == GENERATOR.ROPE_BRIDGES, "%d rope bridges" % decks.size())
 	for part: Node in main.level.get_node("Bridges").get_children():
@@ -209,7 +209,7 @@ func test_walk_across_a_rope_bridge() -> void:
 func test_catch_nets_hang_out_over_alleys_under_a_roof() -> void:
 	var nets: Array = main.level.get_node("Nets").get_children()
 	expect(nets.size() == GENERATOR.NETS, "%d catch nets" % nets.size())
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for net: CatchNet in nets:
 		var out := net.out_of_wall()
 		var far := net.global_position + out * (net.size.y + 1.3) + Vector3.DOWN * 0.5
@@ -254,7 +254,7 @@ func test_fall_into_a_catch_net_and_bounce_back_onto_the_roof() -> void:
 
 
 func test_walkways_join_two_towers_insides() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var alone := map.solve(map.place_under(main.level.get_node("SpawnPoint").global_position + Vector3.UP), 1)
 	var walkways: Array = main.level.get_node("Bridges").get_children().filter(func(p: Node) -> bool:
 			return p.name.begins_with("Walkway") and not p.name.contains("_Roof") and not p.name.contains("_Glass"))
@@ -280,7 +280,7 @@ func test_walkways_join_two_towers_insides() -> void:
 
 
 func test_jump_from_a_roof_into_a_walkway_floor() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var walkway: Node = main.level.get_node("Bridges").get_children().filter(func(p: Node) -> bool: return p.name.begins_with("Walkway"))[0]
 	var names := _two_towers(str(walkway.name).trim_prefix("Walkway"))
 	var rooms := [map.place_named(names[0] + "/Room"), map.place_named(names[1] + "/Room")]

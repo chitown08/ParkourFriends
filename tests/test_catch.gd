@@ -197,12 +197,12 @@ func test_a_catch_saves_a_jump_as_the_checker_says() -> void:
 	# A gap a full-flow running jump falls short of, but a friend at the far edge
 	# catches you: as wide as the checker says a catch takes. (Its room to spare,
 	# ReachMap.JUMP_MARGIN, is about what the real jump gets on top.)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var caught := map.air_distance(SUPERHUMAN.jump_height, SUPERHUMAN.flow_speed, -SUPERHUMAN.hang_height - Player.CATCH_DOWN) + Player.CATCH_OUT
 	var gap := caught - ReachMap.JUMP_MARGIN - 0.05
 	_box("CatchNear", Vector3(0, FLOOR_Y + 5.0, WALL_FACE_Z + gap + 10.0), Vector3(30, 10, 20))
 	await ticks(3)
-	map = ReachMap.build(main.level, SUPERHUMAN)
+	map = ReachMap.shared(main.level, SUPERHUMAN)
 	var near := map.place_named("CatchNear")
 	var far := map.place_named("CatchFar")
 	var how := []

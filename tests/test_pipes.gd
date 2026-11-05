@@ -108,7 +108,7 @@ func test_the_checker_knows_what_it_takes() -> void:
 	drop.global_position = Vector3(107, FLOOR_Y + 30, 0)
 	drop.rotation.y = -PI / 2.0 # (Running east.)
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var start := map.place_named("PipeFloor")
 	var needs := []
 	for link in map.links:

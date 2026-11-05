@@ -68,7 +68,7 @@ func test_the_checker_knows_a_wall_ramp_gets_you_onto_a_roof() -> void:
 	main.level.add_child(floor_box)
 	floor_box.global_position = Vector3(0, FLOOR_Y - 0.5, 0)
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var how := []
 	for link in map.links:
 		if link.from.name == "LauncherFloor" and link.to.name == "LauncherBuilding":

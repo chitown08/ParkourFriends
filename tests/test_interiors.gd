@@ -24,7 +24,7 @@ func before_each() -> void:
 
 
 func test_a_rooms_floor_is_a_place() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var room := map.place_named("Hollow/Room")
 	expect(room != null, "the room's floor is a place")
 	if room:
@@ -33,7 +33,7 @@ func test_a_rooms_floor_is_a_place() -> void:
 
 
 func test_in_through_a_doorway_not_through_a_wall_or_the_ceiling() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "SouthRoof", "Hollow/Room"), "from the roof across the alley, in through the doorway")
 	expect(not _linked(map, "EastRoof", "Hollow/Room"), "not from the east: there's a wall")
 	expect(not _linked(map, "Hollow/Room", "Hollow"), "and not up through the ceiling onto the roof")
@@ -43,11 +43,11 @@ func test_in_through_a_doorway_not_through_a_wall_or_the_ceiling() -> void:
 
 
 func test_a_wall_between_two_roofs_is_in_the_way() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "SouthRoof", "EastRoof"), "test setup: the two roofs the same height, 6 m apart, across the corner")
 	_box("TallWall", Vector3(12, FLOOR_Y + 15, -14), Vector3(1, 30, 30)) # Between them.
 	await ticks(3)
-	map = ReachMap.build(main.level, SUPERHUMAN)
+	map = ReachMap.shared(main.level, SUPERHUMAN)
 	expect(not _linked(map, "SouthRoof", "EastRoof"), "with a tall wall between them, no way across")
 
 
@@ -57,11 +57,11 @@ func test_no_room_overhead_no_jumping_up() -> void:
 	_box("UnderCeiling", Vector3(63, FLOOR_Y + 1.5, 1.5), Vector3(6, 3, 3))
 	_box("UpperBlock", Vector3(69, FLOOR_Y + 3.25, 1.5), Vector3(6, 6.5, 3))
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "UnderCeiling", "UpperBlock"), "test setup: up a storey, no ceiling: fine")
 	_box("LowCeiling", Vector3(62.15, FLOOR_Y + 6.0, 1.5), Vector3(8.3, 1, 7))
 	await ticks(3)
-	map = ReachMap.build(main.level, SUPERHUMAN)
+	map = ReachMap.shared(main.level, SUPERHUMAN)
 	expect(not _linked(map, "UnderCeiling", "UpperBlock"), "a ceiling over where you'd jump from: no")
 
 

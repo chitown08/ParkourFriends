@@ -144,7 +144,7 @@ func test_a_fling_goes_as_far_as_the_checker_says() -> void:
 		if friend.is_on_floor():
 			break
 	release_all()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect_near(speed, SUPERHUMAN.flow_speed * Player.whip_boost(2), 0.3, "let go at")
 	var flew := Vector2(friend.global_position.x - let_go_at.x, friend.global_position.z - let_go_at.z).length()
 	var expected := map.air_distance(SUPERHUMAN.leap_height, SUPERHUMAN.flow_speed * Player.whip_boost(2), 0.0)

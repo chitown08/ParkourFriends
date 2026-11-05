@@ -53,7 +53,7 @@ func before_each() -> void:
 # --- The checker ------------------------------------------------------------------------
 
 func test_run_up_a_slope_not_too_steep() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_run_up(map, "SlopeGround", "Wedge30"), "30°: run up it")
 	expect(_run_up(map, "SlopeGround", "Wedge40"), "40°: run up it")
 	expect(not _run_up(map, "SlopeGround", "Wedge46"), "46°: too steep")
@@ -62,26 +62,26 @@ func test_run_up_a_slope_not_too_steep() -> void:
 
 
 func test_no_running_up_under_a_slab() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(map.place_named("Low") != null, "its top is a place")
 	expect(not _run_up(map, "SlopeGround", "Low"), "no room under the slab")
 
 
 func test_a_step_is_no_slope() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(map.place_named("Stepped") != null, "its top is a place")
 	expect(not _run_up(map, "SlopeGround", "Stepped"), "you can't run up a wall at the top of a slope")
 
 
 func test_a_slope_is_no_place_to_stand() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for spot: ReachMap.Spot in map.places:
 		if spot.name.begins_with("Wedge30"):
 			expect_near(spot.y, FLOOR_Y + RISE, 0.01, "%s is its flat top, not on the slope" % spot.name)
 
 
 func test_terraces_spun_round() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var angle := deg_to_rad(TERRACE_SPIN / 2.0)
 	var out := Vector3(cos(angle), 0, -sin(angle)) # (Halfway round.)
 	expect(map.is_solid(TERRACE_AT + out * (TERRACE_BACK + TERRACE_TOP) / 2.0 + Vector3.UP * 3.0), "solid under its top")
@@ -105,7 +105,7 @@ func test_terraces_spun_round() -> void:
 
 
 func test_no_place_under_a_tower_on_the_terraces() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var at := _tower_at()
 	var footprint := Rect2(at.x - 2.0, at.z - 2.0, 4.0, 4.0).grow(-0.3)
 	for spot: ReachMap.Spot in _places(map, "Terraces"):

@@ -52,7 +52,7 @@ func before_each() -> void:
 # --- The checker ------------------------------------------------------------------------
 
 func test_a_turned_buildings_top() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tops := _places(map, "Turned")
 	var turned := main.level.get_node("Turned") as CSGBox3D
 	var area := 0.0
@@ -67,7 +67,7 @@ func test_a_turned_buildings_top() -> void:
 
 
 func test_a_turned_building_is_where_it_is() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var turned := main.level.get_node("Turned") as CSGBox3D
 	expect(map.is_solid(turned.global_transform * Vector3(9.5, 0, 6.5)), "near its corner: solid")
 	expect(not map.is_solid(turned.global_transform * Vector3(11, 0, 0)), "just past its end: not")
@@ -75,7 +75,7 @@ func test_a_turned_building_is_where_it_is() -> void:
 
 
 func test_a_leaning_buildings_top_is_strips() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tops := _places(map, "Leaning")
 	var leaning := main.level.get_node("Leaning") as CSGBox3D
 	var heights := {}
@@ -90,7 +90,7 @@ func test_a_leaning_buildings_top_is_strips() -> void:
 
 
 func test_too_steep_to_stand_on() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_places(map, "Steep").is_empty(), "leaning 20°, its top is no place (you'd slide off)")
 
 
@@ -100,12 +100,12 @@ func test_the_top_of_a_thin_wall_is_no_place() -> void:
 	var wall := _box("Garden", main.level, Vector3(0, FLOOR_Y + 1.5, 80), Vector3(30, 3, 1.2))
 	wall.rotation.y = deg_to_rad(1.0)
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_places(map, "Garden").is_empty(), "no place on top (%s)" % [_places(map, "Garden").map(func(spot: ReachMap.Spot) -> Rect2: return spot.area)])
 
 
 func test_a_curved_buildings_top_follows_its_curve() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tops := _places(map, "Curved")
 	var curved := main.level.get_node("Curved") as CSGPolygon3D
 	var area := 0.0
@@ -122,7 +122,7 @@ func test_a_curved_buildings_top_follows_its_curve() -> void:
 
 
 func test_a_curved_building_is_solid_only_inside() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	# Its outline bulges out at 30° (12.5 m) and in at 90° (7.5 m).
 	var middle := Vector3(-40, FLOOR_Y + 3.0, -40)
 	expect(map.is_solid(middle + Vector3(cos(PI / 6.0), 0, sin(PI / 6.0)) * 12.0), "in a bulge: solid")
@@ -131,7 +131,7 @@ func test_a_curved_building_is_solid_only_inside() -> void:
 
 
 func test_a_flattened_domes_crown() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var crowns := _places(map, "Flat/Dome")
 	expect(not crowns.is_empty(), "the top of a flattened dome is a place")
 	for crown: ReachMap.Spot in crowns:
@@ -142,7 +142,7 @@ func test_a_flattened_domes_crown() -> void:
 
 
 func test_up_a_wall_leaning_out_a_little_but_not_a_lot() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "Out6Pad", "Out6", true), "leaning out 6°: you can scramble up it")
 	expect(not _linked(map, "Out25Pad", "Out25", true), "leaning out 25°: you can't")
 	expect(not map.links.any(func(link: ReachMap.Link) -> bool: return link.from.name == "Out25Pad" and link.how.begins_with("leg-up")),
@@ -151,7 +151,7 @@ func test_up_a_wall_leaning_out_a_little_but_not_a_lot() -> void:
 
 
 func test_no_way_up_a_mushroom_alone() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var cap := map.place_named("Mushroom/Cap")
 	expect(cap != null, "its cap is a place")
 	expect(not map.solve(map.place_named("AngleGround"), 1).has(cap), "it overhangs all round: no way up it alone")
@@ -301,7 +301,7 @@ func test_the_modern_quarter() -> void:
 	for shape: String in modern:
 		expect(found.has(shape), "there's a %s building (%s)" % [shape, found])
 	# And each has somewhere to stand on top (a leaning one not too steep, say).
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	for b: Node3D in main.level.get_node("Buildings").get_children():
 		if b.get_meta(&"shape", "") in modern:
 			expect(map.places.any(func(spot: ReachMap.Spot) -> bool: return spot.node == b), "%s (%s) has a top you can stand on" % [b.name, b.get_meta(&"shape")])

@@ -40,7 +40,7 @@ func before_each() -> void:
 
 
 func test_a_round_buildings_top_is_a_place() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tops := map.places.filter(func(spot: ReachMap.Spot) -> bool: return spot.name.begins_with("Rotunda"))
 	expect(tops.size() == 2, "two rectangles crossed, says %s" % [tops.map(func(spot: ReachMap.Spot) -> String: return spot.name)])
 	var area := 0.0
@@ -53,20 +53,20 @@ func test_a_round_buildings_top_is_a_place() -> void:
 
 
 func test_a_round_building_is_round() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(map.is_solid(Vector3(7.5, FLOOR_Y + 3.0, -30)), "just inside its wall: solid")
 	expect(not map.is_solid(Vector3(6.5, FLOOR_Y + 3.0, -23.5)), "but its square's corner isn't")
 	expect(not map.is_solid(Vector3(0, FLOOR_Y + STOREYS + 0.5, -30)), "nor over its roof")
 
 
 func test_onto_a_round_roof_and_off_it() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "ShapeGround", "Rotunda"), "a scramble up its wall")
 	expect(_linked(map, "Rotunda", "ShapeGround"), "and down")
 
 
 func test_a_domes_crown_is_a_place() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var crown := map.place_named("Domed/Dome")
 	expect(crown != null, "the top of the dome is a place")
 	if crown:
@@ -82,7 +82,7 @@ func test_a_domes_crown_is_a_place() -> void:
 
 
 func test_a_tier_on_top() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var tier := map.place_named("Stepped/Tier")
 	expect(tier != null and is_equal_approx(tier.y, FLOOR_Y + 2.0 * STOREYS), "the tier's top is a place")
 	var pieces := map.places.filter(func(spot: ReachMap.Spot) -> bool: return spot.name == "Stepped" or spot.name.begins_with("Stepped#"))
@@ -95,7 +95,7 @@ func test_a_tier_on_top() -> void:
 
 
 func test_a_courtyard_down_through() -> void:
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var area := 0.0
 	for spot: ReachMap.Spot in map.places.filter(func(s: ReachMap.Spot) -> bool: return s.name == "Yard" or s.name.begins_with("Yard#")):
 		area += spot.area.get_area()
@@ -109,13 +109,13 @@ func test_a_round_tower_in_the_way() -> void:
 	_box("WestRoof", main.level, Vector3(-60, FLOOR_Y + 3.5, -100), Vector3(16, 7, 4))
 	_box("EastRoof", main.level, Vector3(-38, FLOOR_Y + 3.5, -100), Vector3(16, 7, 4))
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(_linked(map, "WestRoof", "EastRoof"), "test setup: 6 m apart, a jump")
 	var tower := _shape(CSGCylinder3D.new(), "Chimney", main.level, Vector3(-49, FLOOR_Y + 15, -100)) as CSGCylinder3D
 	tower.radius = 2.9
 	tower.height = 30.0
 	await ticks(3)
-	map = ReachMap.build(main.level, SUPERHUMAN)
+	map = ReachMap.shared(main.level, SUPERHUMAN)
 	expect(not _linked(map, "WestRoof", "EastRoof"), "with a tall round chimney in the gap (and the roofs too narrow to go round it), no way across")
 
 
@@ -197,7 +197,7 @@ func test_the_district_has_each_shape() -> void:
 
 func test_you_can_get_onto_every_part_of_every_shape() -> void:
 	await _load_district()
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	var spawn := map.place_under(main.level.get_node("SpawnPoint").global_position + Vector3.UP)
 	var alone := map.solve(spawn, 1)
 	var missing := []
@@ -269,5 +269,5 @@ func test_a_lying_down_cylinder_has_no_top() -> void:
 	log_shape.height = 20.0
 	log_shape.rotation = Vector3(PI / 2.0, 0, 0)
 	await ticks(3)
-	var map := ReachMap.build(main.level, SUPERHUMAN)
+	var map := ReachMap.shared(main.level, SUPERHUMAN)
 	expect(not map.places.any(func(spot: ReachMap.Spot) -> bool: return spot.name.begins_with("Log")), "no place on top of it")

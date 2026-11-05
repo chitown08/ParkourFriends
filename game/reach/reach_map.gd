@@ -97,6 +97,96 @@ static func build(level_: Node, profile: MovementProfile) -> ReachMap:
 	return map
 
 
+## The maps shared() has built, by what they were built from (the last few).
+static var _shared := {}
+const MOST_SHARED := 4
+## Maps that took less than this to build (milliseconds) aren't kept.
+const WORTH_SHARING_MS := 1000
+## Where this map's spots' nodes are in its level (to find them again in a
+## fresh copy of the level: see shared()).
+var _node_paths := {}
+
+
+## Like build(), but if the level is just like one a map was built of lately
+## (a fresh load of the same world, nothing added, moved or taken away), hands
+## back that map instead, pointed at this level's nodes. Building a whole
+## district's map takes seconds; tests ask about the same district again and
+## again. Only for reading: don't change the map you're handed.
+static func shared(level_: Node, profile: MovementProfile) -> ReachMap:
+	var key := "%s|%s|%s" % [profile.resource_path if profile.resource_path else str(profile.get_instance_id()), level_.scene_file_path, _fingerprint(level_)]
+	if _shared.has(key):
+		var found: ReachMap = _shared[key]
+		_shared.erase(key) # (To the back: used last, so kept longest.)
+		_shared[key] = found
+		found._point_at(level_)
+		return found
+	var started := Time.get_ticks_msec()
+	var map := build(level_, profile)
+	if Time.get_ticks_msec() - started < WORTH_SHARING_MS:
+		return map # (Quick to build again: not worth keeping, crowding out a big one.)
+	for spot: Spot in map.places + map.targets:
+		if spot.node and level_.is_ancestor_of(spot.node):
+			map._node_paths[spot] = _place_among(level_, spot.node)
+	for slope: Slope in map.slopes:
+		if slope.node and level_.is_ancestor_of(slope.node):
+			map._node_paths[slope] = _place_among(level_, slope.node)
+	if _shared.size() >= MOST_SHARED:
+		_shared.erase(_shared.keys()[0]) # (The oldest.)
+	_shared[key] = map
+	return map
+
+
+## Where `node` is under `root`, as which child at each step down (names made
+## up in code differ between loads; places among siblings don't).
+static func _place_among(root: Node, node: Node) -> PackedInt32Array:
+	var steps := PackedInt32Array()
+	while node != root:
+		steps.append(node.get_index())
+		node = node.get_parent()
+	steps.reverse()
+	return steps
+
+
+## Everything in `level_` that a map is made from, in one string: its shapes
+## (where, how big) and the things with a script (rails, pipes, relics...: what
+## and where). Not what only moves for looks (a relic bobbing, effects).
+static func _fingerprint(level_: Node) -> String:
+	var parts := PackedStringArray()
+	# [node, its path] (made-up names, like "@Node3D@16047" for nodes made in
+	# code, differ every load: those go by their place among their siblings).
+	var stack: Array = [[level_, ""]]
+	while not stack.is_empty():
+		var entry: Array = stack.pop_back()
+		var node: Node = entry[0]
+		var children := node.get_children()
+		for i in children.size():
+			var child_name := str(children[i].name)
+			stack.append([children[i], "%s/%s" % [entry[1], "#%d" % i if child_name.begins_with("@") else child_name]])
+		if not (node is CSGShape3D or (node.get_script() != null and node is Node3D and not node is VisualInstance3D)):
+			continue # (Not a spinning relic gem: just for looks.)
+		var at := (node as Node3D).transform
+		var line := "%s:%s" % [entry[1], node.get_class()]
+		if not node is RigidBody3D: # (Items: whether they're there, not just where they've settled.)
+			line += "%s%s" % [at.origin.snappedf(0.1), at.basis.get_euler().snappedf(0.01)]
+		if node is CSGBox3D:
+			line += str((node as CSGBox3D).size)
+		parts.append(line)
+	return str(hash("\n".join(parts)))
+
+
+## Points this map's spots at the same nodes in `level_` (a fresh copy of the
+## level it was built of).
+func _point_at(level_: Node) -> void:
+	if level == level_:
+		return
+	level = level_
+	for spot: Variant in _node_paths:
+		var node: Node = level_
+		for step in _node_paths[spot]:
+			node = node.get_child(step) if node and step < node.get_child_count() else null
+		spot.node = node
+
+
 ## Adds a link (if there's a way through: see path_clear(); unless `check_path`
 ## is false, for a way along a surface that's already known clear).
 func add_link(from: Spot, to: Spot, how: String, needs: Array[StringName] = [], helpers_here := 0, helpers_there := 0, together := 0, check_path := true) -> void:
