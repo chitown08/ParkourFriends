@@ -84,12 +84,18 @@ func test_every_tower_top_alone() -> void:
 		expect(not tops.is_empty() and tops.any(func(spot: ReachMap.Spot) -> bool: return alone.has(spot)), "%s's top: you can get there alone" % tower.name)
 
 
-func test_scaffolding_up_every_tower_from_the_street() -> void:
+func test_scaffolding_up_every_glass_tower_from_the_street() -> void:
+	# (Stone towers have rows of ledges instead: tests/test_facades.gd.)
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	var ground := map.place_named("Ground")
 	var grabbed := 0
+	var stone := load("res://materials/stone.tres")
 	for tower in _towers():
 		var scaffold := main.level.get_node_or_null("WaysUp/%s_Scaffold" % tower.name) as Scaffold
+		var has_insides := tower.get_children().any(func(c: Node) -> bool: return c is CSGShape3D and (c as CSGShape3D).operation == CSGShape3D.OPERATION_SUBTRACTION)
+		if tower.material == stone and not has_insides:
+			expect(scaffold == null, "%s is stone: no scaffolding" % tower.name)
+			continue
 		expect(scaffold != null, "%s has scaffolding" % tower.name)
 		if scaffold == null:
 			continue
@@ -102,7 +108,7 @@ func test_scaffolding_up_every_tower_from_the_street() -> void:
 				"%s's: up it from the street" % tower.name)
 		if map.links.any(func(link: ReachMap.Link) -> bool: return link.to == roof and link.how.begins_with("scaffolding (grabbed")):
 			grabbed += 1
-	expect(grabbed >= 15, "most of them you can jump onto from a lower roof next door, %d" % grabbed)
+	expect(grabbed >= 10, "most of them you can jump onto from a lower roof next door, %d" % grabbed)
 
 
 func test_jump_across_a_gap_onto_scaffolding_and_climb_it() -> void:

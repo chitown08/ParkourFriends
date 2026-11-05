@@ -24,10 +24,10 @@ func test_every_flat_roof_has_a_way_up() -> void:
 		if b.size.y > 30.0 or not _is_flat(b):
 			continue # Towers, old-town houses and sawtooth sheds.
 		var area := _footprint(b).grow(3.5) # (A fire escape step's middle is 1.5 m out.)
-		var ways: Array = main.level.get_node("FireEscapes").get_children() + main.level.get_node("WaysUp").get_children()
+		var ways: Array = main.level.get_node("FireEscapes").get_children() + main.level.get_node("WaysUp").get_children() + main.level.get_node("Ledges").get_children()
 		if not ways.any(func(way: Node3D) -> bool: return area.has_point(Vector2(way.global_position.x, way.global_position.z))):
 			missing.append(b.name)
-	expect(missing.is_empty(), "every flat-roofed building should have a fire escape, drainpipe or sills: %s" % [missing])
+	expect(missing.is_empty(), "every flat-roofed building should have a fire escape, drainpipe, sills or ledges: %s" % [missing])
 	expect(_pipes().size() >= 8, "there should be drainpipes about, %d" % _pipes().size())
 	expect(_sill_columns().size() >= 3, "and columns of sills, %d" % _sill_columns().size())
 	expect(_vents().size() >= 20, "and an air vent in most blocks, %d" % _vents().size())

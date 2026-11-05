@@ -266,6 +266,9 @@ const LANDED_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Slide", &"Grin
 const LEAP_SQUASH := 0.28
 ## Landing faster than this (m/s) kicks up dust.
 const DUST_LANDING_SPEED := 20.0
+## Looking for the next ledge up to leap to, from heights this far apart
+## (see find_ledge_above()).
+const LEDGE_SEARCH_STEP := 0.25
 ## Landing faster than this (m/s) from a standstill plays the landing animation.
 const HARD_LANDING_SPEED := 12.0
 ## Seen moving faster than this (m/s), it was a teleport (a respawn), not a run.
@@ -1650,7 +1653,19 @@ func find_ledge(feet: Vector3, forward: Vector3) -> Ledge:
 	above.y = feet.y + ledge_max_height + 0.1
 	var top := raycast(above, Vector3(above.x, feet.y + mantle_min_height, above.z))
 	if top.is_empty() or top.normal.y < 0.7:
-		return null # No flat top within reach.
+		# The wall goes on up. A narrow ledge sticking out of it higher up than
+		# we looked (a window ledge)? Look down just in front of the wall, then
+		# find its face.
+		var lip: Vector3 = wall.position + wall_normal * 0.2
+		lip.y = feet.y + ledge_max_height + 0.1
+		top = raycast(lip, Vector3(lip.x, feet.y + mantle_min_height, lip.z))
+		if top.is_empty() or top.normal.y < 0.7:
+			return null # No flat top within reach.
+		var face_from := Vector3(wall.position.x, top.position.y - 0.05, wall.position.z) + wall_normal * (reach + 0.6)
+		var face := raycast(face_from, face_from - wall_normal * (reach + 0.6))
+		if face.is_empty():
+			return null
+		wall = face
 
 	var ledge := Ledge.new()
 	ledge.normal = wall_normal
@@ -1707,13 +1722,17 @@ func find_ledge_above(ledge: Ledge) -> Ledge:
 	var hanging := hang_position(ledge)
 	# Search as if standing high enough that the ledge we want is within reach:
 	# first where we hang (finds sills sticking out like this one), then a bit
-	# closer in (finds a plain wall top set back behind the sill).
+	# closer in (finds a plain wall top set back behind the sill). A narrow
+	# ledge is only seen when it's at about head height (its face in front of
+	# you), so look from a few heights, lowest first: the nearest one up.
 	for step_in: float in [0.0, 0.6]:
-		var search_feet := Vector3(hanging.x, ledge.position.y + ledge_leap_height - ledge_max_height, hanging.z) \
-				- ledge.normal * step_in
-		var above := find_ledge(search_feet, -ledge.normal)
-		if above != null and above.position.y >= ledge.position.y + 1.0:
-			return above
+		var lift := 1.0 - ledge_max_height
+		while lift <= ledge_leap_height - ledge_max_height + 0.01:
+			var search_feet := Vector3(hanging.x, ledge.position.y + lift, hanging.z) - ledge.normal * step_in
+			var above := find_ledge(search_feet, -ledge.normal)
+			if above != null and above.position.y >= ledge.position.y + 1.0 and above.position.y <= ledge.position.y + ledge_leap_height + 0.01:
+				return above
+			lift += LEDGE_SEARCH_STEP
 	return null
 
 
@@ -1747,3 +1766,17 @@ func recent_peak() -> float:
 ## worked out from how you move on screen, so it works for friends too).
 func seen_speed() -> float:
 	return _ground_speed
+
+
+## If you've just come down on a ledge too narrow to stand on (a row of window
+## ledges, levels/ledges.gd), the ledge to hang from instead; else null.
+func ledge_lip_under() -> Ledge:
+	for i in get_slide_collision_count():
+		var hit := get_slide_collision(i)
+		var body := hit.get_collider() as Node
+		if hit.get_normal().y < 0.7 or body == null or body.get_parent() == null:
+			continue
+		var rows := body.get_parent().get_parent() as Ledges
+		if rows:
+			return rows.ledge_near(global_position)
+	return null

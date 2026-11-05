@@ -32,12 +32,17 @@ const TOWER_STOREYS := Vector2i(12, 16) ## ...this many storeys tall.
 const MAX_ALLEY_STEP := 2
 const EDGE := 20.0 ## Street around the outside of the district.
 
-## Fire escapes: a staircase of solid steps (one storey each) along a street-facing
-## wall, up to one storey below the roof. One per block, on its lowest building
-## (alley steps take you up the rest). Towers don't get one.
-const STEP_RUN := 6.0 ## Length of each step along the wall...
-const MIN_STEP_RUN := 4.5 ## ...squeezed down to this on a short wall.
-const STEP_DEPTH := 3.0 ## How far each step sticks out into the street.
+## Fire escapes (New York style, levels/stairs.gd): an iron deck along the
+## wall at every storey, wrapping round a corner, and flights of stairs just
+## outside the decks, climbing from the street along the walls (a landing
+## between each) to a landing beside the roof. One per block, on its lowest
+## building (alley steps take you up the rest). Towers don't get one.
+const DECK := 1.5 ## How far the decks stick out of the wall...
+const FLIGHT := Vector2(5.0, 1.2) ## ...each flight (run, width), outside them...
+const LANDING := 1.5 ## ...with a landing this long between flights...
+const TOP_LANDING := 2.5 ## ...and one this long at the top, level with the roof.
+const FIRE_ESCAPE_END := 1.0 ## Flights keep this far from the wall's ends...
+const AROUND_CORNER := 3.0 ## ...and start this far round a corner.
 
 ## Grind rails cross the avenues, from a taller roof down to a lower one: they
 ## start just past the taller roof's edge, a little below it (run off onto it),
@@ -299,6 +304,7 @@ const THROUGH_MIN := 14.0
 const THROUGH_OPENING := Vector2(6.0, 4.5) ## ...with an opening this big about every
 const THROUGH_SPACING := 12.0 ## this far along each wall (at floor level).
 const TOWER_DOOR := Vector2(6.0, 5.0) ## Towers: a doorway in each wall, and a
+const PLATFORM_DEPTH := 3.0 ## (How far each sticks out from the wall.)
 const PLATFORM_RUN := 5.0 ## climb of blocks (at least this long) round the inside walls.
 
 # Ways back up: every flat-roofed building without a fire escape (towers
@@ -309,6 +315,16 @@ const WAY_UP_CORNER := 3.0 ## Kept at least this far from a wall's corners.
 const SILL := Vector3(2.5, 0.3, 0.5) ## (Along the wall, thick, out from it.)
 const VENT_OUT := 1.5 ## The vent's middle is this far out from the wall...
 const VENT_LIFT := 1.0 ## ...and it blows you this far above the roof.
+## Window ledges (levels/ledges.gd): stone buildings (b.facade "stone", in
+## sandstone) have a row of ledges along every wall at every storey: catch one
+## when you botch a jump, leap up them to the roof. Some of the old town's
+## plain flat-roofed buildings (no insides to run through), and some of
+## downtown's towers (no scaffolding needed); downtown's glass towers get a row
+## every few storeys (somewhere to catch a fall, not a way up).
+const STONE_CHANCE := 0.6
+const STONE_TOWER_CHANCE := 0.4
+const GLASS_LEDGE_EVERY := 4
+const LEDGE_CLEAR := 2.0 ## Rows stop this far either side of a drainpipe or scaffolding.
 
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
@@ -338,6 +354,8 @@ var _needed := {}
 var _pillar_spots: Array[Vector2] = []
 ## Where drainpipes and sill columns go up walls (launchers keep clear).
 var _way_up_spots: Array[Vector2] = []
+## Where launchers stand against walls (ledges keep clear).
+var _launcher_rects: Array[Rect2] = []
 var _out := PackedStringArray()
 
 
@@ -390,6 +408,7 @@ func _all_buildings() -> Array[Dictionary]:
 	buildings.append_array(_downtown())
 	_pick_shapes(buildings)
 	_pick_interiors(buildings)
+	_pick_facades(buildings)
 	return buildings
 
 
@@ -403,6 +422,7 @@ func _write_scene() -> String:
 	_rails.clear()
 	_pillar_spots.clear()
 	_way_up_spots.clear()
+	_launcher_rects.clear()
 	var buildings := _all_buildings()
 
 	_write_header()
@@ -416,7 +436,7 @@ func _write_scene() -> String:
 			"downtown": _write_tower(b)
 			_:
 				_box(b.name, "Buildings", b.x + b.w / 2.0, b.storeys * STOREY / 2.0, b.z + b.d / 2.0,
-						b.w, b.storeys * STOREY, b.d, "4_building")
+						b.w, b.storeys * STOREY, b.d, "36_stone" if b.facade == "stone" else "4_building")
 				_write_shape(b)
 	var staircases := 0
 	for bx in BLOCKS:
@@ -435,6 +455,7 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	var launchers := _write_launchers(buildings)
+	var ledges := _write_facades(buildings) # (After the ways up and launchers: the rows keep clear of them.)
 	var pipes := _write_pipes(buildings)
 	# (After the ways up the outside: openings keep clear of them.)
 	var interiors := 0
@@ -460,9 +481,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
+			staircases, ways_up, ledges, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -511,7 +532,7 @@ func _block(bx: int, bz: int) -> Array[Dictionary]:
 		var r := parts[i]
 		buildings.append({"name": "Block%d%d_%d" % [bx, bz, i], "x": r.position.x, "z": r.position.y,
 				"w": r.size.x, "d": r.size.y, "storeys": storeys, "tower": tower, "block": Vector2i(bx, bz), "roof": "flat", "fire_escape": false, "interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false,
-				"style": "modern" if MODERN.has_point(Vector2i(bx, bz)) else "old", "turn": 0.0})
+				"style": "modern" if MODERN.has_point(Vector2i(bx, bz)) else "old", "turn": 0.0, "facade": ""})
 	if Vector2i(bx, bz) == MUSEUM_BLOCK:
 		buildings[0].merge({"name": "Museum", "roof": "museum", "tower": false, "storeys": ceili(MUSEUM_HALL.y / STOREY)}, true)
 		return buildings
@@ -636,49 +657,117 @@ func _across_alley(a: Dictionary, b: Dictionary) -> bool:
 	return (absf(gap_x - ALLEY) < 0.1 and overlap_z > 2.0) or (absf(gap_z - ALLEY) < 0.1 and overlap_x > 2.0)
 
 
-## Adds a fire escape to the block's lowest building that has a long enough
-## street-facing wall (trying the next lowest if not). Returns false if none fits.
+## Adds a fire escape (see DECK) to the block's lowest building it fits on
+## (trying the next lowest if not), starting from a street-facing wall and
+## going on round a corner if it needs to. Returns false if none fits.
 func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, block.x, block.y, "stairs"])
 	var area := _block_rect(block)
 	var candidates := buildings.filter(func(b: Dictionary) -> bool: return b.block == block and b.roof == "flat" and not b.tower)
-	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys < b.storeys)
+	# (Lowest first, but not one with insides if another will do: the decks
+	# run the length of the walls, where its doors would go.)
+	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys < b.storeys if (a.interior == "") == (b.interior == "") else a.interior == "")
 	for b: Dictionary in candidates:
-		var steps: int = b.storeys - 1
-		# Each street-facing wall: [a corner, the way along the wall, the way out into the street].
-		var walls := []
-		if is_equal_approx(b.z, area.position.y):
-			walls.append([Vector2(b.x, b.z), Vector2.RIGHT, Vector2.UP])
-		if is_equal_approx(b.z + b.d, area.end.y):
-			walls.append([Vector2(b.x, b.z + b.d), Vector2.RIGHT, Vector2.DOWN])
-		if is_equal_approx(b.x, area.position.x):
-			walls.append([Vector2(b.x, b.z), Vector2.DOWN, Vector2.LEFT])
-		if is_equal_approx(b.x + b.w, area.end.x):
-			walls.append([Vector2(b.x + b.w, b.z), Vector2.DOWN, Vector2.RIGHT])
-		walls = walls.filter(func(w: Array) -> bool:
-				return (b.w if w[1] == Vector2.RIGHT else b.d) >= steps * MIN_STEP_RUN)
-		if walls.is_empty():
+		var options := [] # [walls round b, the one to start on, the flights]
+		for clockwise in [true, false]:
+			var walls := _walls_round(b, clockwise)
+			for i in 4:
+				var outside: Vector2 = walls[i][0] + walls[i][1] * walls[i][3] / 2.0 + walls[i][2]
+				if area.has_point(outside):
+					continue # (Start from the street.)
+				var flights := _plan_flights(walls, i, b.storeys)
+				if not flights.is_empty():
+					options.append([walls, i, flights])
+		if options.is_empty():
 			continue
-		var wall: Array = walls[dice.randi() % walls.size()]
-		var length: float = b.w if wall[1] == Vector2.RIGHT else b.d
-		var run := minf(STEP_RUN, length / steps)
-		var along: Vector2 = wall[1]
-		var start: Vector2 = wall[0]
-		if dice.randf() < 0.5: # Climb from the other end.
-			start += along * length
-			along = -along
-		var out: Vector2 = wall[2]
-		var far_corner := start + along * steps * run + out * STEP_DEPTH
-		_fire_escapes.append(Rect2(start, Vector2.ZERO).expand(far_corner))
+		var pick: Array = options[dice.randi() % options.size()]
+		_write_fire_escape(b, pick[0], pick[2])
 		b.fire_escape = true
-		for k in range(1, steps + 1):
-			var middle := start + along * (k - 0.5) * run + out * STEP_DEPTH / 2.0
-			var size := along.abs() * run + out.abs() * STEP_DEPTH
-			_box("%s_Step%d" % [b.name, k], "FireEscapes", middle.x, k * STOREY / 2.0, middle.y,
-					size.x, k * STOREY, size.y, "7_climb")
 		return true
 	return false
+
+
+## The walls of `b` in order round it (clockwise from above, or not), each
+## [its first corner, the way along it, the way out of the building, its length].
+func _walls_round(b: Dictionary, clockwise: bool) -> Array:
+	var corners := [Vector2(b.x, b.z), Vector2(b.x + b.w, b.z), Vector2(b.x + b.w, b.z + b.d), Vector2(b.x, b.z + b.d)]
+	if not clockwise:
+		corners.reverse()
+	var middle := _middle(b)
+	var walls := []
+	for i in 4:
+		var from: Vector2 = corners[i]
+		var to: Vector2 = corners[(i + 1) % 4]
+		var along := (to - from).normalized()
+		var out := Vector2(along.y, -along.x)
+		if out.dot((from + to) / 2.0 - middle) < 0.0:
+			out = -out
+		walls.append([from, along, out, from.distance_to(to)])
+	return walls
+
+
+## Where a fire escape's flights go, one a storey from the street up to the
+## roof, starting on wall `start` of `walls` (see _walls_round()) and going on
+## to the next if they run out of room: [which wall, how far along it] each.
+## Empty if they don't fit on two walls.
+func _plan_flights(walls: Array, start: int, storeys: int) -> Array:
+	var flights := []
+	var wall := start
+	var at := FIRE_ESCAPE_END
+	while flights.size() < storeys:
+		var last := flights.size() == storeys - 1
+		if at + FLIGHT.x + (TOP_LANDING if last else LANDING) <= walls[wall][3] - FIRE_ESCAPE_END:
+			flights.append([wall, at])
+			at += FLIGHT.x + LANDING
+			continue
+		wall = (wall + 1) % 4
+		if wall == (start + 2) % 4:
+			return []
+		at = AROUND_CORNER
+	return flights
+
+
+## The fire escape on `b`: its decks along every wall the `flights` are on,
+## at every storey (each reaching round the corner to the next), and the
+## flights themselves with their landings.
+func _write_fire_escape(b: Dictionary, walls: Array, flights: Array) -> void:
+	var used := {}
+	for flight: Array in flights:
+		used[flight[0]] = true
+	b["escape_outs"] = used.keys().map(func(i: int) -> Vector2: return walls[i][2])
+	for i: int in used:
+		var wall: Array = walls[i]
+		var corner: Vector2 = wall[0]
+		var along: Vector2 = wall[1]
+		var out: Vector2 = wall[2]
+		var length: float = wall[3] + (DECK if used.has((i + 1) % 4) else 0.0) # (Round the corner to the next.)
+		var middle := corner + along * length / 2.0 + out * DECK / 2.0
+		var size := along.abs() * length + out.abs() * DECK
+		for k in range(1, b.storeys):
+			_box("%s_Deck%d_%d" % [b.name, i, k], "FireEscapes", middle.x, k * STOREY - 0.1, middle.y, size.x, 0.2, size.y, "35_iron")
+		_fire_escapes.append(Rect2(corner, Vector2.ZERO).expand(corner + along * wall[3] + out * (DECK + FLIGHT.y)))
+	for k in flights.size():
+		var wall: Array = walls[flights[k][0]]
+		var along: Vector2 = wall[1]
+		var out: Vector2 = wall[2]
+		var at: float = flights[k][1]
+		var foot: Vector2 = wall[0] + along * at + out * (DECK + FLIGHT.y / 2.0)
+		# Up along the wall; +Z out of it (or into it: then the decks are the other way).
+		var x := Vector3(along.x, 0.0, along.y)
+		var z := x.cross(Vector3.UP)
+		var landing_in := (DECK + FLIGHT.y) / 2.0 * (1.0 if z.dot(Vector3(out.x, 0.0, out.y)) > 0.0 else -1.0)
+		_out.append("\n[node name=\"%s_Flight%d\" type=\"Node3D\" parent=\"FireEscapes\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"34_stairs\")\nrun = %s\nrise = %s\nwidth = %s\nlanding_in = %s" % [
+				b.name, k + 1, _num(x.x), _num(z.x), _num(x.z), _num(z.z), _num(foot.x), _num(k * STOREY), _num(foot.y),
+				_num(FLIGHT.x), _num(STOREY), _num(FLIGHT.y), _num(landing_in)])
+		# A landing after it, outside the deck; at the top, one across both, by the roof.
+		var last := k == flights.size() - 1
+		var length := TOP_LANDING if last else LANDING
+		var depth := DECK + FLIGHT.y if last else FLIGHT.y
+		var middle: Vector2 = wall[0] + along * (at + FLIGHT.x + length / 2.0) + out * ((DECK + FLIGHT.y) - depth / 2.0)
+		var size := along.abs() * length + out.abs() * depth
+		_box("%s_%s" % [b.name, "Top" if last else "Landing%d" % (k + 1)], "FireEscapes", middle.x, (k + 1) * STOREY - 0.1, middle.y,
+				size.x, 0.2, size.y, "35_iron")
 
 
 ## A drainpipe or a column of window sills up one wall of `b` (flat roofs
@@ -686,6 +775,8 @@ func _write_staircase(buildings: Array[Dictionary], block: Vector2i) -> bool:
 func _write_way_up(b: Dictionary) -> bool:
 	if b.tower or b.roof != "flat" or b.fire_escape:
 		return false
+	if b.facade == "stone":
+		return true # (Its ledges: see _write_facades().)
 	var dice := RandomNumberGenerator.new()
 	dice.seed = hash([SEED, b.name, "way up"])
 	var walls := _walls(b)
@@ -1265,7 +1356,7 @@ func _downtown() -> Array[Dictionary]:
 				storeys = mini(storeys, EDGE_STOREYS)
 			var b := {"name": "Tower%d_%d" % [i, j], "x": lot.position.x, "z": lot.position.y, "w": lot.size.x, "d": lot.size.y,
 					"storeys": storeys, "tower": false, "block": Vector2i(-1, -1), "roof": "downtown", "fire_escape": false,
-					"interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false, "style": "downtown", "turn": 0.0,
+					"interior": "", "dome": 0.0, "tiers": 0, "side": "", "shapeable": false, "style": "downtown", "turn": 0.0, "facade": "",
 					"lot": Vector2i(i, j), "base": storeys, "upper": lot}
 			if dice.randf() < WING_CHANCE:
 				b.side = ["N", "S", "W", "E"][dice.randi() % 4]
@@ -1306,12 +1397,12 @@ static func _cut_off(r: Rect2, side: String, part: float) -> Rect2:
 ## (b.upper, from there up to b.storeys) added into it, "<name>/Upper".
 func _write_tower(b: Dictionary) -> void:
 	var base: float = b.base * STOREY
-	_box(b.name, "Buildings", b.x + b.w / 2.0, base / 2.0, b.z + b.d / 2.0, b.w, base, b.d, "29_tower")
+	_box(b.name, "Buildings", b.x + b.w / 2.0, base / 2.0, b.z + b.d / 2.0, b.w, base, b.d, _tower_material(b))
 	if b.base < b.storeys:
 		var upper: Rect2 = b.upper
 		var top: float = b.storeys * STOREY
 		var at := upper.get_center() - _middle(b)
-		_box("Upper", "Buildings/" + b.name, at.x, top / 2.0, at.y, upper.size.x, top - base, upper.size.y, "29_tower", false)
+		_box("Upper", "Buildings/" + b.name, at.x, top / 2.0, at.y, upper.size.x, top - base, upper.size.y, _tower_material(b), false)
 
 
 ## How many storeys tall tower `b` is at `p` (from above): its top part's, its
@@ -1431,6 +1522,8 @@ func _write_tower_pipe(b: Dictionary, dice: RandomNumberGenerator) -> bool:
 ## Scaffolding up tower `t` from the street: on a wall facing a lower
 ## neighbour (the least lower), else any wall onto a gap. False if none fits.
 func _write_scaffold(t: Dictionary, gaps: Array, dice: RandomNumberGenerator) -> bool:
+	if t.facade == "stone" and t.interior == "":
+		return false # (Its ledges are the way up.)
 	var sides := [] # [gap, which side of it `t` is]
 	for gap: Dictionary in gaps:
 		if gap.a == t or gap.b == t:
@@ -1678,6 +1771,10 @@ func _write_header() -> void:
 [ext_resource type="Script" path="res://levels/scaffold.gd" id="30_scaffold"]
 [ext_resource type="Material" path="res://materials/net.tres" id="31_net"]
 [ext_resource type="Script" path="res://levels/catch_net.gd" id="32_catch_net"]
+[ext_resource type="Script" path="res://levels/ledges.gd" id="33_ledges"]
+[ext_resource type="Script" path="res://levels/stairs.gd" id="34_stairs"]
+[ext_resource type="Material" path="res://materials/iron.tres" id="35_iron"]
+[ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -1755,7 +1852,9 @@ directional_shadow_max_distance = 250.0
 
 [node name="Bridges" type="Node3D" parent="."]
 
-[node name="Nets" type="Node3D" parent="."]""")
+[node name="Nets" type="Node3D" parent="."]
+
+[node name="Ledges" type="Node3D" parent="."]""")
 
 
 ## The street (one slab under everything) and the subway line down the north-south avenue.
@@ -2246,6 +2345,7 @@ func _write_launchers(buildings: Array[Dictionary]) -> int:
 			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(1.0).intersects(footprint)) \
 					or _way_up_spots.any(func(spot: Vector2) -> bool: return footprint.grow(1.5).has_point(spot)):
 				continue
+			_launcher_rects.append(footprint) # (The ledges too.)
 			_fire_escapes.append(footprint) # (Keeps the pavement clutter clear.)
 			var yaw := atan2(-heading.x, -heading.y)
 			var c := cos(yaw)
@@ -2327,6 +2427,106 @@ func _write_pipe(name: String, from: Vector2, to: Vector2, y: float, radius: flo
 	var s := sin(yaw)
 	_out.append("\n[node name=\"%s\" type=\"Node3D\" parent=\"Pipes\"]\ntransform = Transform3D(%s, 0, %s, 0, 1, 0, %s, 0, %s, %s, %s, %s)\nscript = ExtResource(\"27_pipe\")\nlength = %s\nradius = %s\nglass = %s" % [
 			name, _num(c), _num(s), _num(-s), _num(c), _num(from.x), _num(y), _num(from.y), _num(from.distance_to(to)), _num(radius), "true" if glass else "false"])
+
+
+## Which buildings are stone, with ledges (see STONE_CHANCE): of the old
+## town's plain flat-roofed buildings with no insides, and of downtown's towers
+## (the rest of those are glass).
+func _pick_facades(buildings: Array[Dictionary]) -> void:
+	for b in buildings:
+		var dice := RandomNumberGenerator.new()
+		dice.seed = hash([SEED, b.name, "facade"])
+		var roll := dice.randf()
+		if b.roof == "downtown":
+			b.facade = "stone" if roll < STONE_TOWER_CHANCE and b.name != "Spire" else "glass"
+		elif b.roof == "flat" and b.style == "old" and not b.tower and b.interior == "":
+			b.facade = "stone" if roll < STONE_CHANCE else ""
+
+
+func _tower_material(b: Dictionary) -> String:
+	return "36_stone" if b.facade == "stone" else "29_tower"
+
+
+## The rows of ledges up stone buildings' walls (every storey), and glass
+## towers' (every few). Not where the fire escape is, nor (downtown) on towers
+## with insides to run through (their openings); clear of drainpipes and
+## scaffolding. Says how many walls got them.
+func _write_facades(buildings: Array[Dictionary]) -> int:
+	var count := 0
+	for b in buildings:
+		if b.facade == "" or b.interior != "":
+			continue
+		if b.roof != "downtown":
+			for wall: Array in _walls(b):
+				if wall[2] in b.get("escape_outs", []):
+					continue
+				count += 1 if _write_ledges("%s_Ledges%d" % [b.name, count], wall, 0.0, wall[3], 0.0, range(1, b.storeys), b.storeys) else 0
+			continue
+		# Downtown: up its lower part's walls (all the way, where the top part's
+		# wall carries on above), and up the top part's walls from its lower roof.
+		var every: int = 1 if b.facade == "stone" else GLASS_LEDGE_EVERY
+		var upper: Rect2 = b.upper
+		var top_walls := _walls({"x": upper.position.x, "z": upper.position.y, "w": upper.size.x, "d": upper.size.y})
+		var winged: bool = b.base < b.storeys
+		for wall: Array in _walls(b):
+			var on := Vector2(INF, -INF) # (Where the top part's wall carries this one on up.)
+			for top: Array in top_walls:
+				var corner: Vector2 = top[0]
+				if winged and top[2] == wall[2] and absf((corner - wall[0]).dot(wall[2])) < 0.01:
+					var from: float = (corner - wall[0]).dot(wall[1])
+					on = Vector2(from, from + top[3])
+			var pieces := [[0.0, wall[3], b.base]]
+			if on.x < on.y:
+				pieces = [[0.0, on.x, b.base], [on.x, on.y, b.storeys], [on.y, wall[3], b.base]]
+			for piece: Array in pieces:
+				if piece[1] - piece[0] < Ledges.SHORTEST:
+					continue
+				var heights := range(1, piece[2]).filter(func(k: int) -> bool: return k % every == 0)
+				count += 1 if _write_ledges("%s_Ledges%d" % [b.name, count], wall, piece[0], piece[1], 0.0, heights, piece[2]) else 0
+		if winged:
+			for top: Array in top_walls:
+				var outside: Vector2 = top[0] + top[1] * top[3] / 2.0 + top[2] * 1.0
+				if not Rect2(b.x, b.z, b.w, b.d).has_point(outside):
+					continue # (Carried on from the lower part's wall: done.)
+				var heights := range(b.base + 1, b.storeys).filter(func(k: int) -> bool: return k % every == 0)
+				count += 1 if _write_ledges("%s_Ledges%d" % [b.name, count], top, 0.0, top[3], 0.0, heights, b.storeys) else 0
+	return count
+
+
+## A row of ledges at each of `storeys` along `wall` (see _walls()), from
+## `from` to `to` along it, up to a roof `top` storeys up; clear of drainpipes
+## and scaffolding (and downtown's things in the gaps). False if it gets none.
+func _write_ledges(name: String, wall: Array, from: float, to: float, base: float, storeys: Array, top: int) -> bool:
+	if storeys.is_empty():
+		return false
+	var out: Vector2 = wall[2]
+	# Its +X runs along the wall with +Z out (see levels/ledges.gd): from this
+	# end of the wall, or the other.
+	var along := Vector2(out.y, -out.x)
+	var start: Vector2 = wall[0] + wall[1] * from
+	if along.dot(wall[1]) < 0.0:
+		start = wall[0] + wall[1] * to
+	var length := to - from
+	var gaps := PackedVector2Array()
+	var front := Rect2(start, Vector2.ZERO).expand(start + along * length + out * 1.0)
+	for spot in _way_up_spots:
+		if front.grow(0.1).has_point(spot):
+			var at := (spot - start).dot(along)
+			gaps.append(Vector2(at - LEDGE_CLEAR, at + LEDGE_CLEAR))
+	for thing in _gap_things + _launcher_rects:
+		var both := front.intersection(thing)
+		if both.has_area():
+			var a := (both.position - start).dot(along)
+			var b := (both.end - start).dot(along)
+			gaps.append(Vector2(minf(a, b) - 0.5, maxf(a, b) + 0.5))
+	var heights := PackedFloat32Array()
+	for k: int in storeys:
+		heights.append(k * STOREY)
+	_wall_node(name, "Ledges", "33_ledges", Vector3(start.x, base, start.y), out,
+			"length = %s\nheights = PackedFloat32Array(%s)\ngaps = PackedVector2Array(%s)\ntop = %s" % [
+			_num(length), ", ".join(Array(heights).map(func(h: float) -> String: return _num(h))),
+			", ".join(Array(gaps).map(func(g: Vector2) -> String: return "%s, %s" % [_num(g.x), _num(g.y)])), _num(top * STOREY)])
+	return true
 
 
 ## Which buildings are hollow inside (b.interior): every tower ("atrium": a
@@ -2444,7 +2644,7 @@ func _write_platforms(b: Dictionary) -> void:
 	var x1: float = b.x + b.w - WALL
 	var z0: float = b.z + WALL
 	var z1: float = b.z + b.d - WALL
-	var depth := STEP_DEPTH
+	var depth := PLATFORM_DEPTH
 	# Round the walls (north, east, south, west), each starting past the last's corner.
 	var walls := [[Vector2(x0 + depth, z0), Vector2.RIGHT, Vector2.DOWN, x1 - x0 - depth],
 			[Vector2(x1, z0 + depth), Vector2.DOWN, Vector2.LEFT, z1 - z0 - depth],
@@ -2477,7 +2677,7 @@ func _write_platforms(b: Dictionary) -> void:
 ## The rectangle (from above) of a platform slot, `length` along it from its start.
 func _slot_rect(slot: Array, length: float) -> Rect2:
 	var start: Vector2 = slot[0]
-	return Rect2(start, Vector2.ZERO).expand(start + (slot[1] as Vector2) * length + (slot[2] as Vector2) * STEP_DEPTH)
+	return Rect2(start, Vector2.ZERO).expand(start + (slot[1] as Vector2) * length + (slot[2] as Vector2) * PLATFORM_DEPTH)
 
 
 ## A few red vault boxes about `b`'s room (its floor at `floor_y`), clear of

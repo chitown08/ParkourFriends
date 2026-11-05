@@ -252,7 +252,7 @@ relics. (Later, with more regions: a block per region.)
 
 | World | Purpose |
 |---|---|
-| `rooftop_district.tscn` | The playground (default). White and grey buildings, a grey street, everything you can use in colour (red vault, yellow climb, blue grind rails, orange ramps and vents); no signs. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a yellow fire escape (one-storey solid steps along a street-facing wall of its lowest building), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Thirty relics come back to a drop-off in the middle of the plaza, for teams of every size: 14 for one player, 8 for two, 5 for three, 3 for four (`RELICS_WANTED`). Each has a stack of gold rings, one per player it takes (`WorldItem.players_needed`). The generator tries a relic on every big flat roof (hovering over it, floating 9.5 m above it, or on a white pillar 7 / 11 / 12.5 / 14 m tall: a leap, then leg-ups from one, two or three friends) and in the streets, asks the reachability checker what each takes from the spawn, keeps enough of each, and writes the checker's answer as the rings. Five are fixed: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Items lie about to try: bats and balloons in the plaza, gliders on the three tallest free roofs, more balloons on the next, crates in the streets (they go home if left lying about). Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up), and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
+| `rooftop_district.tscn` | The playground (default). White and grey buildings, a grey street, everything you can use in colour (red vault, yellow climb, blue grind rails, orange ramps and vents); no signs. A 5 x 5 block district: buildings split by 5 m alleys, blocks by 10 m streets, quarters by two 24 m avenues crossing at a plaza (the north-south one has the subway tracks). Built from a seed by `tools/gen_district.gd`, each block rolling its own dice. Alley neighbours differ by at most two storeys (7 m, a readied leap gets you up), towers aside. Sloped roofs are sprinkled about (grey, never on towers or each block's lowest building): old-town terraces of pitched-roof houses (ridges across the row, 1.5 m lanes or touching) and sawtooth sheds (5 m teeth, a gentle slope up to a 1.2 m glass face); free-run slides down them and skims the glass faces. Only flat roofs get fire escapes, rails, checkpoints, relics and clutter. Every block has a New York-style fire escape on its lowest building (iron decks at every storey along one or two walls, wrapping a corner, with flights of stairs outside them from the street up to a landing beside the roof: see "The middle of buildings"), and grind rails cross both avenues from a taller roof down to a lower one (and can be climbed back up). Roofs carry red air-con boxes to vault and grey stairwell huts (kept clear of roof edges, rail run-ups and landings, and checkpoints); pavements have red benches and bins and yellow phone booths (kept clear of fire escapes). Thirty relics come back to a drop-off in the middle of the plaza, for teams of every size: 14 for one player, 8 for two, 5 for three, 3 for four (`RELICS_WANTED`). Each has a stack of gold rings, one per player it takes (`WorldItem.players_needed`). The generator tries a relic on every big flat roof (hovering over it, floating 9.5 m above it, or on a white pillar 7 / 11 / 12.5 / 14 m tall: a leap, then leg-ups from one, two or three friends) and in the streets, asks the reachability checker what each takes from the spawn, keeps enough of each, and writes the checker's answer as the rings. Five are fixed: one floating 18 m over the plaza (launch off a launch roof with a friend who tosses you near the top; it can be caught from 2.5 m away, `items/data/relic_sky.tres`), one over the grind rail nearest the plaza, one on the tallest roof, one on a roof in the far north-east corner, and one on the subway tracks at the north end. Items lie about to try: bats and balloons in the plaza, gliders on the three tallest free roofs, more balloons on the next, crates in the streets (they go home if left lying about). Round the plaza, four orange launch roofs (`levels/ramp.gd`: low buildings, a yellow step and wall at the back, a 25° roof down to a lip 2.5 m up) launch you toward the middle; leaving one sliding goes higher. Ways back up: every other flat-roofed building (towers aside) has a yellow drainpipe (`levels/drainpipe.gd`; climb it at 5 m/s, pulled onto the roof at the top) or a column of yellow window sills (one per storey, 3.5 m apart: hang, then ledge-leap up); stone buildings (sandstone) have rows of window ledges along every wall instead, and every block an orange air vent on the pavement (`levels/air_vent.gd`) that blows you up beside a building to 1 m above its roof. Towers have no way up yet. R takes you back to a roof checkpoint |
 | `free_run_line.tscn` | Training ground. One straight course with every move in order. Built by `tools/gen_free_run_line.sh` |
 | `test_course.tscn` | Training ground. Human-scale lab the move tests rely on |
 
@@ -260,7 +260,7 @@ relics. (Later, with more regions: a block per region.)
 
 `ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
 and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
-(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, catch, drainpipe (and scaffolding: climbed from its foot, or grabbed from a jump across a gap), window sills,
+(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, catch, drainpipe (and scaffolding: climbed from its foot, or grabbed from a jump across a gap), window sills, rows of window ledges (climbed from beside the wall, or caught from a jump across a gap), fire escape stairs,
 air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
 or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up, the rest of a whip's line), friends already there (a chain, a catch), friends going together (a pack's drafting jump).
 `solve()` spreads a group out from the start and gives the most players who can get to each spot;
@@ -365,8 +365,8 @@ new rule is checked by breaking it on purpose to make sure a test notices.
 
 - **Full pipes**: a few round tunnels to run round the walls of at speed (a sewer, a road tunnel,
   a glass observation tube between skyscrapers). Interiors in general: bridges, building floors.
-- **More ways up**: scaffolding (stacked platforms, needs a zig-zag layout with grabbable fronts),
-  ivy, bounce pads; air vents could pair with a glider. Something for the towers.
+- **More ways up**: ivy, bounce pads; air vents could pair with a glider. Window-washer gondolas and
+  counterweight hoists (a friend jumps on the counterweight to fling you up) for the tallest towers.
 - **Co-op moves that scale with player count** (Nov 2026, the user's favourites):
   - **Hanging chain**: built (see "How movement is built").
   - **Leg-up**: built (see "How movement is built"), stacks up to four high.
@@ -526,6 +526,46 @@ back onto the roof, leap from a roof into a walkway floor).
 
 Still to come here: wingsuit courses off the tops (see the ideas backlog), and the hub tower is now
 dwarfed (56-60 m against towers up to 140 m), so it should grow to stay a landmark.
+
+## The middle of buildings (Nov 2026)
+
+Playtest: tall towers made falling expensive (a long climb back every time) and the fun lived only
+on the roofs and the street. Three ways out: make it harder to fall, easier to get up, or make the
+middle fun. The direction: the city like a ski resort, quick lifts up and long fun runs down
+through the middle, with mistakes caught partway. First pieces:
+
+- **Rows of window ledges** (`levels/ledges.gd`, yellow lips 0.5 m deep): **stone** buildings
+  (sandstone, so you learn to read them) have a row along every wall at every storey: in the old
+  town, 60% of the plain flat-roofed old-style buildings with no insides; downtown, 40% of the
+  towers (not the spire). Botch a jump at one and push toward it to catch the next ledge down; come
+  down on one and you hang from it (there's no room to stand); then leap up ledge by ledge, shimmy
+  along, pull onto the roof. **Glass** towers get a row every 4 storeys: somewhere to catch a fall,
+  not a way up. Stone towers don't need scaffolding (20 left, on glass towers); stone old-town
+  buildings don't need a drainpipe or sills. Rows stop short of drainpipes and scaffolding and
+  downtown's things in the gaps; towers with walkways inside get none (their openings).
+  Finding a narrow ledge (`Player.find_ledge()`) now looks down just in front of the wall too, so
+  it's seen anywhere in your reach, not only at head height; leaping up from one
+  (`find_ledge_above()`) looks from several heights, so the full ledge leap (4.5 m) works.
+- **New York fire escapes** (`levels/stairs.gd`, iron grey): on each block's lowest building, iron
+  decks 1.5 m deep at every storey along one or two walls (round a corner), and outside them
+  flights of stairs (5 m, one storey each) with a landing between, climbing from the street along
+  the walls to a landing level with the roof. You run straight up; the decks are paths round the
+  building at every floor. Replaces the old solid yellow staircases.
+- Rules: `rules/ledges.gd` (from beside the wall, a ledge in jump-and-grab reach, each a ledge leap
+  above the last up to the roof; or a ledge caught from a running jump or readied leap across a
+  gap), `rules/stairs.gd` (each flight joins the deck or street at its foot to the deck at its top).
+- Tests: `tests/test_facades.gd` (a ledge every storey on stone, every few on glass, no scaffolding
+  on stone towers, every stone roof a ledge climb; in the game: climb from the street, fall and
+  catch one and shimmy, botch a jump downtown and catch one then leap to the top; the checker and
+  the game agree on ledges 4.3 m apart (climb) and 5.1 m (don't); a fire escape on every block with
+  decks every storey, its stairs a way up, run up one round a corner, and one free-running).
+
+Next ideas for the middle (not built): quick lifts up the tallest towers (window-washer gondolas, a
+counterweight hoist a friend drops on to fling you up), more orange launch pads up to wing roofs,
+setback terraces and balconies every 8-10 storeys, alley wall-jumps between towers, awnings that
+bounce you down a street, zip lines down from a tall tower to a lower roof. Also: once you're
+hanging you catch every ledge on the way down, so dropping a long way is slow; a kick-off-the-wall
+from a hang may be wanted.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 

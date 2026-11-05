@@ -47,7 +47,12 @@ func physics_update(delta: float) -> void:
 	player.face_direction(input.move_direction, delta)
 
 	if player.is_on_floor():
-		player.change_state(&"Ground")
+		# Come down on a window ledge: hang from it (there's no room to stand).
+		var lip := player.ledge_lip_under()
+		if lip:
+			player.change_state(&"Hang", {"ledge": lip})
+		else:
+			player.change_state(&"Ground")
 		return
 
 	if _try_land_on_rail():

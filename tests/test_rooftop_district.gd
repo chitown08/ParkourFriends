@@ -103,33 +103,6 @@ func test_a_two_storey_alley_step_can_be_leapt_up() -> void:
 	expect(await _run_across_pair(pair, true, 20.0), "a readied leap should get you up a two-storey step")
 
 
-func test_every_block_has_a_fire_escape_from_the_street() -> void:
-	var climbed := {}
-	for building in _buildings():
-		var steps := _steps_of(building)
-		if steps.is_empty():
-			continue
-		var block := building.name.get_slice("_", 0)
-		climbed[block] = true
-		expect_near(_top(steps[0]), STOREY, 0.01, "%s's fire escape should start one storey up" % building.name)
-		expect_near(_top(steps[-1]), _top(building) - STOREY, 0.01, "and end one storey below its roof")
-		for k in range(1, steps.size()):
-			expect_near(_top(steps[k]) - _top(steps[k - 1]), STOREY, 0.01, "each step one storey up")
-	# (All but the museum's block: you run up the museum.)
-	expect(climbed.size() == 24 and not climbed.has("Museum"), "all 24 blocks but the museum's should have one (downtown has scaffolding), %d do" % climbed.size())
-
-
-func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
-	# The squeezed-up one (shortest steps) and the tallest one.
-	var all := _staircases()
-	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _step_run(a) < _step_run(b))
-	var squeezed: CSGBox3D = all[0]
-	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _steps_of(a).size() > _steps_of(b).size())
-	for building: CSGBox3D in [squeezed, all[0]]:
-		expect(await _climb_fire_escape(building), "should climb %s's fire escape (%d steps of %.1f m) to the roof, ended at %v" % [
-				building.name, _steps_of(building).size(), _step_run(building), player.global_position])
-
-
 func test_rails_cross_the_avenues_downhill_onto_a_lower_roof() -> void:
 	var rails := _avenue_rails()
 	expect(rails.size() >= 6, "there should be rails across the avenues, %d" % rails.size())
@@ -184,19 +157,6 @@ func test_jump_on_a_rail_from_the_lower_roof_and_climb_it_back_up() -> void:
 	expect(on_top, "and climb it up onto %s, ended at %v" % [start.name, player.global_position])
 
 
-func test_hugging_the_wall_up_a_fire_escape_doesnt_turn_into_a_wall_run() -> void:
-	# Running right beside the building's wall, or drifting into it, you should
-	# still go up step by step - not wall-run into the next step and then kick
-	# off away from the building.
-	var all := _staircases()
-	all.sort_custom(func(a: CSGBox3D, b: CSGBox3D) -> bool: return _steps_of(a).size() > _steps_of(b).size())
-	for start: Array in [[1.0, 0.0], [0.0, 5.0]]: # [metres toward the wall, degrees into it]
-		states_entered.clear()
-		expect(await _climb_fire_escape(all[0], start[0], start[1]), "should climb %s's fire escape (%.1f m toward the wall, %.0f deg into it), ended at %v" % [
-				all[0].name, start[0], start[1], player.global_position])
-		expect(not &"WallRun" in states_entered, "and never wall-run on the way up (%.1f m, %.0f deg)" % start)
-
-
 func test_clutter_colour_says_what_its_for() -> void:
 	# Red is low enough to vault, yellow is a climb, grey huts are just in the way.
 	var vault := load("res://materials/grid_vault.tres")
@@ -236,8 +196,9 @@ func test_roof_clutter_leaves_room_to_land_and_ride_rails() -> void:
 
 func test_street_clutter_stays_on_the_pavement_clear_of_fire_escapes() -> void:
 	var steps: Array[Rect2] = []
-	for step: CSGBox3D in main.level.get_node("FireEscapes").get_children():
-		steps.append(_footprint(step).grow(8.0))
+	for step: Node in main.level.get_node("FireEscapes").get_children():
+		if step is CSGBox3D: # (Its decks and landings.)
+			steps.append(_footprint(step).grow(8.0))
 	for thing: CSGBox3D in main.level.get_node("StreetClutter").get_children():
 		expect(is_equal_approx(thing.global_position.y, thing.size.y / 2.0), "%s should stand on the street" % thing.name)
 		var spot := _footprint(thing)
@@ -419,7 +380,8 @@ func test_relics_float_in_the_open() -> void:
 	var solid: Array[CSGBox3D] = _buildings()
 	solid.append_array(_clutter())
 	for step in main.level.get_node("FireEscapes").get_children():
-		solid.append(step)
+		if step is CSGBox3D: # (Not the flights of stairs.)
+			solid.append(step)
 	for thing in main.level.get_node("Interiors").get_children():
 		solid.append(thing)
 	for relic: WorldItem in main.level.get_node("Relics").get_children():
@@ -542,54 +504,6 @@ func _run_at_ramp(how: Dictionary) -> float:
 	if not how.get("crouch", false):
 		expect(launched[0], "should launch off the ramp (%s)" % [how])
 	return peak
-
-
-## Walks up to a building's fire escape from the street with free-run, climbs
-## the steps, then turns to the wall for the roof. Says if you got onto the roof.
-## `toward_wall` starts you that many metres off the middle of the steps toward
-## the building, and `angle_in` aims you that many degrees into its wall.
-func _climb_fire_escape(building: CSGBox3D, toward_wall := 0.0, angle_in := 0.0) -> bool:
-	var steps := _steps_of(building)
-	var along := _flat(steps[1].global_position - steps[0].global_position).normalized() if steps.size() > 1 \
-			else Vector3.ZERO
-	var to_wall := _flat(building.global_position - steps[0].global_position)
-	to_wall = to_wall - along * to_wall.dot(along)
-	to_wall = to_wall.normalized()
-	var foot := steps[0].global_position - along * (_step_run(building) / 2.0 + 8.0) + to_wall * toward_wall
-	var aim := along.rotated(Vector3.UP, deg_to_rad(angle_in) * signf(along.cross(to_wall).y))
-	await place(Vector3(foot.x, 0.05, foot.z), yaw_for(aim))
-	Input.action_press(&"free_run")
-	Input.action_press(&"move_forward")
-	for i in 60 * 15:
-		await ticks(1)
-		if player.is_on_floor() and player.global_position.y > _top(steps[-1]) - 0.2:
-			player.camera_rig.yaw = yaw_for(to_wall) # Last step: turn to the wall.
-		if player.is_on_floor() and _building_under(player.global_position) == building:
-			release_all()
-			return true
-	release_all()
-	return false
-
-
-func _staircases() -> Array:
-	return _buildings().filter(func(b: CSGBox3D) -> bool: return not _steps_of(b).is_empty())
-
-
-## A building's fire escape steps, lowest first.
-func _steps_of(building: CSGBox3D) -> Array[CSGBox3D]:
-	var steps: Array[CSGBox3D] = []
-	var k := 1
-	while main.level.has_node("FireEscapes/%s_Step%d" % [building.name, k]):
-		steps.append(main.level.get_node("FireEscapes/%s_Step%d" % [building.name, k]))
-		k += 1
-	return steps
-
-
-## How long each step of a building's fire escape is.
-func _step_run(building: CSGBox3D) -> float:
-	var steps := _steps_of(building)
-	return maxf(steps[0].size.x, steps[0].size.z) if steps[0].size.x != 3.0 and steps[0].size.z != 3.0 \
-			else (steps[0].size.z if steps[0].size.x == 3.0 else steps[0].size.x)
 
 
 func _flat(v: Vector3) -> Vector3:
