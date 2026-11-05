@@ -55,6 +55,7 @@ at the bottom of the screen says what a button would do right now ("E  Toss your
 | Window ledges (yellow rows on sandstone buildings) | Miss a jump at a stone wall and push toward it to catch the next ledge down (land on one and you hang from it); leap up ledge by ledge to the roof, shimmy along. Glass towers have a row every few storeys to catch a fall  Hold back and jump to kick off the wall. |
 | Fire escapes (iron) | Run straight up the stairs from the street; the decks at every floor are paths round the building |
 | Lifts (orange platforms) | Step on and ride up: a hoist in the old town winches you up; a gondola climbs a glass tower downtown. On a hoist, a friend on the roof can step onto the other platform (the counterweight) to fling you up over the edge |
+| Zip lines (blue cables) | Jump up and grab one by its pole on a high roof: you whizz down it onto a lower roof. Jump to let go |
 | Drainpipes (yellow), air vents (orange grates), grind rails | Run or jump into a pipe and push to climb / step on a vent / land on a rail |
 | Launch roofs (orange) | Run or slide down them fast; a free-run leap at the lip goes furthest |
 | Wall ramps and quarter-pipes (orange) | Free-run up them fast and they throw you high: a wall ramp up a building's side (steer for the wall to grab the roof), a quarter-pipe straight up |

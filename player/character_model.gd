@@ -45,13 +45,13 @@ const STATE_MOVES := {
 	&"WallScramble": &"wall_scramble", &"Grind": &"grind", &"Glide": &"glide",
 	&"Brace": &"brace", &"LegUp": &"leg_up", &"ChainHang": &"chain_hang", &"ChainClimb": &"chain_climb",
 	&"PipeClimb": &"pipe_climb", &"Catch": &"catch", &"Caught": &"caught",
-	&"Linked": &"linked", &"Whip": &"whip", &"Whipped": &"whipped",
+	&"Linked": &"linked", &"Whip": &"whip", &"Whipped": &"whipped", &"Zip": &"zip",
 }
 ## Until a move has its own animation (see docs/ANIMATION_LIST.md), this one plays instead.
 const STAND_INS := {
 	"shimmy": &"hang", "brace": &"crouch_idle", "catch": &"crouch_idle", "caught": &"hang",
 	"chain_hang": &"hang", "chain_climb": &"wall_scramble", "leg_up": &"wall_scramble",
-	"pipe_climb": &"wall_scramble",
+	"pipe_climb": &"wall_scramble", "zip": &"hang",
 }
 ## States where a one-off move plays over what you're doing.
 const ACTION_STATES: Array[StringName] = [&"Ground", &"Crouch", &"Air"]

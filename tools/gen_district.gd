@@ -332,6 +332,17 @@ const HOISTS := 6
 const HOIST_MIN_STOREYS := 6
 const HOIST_CLEAR := 5.5
 const GONDOLA_CLEAR := 4.0
+## Zip lines (levels/zip_line.gd): this many downtown (x) and across the
+## boulevard into the old town (y); this long across (from above); dropping
+## this much per metre across (gentle to steep); their poles this far in from
+## the roof's edge (the low one with this much roof beyond it to land on);
+## clear of everything this far under the cable (you hanging from it).
+const ZIP_LINES := Vector2i(5, 3)
+const ZIP_LENGTH := Vector2(25.0, 90.0)
+const ZIP_SLOPE := Vector2(0.12, 0.7)
+const ZIP_IN := 2.5
+const ZIP_LANDING := 8.0
+const ZIP_BODY := 2.6
 
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
@@ -463,6 +474,7 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	var launchers := _write_launchers(buildings)
 	var hoists := _write_hoists(buildings)
+	var zip_lines := _write_zip_lines(buildings)
 	var ledges := _write_facades(buildings) # (After the ways up and launchers: the rows keep clear of them.)
 	var pipes := _write_pipes(buildings)
 	# (After the ways up the outside: openings keep clear of them.)
@@ -489,9 +501,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d hoists, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d hoists, %d zip lines, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, ledges, hoists, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
+			staircases, ways_up, ledges, hoists, zip_lines, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -1554,6 +1566,83 @@ func _write_gondola(t: Dictionary, gaps: Array, dice: RandomNumberGenerator) -> 
 	return true
 
 
+## Zip lines (levels/zip_line.gd, see ZIP_LINES): from a tower down to a lower
+## one downtown, and from towers by the boulevard down across it into the old
+## town; each well clear of every building between. Says how many.
+func _write_zip_lines(buildings: Array[Dictionary]) -> int:
+	var towers := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "downtown")
+	towers.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.storeys > b.storeys)
+	var old_roofs := buildings.filter(func(b: Dictionary) -> bool: return b.roof == "flat" and not b.tower and b.block != Vector2i(-1, -1))
+	var used := {}
+	var count := 0
+	for across in [false, true]: # Downtown, then over the boulevard.
+		var made := 0
+		for high: Dictionary in towers:
+			if made >= (ZIP_LINES.y if across else ZIP_LINES.x):
+				break
+			if used.has(high.name) or (across and high.lot.x != 0):
+				continue
+			var lows: Array = old_roofs if across else towers
+			for low: Dictionary in lows:
+				if used.has(low.name) or low == high:
+					continue
+				var line := _zip_line(high, low, buildings)
+				if line.is_empty():
+					continue
+				var start: Vector3 = line[0]
+				var finish: Vector3 = line[1]
+				_wall_node("Zip%s_%s" % [high.name, low.name], "WaysUp", "38_zip", start, Vector2(0, 1),
+						"end = Vector3(%s, %s, %s)" % [_num(finish.x - start.x), _num(finish.y - start.y), _num(finish.z - start.z)])
+				var way := Vector2(finish.x - start.x, finish.z - start.z).normalized()
+				var a := Vector2(start.x, start.z)
+				var b := Vector2(finish.x, finish.z)
+				_rail_paths.append([a - way * 3.0, a + way * 2.0]) # (Room to jump up to it...)
+				_rail_paths.append([b - way * 2.0, b + way * ZIP_LANDING]) # (...and to land.)
+				used[high.name] = true
+				used[low.name] = true
+				made += 1
+				count += 1
+				break
+	return count
+
+
+## Where a zip line from `high`'s roof down to `low`'s goes ([its high pole's
+## foot, its low pole's foot]), or [] if it doesn't fit: too short, too long,
+## too steep or too flat, or something in the way.
+func _zip_line(high: Dictionary, low: Dictionary, buildings: Array[Dictionary]) -> Array:
+	var high_top: Rect2 = high.upper if high.has("upper") else Rect2(high.x, high.z, high.w, high.d)
+	var low_top: Rect2 = low.upper if low.has("upper") else Rect2(low.x, low.z, low.w, low.d)
+	var start_2d := _closest_in(high_top.grow(-ZIP_IN), low_top.get_center())
+	var end_2d := _closest_in(low_top.grow(-ZIP_LANDING / 2.0), high_top.get_center())
+	var start := Vector3(start_2d.x, high.storeys * STOREY, start_2d.y)
+	var finish := Vector3(end_2d.x, low.storeys * STOREY, end_2d.y)
+	var across := start_2d.distance_to(end_2d)
+	var drop := start.y - finish.y
+	if across < ZIP_LENGTH.x or across > ZIP_LENGTH.y or drop < across * ZIP_SLOPE.x or drop > across * ZIP_SLOPE.y:
+		return []
+	# Clear of every building between (you hang under it, ZIP_BODY down).
+	var top := start + Vector3.UP * ZipLine.POLE
+	var bottom := finish + Vector3.UP * ZipLine.POLE
+	var steps := ceili(top.distance_to(bottom))
+	for i in range(4, steps - 3):
+		var at := top.lerp(bottom, float(i) / steps) + Vector3.DOWN * ZIP_BODY
+		for b: Dictionary in buildings:
+			if b == high or b == low:
+				continue # (Its own two.)
+			if b.roof == "downtown":
+				var lot := Rect2(b.x, b.z, b.w, b.d)
+				if (lot.grow(1.0).has_point(Vector2(at.x, at.z)) and at.y < b.base * STOREY + 1.0) \
+						or ((b.upper as Rect2).grow(1.0).has_point(Vector2(at.x, at.z)) and at.y < b.storeys * STOREY + 1.0):
+					return []
+			elif Rect2(b.x, b.z, b.w, b.d).grow(1.0).has_point(Vector2(at.x, at.z)) and at.y < b.storeys * STOREY + (1.0 if b.roof == "flat" else 6.0):
+				return []
+	return [start, finish]
+
+
+static func _closest_in(r: Rect2, p: Vector2) -> Vector2:
+	return Vector2(clampf(p.x, r.position.x, r.end.x), clampf(p.y, r.position.y, r.end.y))
+
+
 ## Counterweight hoists (levels/lift.gd) up tall old-town buildings from the
 ## street (see HOISTS): one per block at most, on a street-facing wall, clear
 ## of fire escapes, drainpipes and launchers. Says how many.
@@ -1866,6 +1955,7 @@ func _write_header() -> void:
 [ext_resource type="Material" path="res://materials/iron.tres" id="35_iron"]
 [ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
 [ext_resource type="Script" path="res://levels/lift.gd" id="37_lift"]
+[ext_resource type="Script" path="res://levels/zip_line.gd" id="38_zip"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)

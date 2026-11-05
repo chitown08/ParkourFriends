@@ -58,7 +58,7 @@ func physics_update(delta: float) -> void:
 	if _try_land_on_rail():
 		return
 	# Ledges and scrambles need your hands free of bulky items.
-	if not player.hands_busy() and (_try_get_caught() or _try_grab_friend() or _try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
+	if not player.hands_busy() and (_try_get_caught() or _try_grab_friend() or _try_grab_zip_line() or _try_grab_pipe() or _try_grab_ledge() or _try_wall_scramble()):
 		return
 	_try_wall_run()
 
@@ -85,6 +85,20 @@ func _try_get_caught() -> bool:
 		return false
 	player.change_state(&"Caught", catch)
 	return true
+
+
+## Catches hold of a zip line your hands come to (jumping up into it, or
+## falling past it), anywhere but right at its bottom.
+func _try_grab_zip_line() -> bool:
+	if _regrab_timer > 0.0:
+		return false
+	var hands := player.global_position + Vector3.UP * ZipLine.HANDS
+	for line: ZipLine in player.get_tree().get_nodes_in_group(&"zip_lines"):
+		var along := line.closest_distance(hands)
+		if along < line.length() - 3.0 and line.point_at(along).distance_to(hands) <= ZipLine.GRAB_REACH:
+			player.change_state(&"Zip", {"line": line})
+			return true
+	return false
 
 
 func _try_grab_pipe() -> bool:

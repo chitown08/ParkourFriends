@@ -308,7 +308,7 @@ var last_wall_normal := Vector3.ZERO
 var wall_jump_velocity: float
 
 ## States that need your hands (not possible with a bulky item in them).
-const HANDS_MOVES: Array[StringName] = [&"Hang", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace", &"Linked", &"Whipped", &"Catch", &"Caught"]
+const HANDS_MOVES: Array[StringName] = [&"Hang", &"Zip", &"Climb", &"Vault", &"WallScramble", &"PipeClimb", &"ChainHang", &"ChainClimb", &"Brace", &"Linked", &"Whipped", &"Catch", &"Caught"]
 ## Hanging, from a ledge or from a friend: someone can hang from your feet.
 const CHAIN_STATES: Array[StringName] = [&"Hang", &"ChainHang", &"Caught"]
 ## How far from a hanging friend's feet your hands can be to grab them.

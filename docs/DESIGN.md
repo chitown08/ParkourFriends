@@ -575,6 +575,12 @@ through the middle, with mistakes caught partway. First pieces:
     its drainpipe on up). 12 m/s, wide enough for a few of you.
   - Empty, a lift goes back down after a second. Every screen runs its own from where everyone
     is; whoever rides is flung on their own screen.
+- **Zip lines** (`levels/zip_line.gd`, blue cables on iron poles, `player/states/zip.gd`, `rules/zip_line.gd`):
+  eight, from a pole 3 m tall on a tower's roof down to one on a lower roof: five between towers
+  downtown, three from the towers by the boulevard down across it into the old town. 25-90 m
+  across, 7-35° down, clear of every building under them. Jump up and grab the cable (or catch it
+  falling past), and you whizz down hanging from it (8 m/s at least, up to 24), flung off the end
+  onto the roof; jump to let go early.
 - **Kicking off a wall from a hang**: hold back (you let go) and press jump: the wall jump pushes
   you out and away, so you don't catch every ledge on the way down.
 
