@@ -260,7 +260,7 @@ relics. (Later, with more regions: a block per region.)
 
 `ReachMap.build(level, profile)` turns a level into places (every walkable box top, seen from above)
 and targets (relics), and links them with **rules**, one script each in `game/reach/rules/`: jump
-(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, catch, drainpipe, window sills,
+(and drop, and leap, and full-flow jumps, alone or drafting in a pack), scramble, hanging chain, toss, leg-up, crack the whip, catch, drainpipe (and scaffolding: climbed from its foot, or grabbed from a jump across a gap), window sills,
 air vent, grind rail, launch roof, glider, touching relics. Each link says what it needs: abilities
 or items (`flow`, `glider`), friends who stay behind (a toss, those braced for a leg-up, the rest of a whip's line), friends already there (a chain, a catch), friends going together (a pack's drafting jump).
 `solve()` spreads a group out from the start and gives the most players who can get to each spot;
@@ -456,7 +456,7 @@ blocks (four lots each) and its own shapes, dealt out to every building there th
   road: rails, tubes, the tunnel), at least 7 m up; a relic sits at the tip.
 - **Round** (as in the old town).
 The rest is the **old town** (round, domed, stepped, courtyard, winged).
-Since built: the museum and the skyline (below). Next: a church or
+Since built: the museum and downtown (below). Next: a church or
 cathedral, parking garages, hallways.
 
 ### Slopes and the museum
@@ -481,35 +481,51 @@ terrace on it (to 18 m), and a low wing (5 m) either side. Relics on the terrace
 over the dome. Tests: `tests/test_museum.gd` (keeps to its block; slopes runnable; every top
 reachable alone; in the game, up both terraces from the street, and up the dome).
 
-### The skyline (the futuristic quarter)
+### Downtown
 
-East of the old town, across a boulevard as wide as an avenue, six blocks (two across, three down;
-`SKYSCRAPERS` in the generator), avenues between them all. Each block is a **podium** (3 storeys,
-the whole block: up it the old town's ways, fire escape, drainpipe or sills, air vent) with a
-**skyscraper** on it: 77-105 m, and the **spire** in the middle, 140 m. Each goes up in stages, each
-set back from the one below, leaving a narrow **terrace** round it (4 m, or 3): the higher you go,
-the less room to land and the further to fall. Ways up (nothing impossible, not everything direct):
+East of the old town, across a boulevard as wide as an avenue (`DOWNTOWN_*` in the generator),
+after the user's own concept art: tall modern towers packed close, roofs at all heights, busy with
+things to vault and climb, and coloured parkour kit in the gaps. A first try (a "futuristic
+skyline": six skyscrapers on podiums, 24 m avenues, sky lifts, spiral ramps, 60 m glass bridges) was
+too spread out and too sci-fi; this replaces it.
 
-- a **sky lift** (a big orange air vent) on the podium beside the first stage, or
-- a **spiral**: a ramp 4 m wide round the first stage's walls, a landing at each corner, no steeper
-  than 25 degrees, then a level walk beside its top; you step across onto the terrace; or
-- **none**: the spire and its neighbour to the south are got into across a bridge;
-- then from each terrace a sky lift up the next stage.
+- **Towers**: 32 of them in a grid, each 16-24 m across, most an **alley** (5 m, a running jump)
+  from the next, some a **street** (10 m, a readied leap). 14-30 storeys, taller toward the middle;
+  the column by the boulevard stays under 18 (it steps up from the old town). The **spire** in the
+  middle is 140 m, with a terrace round it at 105 m. About a third have a lower **wing** on one
+  side (3-6 storeys lower) with a drainpipe from it up to the top. You run it high up, roof to roof;
+  the street is a deep canyon below.
+- **Roofs** are busy: closer to the edges and more of them than in the old town, red vaults (some
+  long, like ducts), stairwell huts.
+- **Scaffolding** (yellow, `levels/scaffold.gd`): up every tower from the street, on a wall facing a
+  lower neighbour if it has one. It climbs like a drainpipe, but anywhere across its 3 m face, and
+  you can **grab it mid-jump** from the roof across the gap (the checker's drainpipe rule now knows
+  that: from a place in front of the face, in reach of a running jump or a readied leap, at a height
+  you can hold on at). Every tower top can be reached alone this way.
+- **Grind rails** (blue): ten, from a roof across a gap down to one 1-3 storeys lower, starting 8 m
+  in from the edge (on the roof) and ending 6 m in.
+- **Rope bridges**: five, across streets between towers the same height: a level deck of rainbow
+  rope netting (`materials/net.tres`) with a hand-rope either side, sagging (to look at). Level,
+  because the checker reads a gently sloping plank as two strips too small to stand on.
+- **Catch nets** (`levels/catch_net.gd`): eight, sticking out of a wall over an alley, 3 storeys
+  under its roof, nearly to the far side. Miss a jump and one catches you, then bounces you back up,
+  drifting in to the wall, onto the roof (or grab its edge). Rule: `rules/catch_net.gd`.
+- **Walkways**: two covered walkways (glass sides) across alleys, joining a floor inside each
+  tower: two storeys tall, openings 6 m tall all round (room to jump in at full height), level with
+  a lower roof next door, so you jump in from it, run through and across. Openings keep clear of
+  scaffolding and drainpipes.
 
-**Glass bridges** (see-through, 4 m wide, no rails) join the first stages' terraces across the
-avenues, 42-56 m up, about 60 m long; where the terraces differ, the bridge slopes (13 degrees) and
-you run up it. Relics: one on each skyscraper's top, one floating over the spire (a toss up from its
-top) and one floating over a level bridge. The skyline's relics are always there (like the five
-fixed ones), and `RELICS_WANTED` counts them, so the old town keeps the same relics. The old town
-is left exactly as it was: nothing in it picks from the skyline's buildings. A checkpoint on the
-middle-west podium. The checker needed nothing new: sky lifts are air vents, the spiral and the
-sloping bridges are slopes. Tests: `tests/test_skyline.gd` (across the boulevard; heights; the
-spiral's slope; every stage reachable alone, each skyscraper its own way; bridges join the terraces
-both ways; in the game, round and up a spiral, up a sky lift to the spire's top, up a sloping
-bridge).
+Nothing sci-fi: no sky lifts, spirals or long glass bridges. Relics: on the four tallest tops (the
+spire's too), in each walkway, floating over the spire (a toss up from its top) and over a rope
+bridge (a toss up from it). They're always there (like the five fixed ones) and `RELICS_WANTED`
+counts them, so the old town keeps the same relics. A checkpoint on a tower by the boulevard.
+Tests: `tests/test_downtown.gd` (packed close across the boulevard; heights; no sci-fi; every top
+alone; scaffolding up every tower; rails, rope bridges, nets and walkways joined up; and in the game:
+jump across a gap onto scaffolding and climb it, walk a rope bridge, fall into a catch net and bounce
+back onto the roof, leap from a roof into a walkway floor).
 
 Still to come here: wingsuit courses off the tops (see the ideas backlog), and the hub tower is now
-dwarfed (56-60 m against 77-140 m), so it should grow to stay a landmark.
+dwarfed (56-60 m against towers up to 140 m), so it should grow to stay a landmark.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 

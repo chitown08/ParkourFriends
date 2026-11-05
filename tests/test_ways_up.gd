@@ -144,7 +144,7 @@ func test_an_air_vent_blows_you_up_to_the_roof() -> void:
 func _pipes() -> Array[Drainpipe]:
 	var found: Array[Drainpipe] = []
 	for child in main.level.get_node("WaysUp").get_children():
-		if child is Drainpipe:
+		if child is Drainpipe and not child is Scaffold and absf(child.global_position.y) < 0.01: # (Old town: from the street.)
 			found.append(child)
 	return found
 

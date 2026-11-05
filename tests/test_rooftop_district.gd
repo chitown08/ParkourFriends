@@ -116,7 +116,7 @@ func test_every_block_has_a_fire_escape_from_the_street() -> void:
 		for k in range(1, steps.size()):
 			expect_near(_top(steps[k]) - _top(steps[k - 1]), STOREY, 0.01, "each step one storey up")
 	# (All but the museum's block: you run up the museum.)
-	expect(climbed.size() == 30 and not climbed.has("Museum"), "all 30 blocks (the skyline's too) but the museum's should have one, %d do" % climbed.size())
+	expect(climbed.size() == 24 and not climbed.has("Museum"), "all 24 blocks but the museum's should have one (downtown has scaffolding), %d do" % climbed.size())
 
 
 func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
@@ -131,7 +131,7 @@ func test_fire_escapes_take_you_from_the_street_to_the_roof() -> void:
 
 
 func test_rails_cross_the_avenues_downhill_onto_a_lower_roof() -> void:
-	var rails: Array[Node] = main.level.get_node("GrindRails").get_children()
+	var rails := _avenue_rails()
 	expect(rails.size() >= 6, "there should be rails across the avenues, %d" % rails.size())
 	for rail: GrindRail in rails:
 		var landing := _building_under(rail.bottom() + Vector3.DOWN * 0.7)
@@ -143,7 +143,7 @@ func test_rails_cross_the_avenues_downhill_onto_a_lower_roof() -> void:
 
 
 func test_running_off_a_roof_rides_a_rail_over_the_avenue() -> void:
-	var rail: GrindRail = main.level.get_node("GrindRails").get_child(0)
+	var rail: GrindRail = _avenue_rails()[0]
 	var way := _flat(rail.bottom() - rail.top()).normalized()
 	var landing := _building_under(rail.bottom() + Vector3.DOWN * 0.7)
 	await place(rail.top() + Vector3.UP * 0.45 - way * 8.0, yaw_for(way))
@@ -163,7 +163,7 @@ func test_running_off_a_roof_rides_a_rail_over_the_avenue() -> void:
 
 func test_jump_on_a_rail_from_the_lower_roof_and_climb_it_back_up() -> void:
 	# Stand under the low end, jump onto it facing up, and keep pushing.
-	var rail: GrindRail = main.level.get_node("GrindRails").get_child(0)
+	var rail: GrindRail = _avenue_rails()[0]
 	var up := _flat(rail.top() - rail.bottom()).normalized()
 	var start := _building_under(rail.top() + Vector3.UP * 0.4 + up * 2.0)
 	var under := rail.bottom() + up * 1.5
@@ -213,7 +213,7 @@ func test_clutter_colour_says_what_its_for() -> void:
 
 
 func test_roof_clutter_leaves_room_to_land_and_ride_rails() -> void:
-	for thing: CSGBox3D in main.level.get_node("RoofClutter").get_children():
+	for thing: CSGBox3D in main.level.get_node("RoofClutter").get_children().filter(func(t: Node) -> bool: return not (t.name.begins_with("Tower") or t.name.begins_with("Spire"))): # (Downtown's: tests/test_downtown.gd.)
 		var roof := _building_under(thing.global_position + Vector3.DOWN * thing.size.y / 2.0)
 		expect(roof != null and not _is_tower(roof), "%s should stand on a roof (not a tower)" % thing.name)
 		if roof == null:
@@ -407,7 +407,7 @@ func test_you_can_steer_in_the_air_after_a_launch() -> void:
 
 func test_thirty_eight_relics_and_a_drop_off_in_the_plaza() -> void:
 	var relics: Array[Node] = main.level.get_node("Relics").get_children()
-	expect(relics.size() == 38, "thirty-eight relics (eight in the skyline), %d" % relics.size())
+	expect(relics.size() == 38, "thirty-eight relics (eight downtown), %d" % relics.size())
 	# (And 3 from the group run.)
 	expect(main.hud.get_node("Relics").text == "Relics 0 / 41", "the counter should show them: %s" % main.hud.get_node("Relics").text)
 	var drop_off: DropOff = main.level.get_node("DropOff")
@@ -798,3 +798,12 @@ func test_the_hub_tower_lights_up_a_light_per_relic_delivered() -> void:
 	expect(board.lit() == Vector2i(1, 41), "deliver one: its light comes on, %s" % board.lit())
 	var rows := board.rows().map(func(row: Array) -> int: return row.size())
 	expect(rows == [20, 10, 5, 3, 3], "rows by players each takes, then the run: %s" % [rows])
+
+
+## The grind rails across the avenues (not downtown's).
+func _avenue_rails() -> Array[GrindRail]:
+	var found: Array[GrindRail] = []
+	for rail: Node in main.level.get_node("GrindRails").get_children():
+		if rail.name.begins_with("RailEW") or rail.name.begins_with("RailNS"):
+			found.append(rail)
+	return found

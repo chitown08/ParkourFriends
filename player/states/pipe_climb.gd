@@ -39,7 +39,7 @@ func physics_update(delta: float) -> void:
 	if feet.y >= _pipe.top() - 0.3:
 		climb = minf(climb, 0.0) # The top of the pipe.
 	# Hug the pipe, moving with collisions (never pushed into the wall).
-	var hold := _pipe.point_at(feet.y) + out * (Drainpipe.RADIUS + player.body_radius + 0.05)
+	var hold := _pipe.grab_point(feet) + out * (Drainpipe.RADIUS + player.body_radius + 0.05)
 	var to_hold := Vector3(hold.x - feet.x, 0.0, hold.z - feet.z)
 	player.velocity = to_hold * HOLD + Vector3.UP * climb
 	player.move_and_slide()

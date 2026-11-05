@@ -226,7 +226,7 @@ func test_every_drainpipe_sill_column_and_vent_is_a_way_up() -> void:
 	for link in map.links:
 		if ways.has(link.how) and link.to.y > link.from.y + 10.0:
 			ways[link.how] += 1
-	var pipes: int = main.level.find_children("*", "Drainpipe", true, false).size()
+	var pipes: int = main.level.find_children("*", "Drainpipe", true, false).filter(func(p: Node) -> bool: return not p is Scaffold).size() # (Scaffolding: tests/test_downtown.gd.)
 	var columns: int = main.level.find_children("*_Sill1", "CSGBox3D", true, false).size()
 	var vents: int = main.level.find_children("*", "AirVent", true, false).size()
 	expect(ways["drainpipe"] == pipes, "each of the %d drainpipes should lead up to a roof, %d do" % [pipes, ways["drainpipe"]])
@@ -242,7 +242,7 @@ func test_you_can_climb_every_tower_from_the_inside() -> void:
 	await _load_district()
 	var map := ReachMap.build(main.level, SUPERHUMAN)
 	for b: CSGShape3D in main.level.get_node("Buildings").get_children():
-		if ReachMap._bounds(b).size.y < 30.0:
+		if ReachMap._bounds(b).size.y < 30.0 or b.name.begins_with("Tower") or b.name == "Spire": # (Downtown's aren't hollow.)
 			continue
 		var roof := map.place_named(b.name)
 		expect(map.players_needed(roof, _spawn(map), []) == 1, "%s is a tower: you can climb it alone, inside" % b.name)

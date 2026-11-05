@@ -36,6 +36,12 @@ func point_at(y: float) -> Vector3:
 	return Vector3(foot.x, y, foot.z)
 
 
+## Where you'd hold on, climbing it near `at` (world space): the pipe at that
+## height. (Something wider you climb, like scaffolding, holds you where you grabbed.)
+func grab_point(at: Vector3) -> Vector3:
+	return point_at(at.y)
+
+
 ## Flat direction pointing out of the wall.
 func out_of_wall() -> Vector3:
 	var out := global_basis.z

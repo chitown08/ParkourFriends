@@ -4,7 +4,7 @@ extends ReachRule
 ## (further: glide there in hops, landing on the way). Needs &"glider".
 
 ## The furthest glide it checks (from above, metres): about six seconds'
-## gliding. (From the skyline's tops you could glide most of the way across
+## gliding. (From downtown's tops you could glide most of the way across
 ## the district; checking every one of those paths took most of a minute.)
 const MAX_GLIDE := 100.0
 

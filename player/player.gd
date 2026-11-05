@@ -1531,7 +1531,7 @@ func find_drainpipe(toward := Vector3.ZERO, extra := 0.0) -> Drainpipe:
 		return null
 	for pipe: Drainpipe in get_tree().get_nodes_in_group(&"drainpipes"):
 		var out := pipe.out_of_wall()
-		var offset := global_position - pipe.point_at(global_position.y)
+		var offset := global_position - pipe.grab_point(global_position)
 		if global_position.y < pipe.global_position.y - 0.5 or global_position.y > pipe.top() - 1.0 \
 				or offset.dot(out) < 0.0 or push.normalized().dot(-out) < 0.5:
 			continue
