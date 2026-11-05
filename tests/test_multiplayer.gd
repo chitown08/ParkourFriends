@@ -24,6 +24,26 @@ func test_client_gets_the_hosts_world_and_start_position() -> void:
 			"the client should start where the host placed them")
 
 
+func test_the_hosts_time_of_day_reaches_everyone() -> void:
+	expect(client_main.time_of_day == host_main.time_of_day, "on joining, the client has the host's time of day (%s)" % client_main.time_of_day)
+	host_main.set_time_of_day("night")
+	await ticks(10)
+	expect(client_main.time_of_day == "night", "the host picks night: the client's at night too (%s)" % client_main.time_of_day)
+	# A friend joining later gets it too.
+	host_main.set_time_of_day("sunset")
+	client_main.leave_game()
+	await ticks(10)
+	client_main.start_join("127.0.0.1", TEST_PORT)
+	for i in 300:
+		await ticks(1)
+		if _player_count(host_main) == 2 and _player_count(client_main) == 2:
+			break
+	await ticks(10)
+	expect(client_main.time_of_day == "sunset", "joining while it's sunset, the client's at sunset (%s)" % client_main.time_of_day)
+	host_main.set_time_of_day("day")
+	await ticks(10)
+
+
 func test_colours_are_different_and_match_on_both_screens() -> void:
 	var client_id: int = client_main.multiplayer.get_unique_id()
 	expect(_find(host_main, 1).color_index == 0, "host should be colour 0")

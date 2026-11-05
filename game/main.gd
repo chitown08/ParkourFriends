@@ -48,6 +48,8 @@ var level: Level
 ## Relics the team has delivered to a drop-off, by item name. The host's copy is the official
 ## one; it tells everyone else (see _on_delivered()).
 var delivered_relics := {}
+## The time of day everyone sees (the host's pick: see set_time_of_day()).
+var time_of_day := "day"
 ## The world being played (its id in WORLDS; the host's, on a joining computer "").
 var current_world := ""
 
@@ -102,6 +104,7 @@ func _ready() -> void:
 	pause_menu.resume_pressed.connect(set_paused.bind(false))
 	pause_menu.leave_pressed.connect(leave_game)
 	pause_menu.music_changed.connect(update_music_volume)
+	pause_menu.time_of_day_changed.connect(set_time_of_day)
 	music.finished.connect(_play_next_track)
 	update_music_volume()
 	pause_menu.quit_pressed.connect(get_tree().quit)
@@ -225,7 +228,7 @@ func leave_game() -> void:
 func set_paused(paused: bool) -> void:
 	is_paused = paused
 	if paused:
-		pause_menu.open(network.lobby_id != 0)
+		pause_menu.open(network.lobby_id != 0, not multiplayer.has_multiplayer_peer() or multiplayer.is_server(), time_of_day)
 	else:
 		pause_menu.hide()
 	if local_player:
@@ -358,6 +361,24 @@ func _on_peer_connected(peer_id: int) -> void:
 	if multiplayer.is_server():
 		spawn_player(peer_id)
 		_receive_relic_list.rpc_id(peer_id, delivered_relics.keys())
+		_receive_time_of_day.rpc_id(peer_id, time_of_day)
+
+
+## The host picking the time of day (the pause menu): here, and for everyone.
+func set_time_of_day(time: String) -> void:
+	Settings.time_of_day = time
+	Settings.save_to_disk()
+	time_of_day = time
+	TimeOfDay.apply(level, time)
+	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+		_receive_time_of_day.rpc(time)
+
+
+## The host telling everyone what time of day it is.
+@rpc("authority", "call_remote", "reliable")
+func _receive_time_of_day(time: String) -> void:
+	time_of_day = time
+	TimeOfDay.apply(level, time)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
@@ -394,6 +415,10 @@ func _on_world_added(node: Node) -> void:
 
 func _on_world_ready(new_level: Level) -> void:
 	level = new_level
+	# The host's time of day (a joining friend gets it from the host: see _on_peer_connected()).
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		time_of_day = Settings.time_of_day
+	TimeOfDay.apply(level, time_of_day)
 	_play_music(level.music, level.music_folder)
 	for player: Player in players.get_children():
 		player.kill_height = level.kill_height

@@ -2,7 +2,7 @@ extends SceneTree
 ## Takes a picture of the rooftop district from a camera at one point looking
 ## at another. Needs a window (not --headless).
 ##
-## Usage: Godot_v4.7.2-stable_win64_console.exe --path . --script res://tools/district_view.gd -- <out.png> <x,y,z camera> <x,y,z looking at>
+## Usage: Godot_v4.7.2-stable_win64_console.exe --path . --script res://tools/district_view.gd -- <out.png> <x,y,z camera> <x,y,z looking at> [time of day]
 
 const SIZE := Vector2i(1280, 720)
 
@@ -21,7 +21,9 @@ func _shoot() -> void:
 	viewport.msaa_3d = Viewport.MSAA_4X
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(viewport)
-	viewport.add_child((load("res://levels/rooftop_district.tscn") as PackedScene).instantiate())
+	var level := (load("res://levels/rooftop_district.tscn") as PackedScene).instantiate()
+	viewport.add_child(level)
+	TimeOfDay.apply(level, args[3] if args.size() > 3 else "day")
 	var camera := Camera3D.new()
 	camera.fov = 60.0
 	camera.far = 1000.0

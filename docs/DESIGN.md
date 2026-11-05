@@ -607,6 +607,27 @@ through the middle, with mistakes caught partway. First pieces:
 
 The middle layer's first set is built (Nov 2026). The sky and times of day are next.
 
+## Times of day (Nov 2026)
+
+`game/time_of_day.gd` and `materials/sky.gdshader`. A stylized sky of our own (no photo skies): a
+gradient from the horizon up, a warm glow round the sun (and along the horizon toward it), the
+sun's disc (at night the moon's: the light is moonlight), soft clouds drifting by (smooth noise,
+made once as a texture) and stars. Five presets, each setting the sky, the sun's angle, colour and
+strength, the ambient light and the fog: **day** (much as before), **morning**, **golden hour**,
+**sunset** and **night**. The fog only lightly tints the sky (it would hide its colours).
+- **After dark** (the `night_glow` shader global, in `project.godot`: a little at sunset, full at
+  night) the grid material (`materials/grid.gdshader`) lights some of the walls' windows (a
+  window every 3 m along each storey, at random, warm) on materials with `windows` on (buildings,
+  towers, stone), and colourful things glow a little (the more colourful, the more), so the
+  red/yellow/blue/orange language still reads in the dark. Light trails, kites and relics stand out.
+- **The host picks** in the pause menu ("Time of day"; a friend sees it but can't change it). It's
+  saved in their settings, set on each world as it loads, and sent to friends when they join or
+  when it changes (`Main.set_time_of_day()`).
+- Tests: `tests/test_time_of_day.gd` (each preset's sky, sun, light and fog; night glows and day
+  doesn't; the pick is kept for the next game; only the host picks), and in
+  `tests/test_multiplayer.gd` the host's pick reaching a friend, joining or not.
+- Later: a slow day-night cycle blending the presets; neon signs (the user's plan); street lamps.
+
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 
 How big can a one-load world go? A throwaway city built in code as it loads (in the start menu as

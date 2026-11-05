@@ -12,6 +12,8 @@ signal invite_pressed
 signal movement_changed(profile_id: String)
 ## The music volume slider moved (the new value is in Settings).
 signal music_changed
+## The host picked a time of day (one of TimeOfDay.NAMES).
+signal time_of_day_changed(time: String)
 ## Something picked in "Your outfit" (the new outfit is in Settings.outfit).
 signal outfit_changed
 
@@ -44,6 +46,11 @@ func _ready() -> void:
 	%LightTrails.toggled.connect(func(pressed: bool) -> void:
 		Settings.light_trails = pressed
 		Settings.save_to_disk())
+	for time in TimeOfDay.NAMES:
+		%TimeOfDay.add_item(TimeOfDay.LABELS[time])
+		%TimeOfDay.set_item_metadata(%TimeOfDay.item_count - 1, time)
+	%TimeOfDay.item_selected.connect(func(index: int) -> void:
+		time_of_day_changed.emit(String(%TimeOfDay.get_item_metadata(index))))
 	for profile_id: String in ["superhuman", "human"]:
 		_movement.add_item(profile_id.capitalize())
 		_movement.set_item_metadata(_movement.item_count - 1, profile_id)
@@ -61,9 +68,14 @@ func _ready() -> void:
 	_make_outfit_lists()
 
 
-## Shows the menu; `can_invite`: in a Steam game, so there's an "Invite Friends" button.
-func open(can_invite := false) -> void:
+## Shows the menu; `can_invite`: in a Steam game, so there's an "Invite Friends"
+## button; `is_host`: you pick the time of day (it's `time` now).
+func open(can_invite := false, is_host := true, time := "day") -> void:
 	%Invite.visible = can_invite
+	%TimeOfDay.disabled = not is_host
+	for i in %TimeOfDay.item_count:
+		if %TimeOfDay.get_item_metadata(i) == time:
+			%TimeOfDay.select(i)
 	_sensitivity.set_value_no_signal(Settings.mouse_sensitivity)
 	_sensitivity_value.text = "%.2f" % Settings.mouse_sensitivity
 	_invert_y.set_pressed_no_signal(Settings.invert_y)

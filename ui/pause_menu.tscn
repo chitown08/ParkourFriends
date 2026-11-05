@@ -92,6 +92,17 @@ text = "Fullscreen (F11)"
 unique_name_in_owner = true
 text = "Light trails (where friends have run)"
 
+[node name="TimeOfDayRow" type="HBoxContainer" parent="Center/Panel/Margin/Items/Columns/Settings"]
+
+[node name="Label" type="Label" parent="Center/Panel/Margin/Items/Columns/Settings/TimeOfDayRow"]
+custom_minimum_size = Vector2(130, 0)
+text = "Time of day"
+
+[node name="TimeOfDay" type="OptionButton" parent="Center/Panel/Margin/Items/Columns/Settings/TimeOfDayRow"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
+tooltip_text = "The host picks: everyone in the game sees it"
+
 [node name="MasterRow" type="HBoxContainer" parent="Center/Panel/Margin/Items/Columns/Settings"]
 
 [node name="Label" type="Label" parent="Center/Panel/Margin/Items/Columns/Settings/MasterRow"]

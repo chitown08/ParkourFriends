@@ -9,3 +9,4 @@ shader_parameter/base_color = Color(0.78, 0.84, 0.9, 1)
 shader_parameter/line_color = Color(0.62, 0.7, 0.8, 1)
 shader_parameter/grid_size = 1.0
 shader_parameter/line_width = 0.025
+shader_parameter/windows = true
