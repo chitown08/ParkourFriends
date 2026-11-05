@@ -2,6 +2,8 @@ extends PlayerState
 ## Hanging from a ledge by your hands.
 ##   Jump              -> pull yourself up, or if there's no room to stand
 ##                        (a narrow sill), leap up to the next ledge above
+##   Back + jump       -> let go, then kick off the wall (a wall jump, see
+##                        air.gd): down a wall of ledges without catching every one
 ##   Left / right      -> shimmy along the ledge
 ##   Crouch, or back   -> let go
 

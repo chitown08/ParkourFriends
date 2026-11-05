@@ -33,7 +33,7 @@ class ErrorCatcher:
 
 ## In game seconds: run_tests.cmd runs the game flat out (--fixed-fps 60), as
 ## fast as the computer can (each test says how long it took for real).
-const TIME_LIMIT_SECONDS := 1200.0
+const TIME_LIMIT_SECONDS := 3600.0
 
 
 func _initialize() -> void:

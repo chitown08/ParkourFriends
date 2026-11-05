@@ -564,12 +564,23 @@ through the middle, with mistakes caught partway. First pieces:
   the game agree on ledges 4.3 m apart (climb) and 5.1 m (don't); a fire escape on every block with
   decks every storey, its stairs a way up, run up one round a corner, and one free-running).
 
-Next ideas for the middle (not built): quick lifts up the tallest towers (window-washer gondolas, a
-counterweight hoist a friend drops on to fling you up), more orange launch pads up to wing roofs,
-setback terraces and balconies every 8-10 storeys, alley wall-jumps between towers, awnings that
-bounce you down a street, zip lines down from a tall tower to a lower roof. Also: once you're
-hanging you catch every ledge on the way down, so dropping a long way is slow; a kick-off-the-wall
-from a hang may be wanted.
+- **Lifts** (`levels/lift.gd`, orange platforms on iron frames, `rules/lift.gd`): quick ways up.
+  - **Counterweight hoists**: six, up tall old-town buildings from the street. A platform at
+    each end of a rope over a pulley at the roof's edge. Stand on the street one and it winches
+    you up (6 m/s). Or a friend on the roof steps onto the other, the counterweight waiting level
+    with the roof: it drops (speeding up like a falling weight), you shoot up and are flung over
+    the edge onto the roof, and they ride the drop to the street. Co-op; it works alone too.
+  - **Window-washer gondolas**: up every glass tower (stone ones have ledges), on a wall onto a
+    gap, all the way up if one goes there, else the tallest (the spire's: its terrace at 105 m,
+    its drainpipe on up). 12 m/s, wide enough for a few of you.
+  - Empty, a lift goes back down after a second. Every screen runs its own from where everyone
+    is; whoever rides is flung on their own screen.
+- **Kicking off a wall from a hang**: hold back (you let go) and press jump: the wall jump pushes
+  you out and away, so you don't catch every ledge on the way down.
+
+Next ideas for the middle (not built): setback terraces and balconies every 8-10 storeys, alley
+wall-jumps between towers, awnings that bounce you down a street, zip lines down from a tall tower
+to a lower roof.
 
 ## Scale: the stress city (`levels/stress_city.gd`, `tools/bench_city.gd`, Nov 2026)
 

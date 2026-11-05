@@ -35,6 +35,7 @@
 [ext_resource type="Script" path="res://levels/stairs.gd" id="34_stairs"]
 [ext_resource type="Material" path="res://materials/iron.tres" id="35_iron"]
 [ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
+[ext_resource type="Script" path="res://levels/lift.gd" id="37_lift"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
@@ -4709,6 +4710,108 @@ script = ExtResource("32_catch_net")
 size = Vector2(8.0, 4.0)
 rise = 11.5
 
+[node name="Tower0_1_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 177.27, 0.0, -114.84)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 42.0
+
+[node name="Tower0_4_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 189.5, 0.0, -32.17)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 63.0
+
+[node name="Tower0_5_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 177.91, 0.0, -14.36)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 63.0
+
+[node name="Tower1_3_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 214.84, 0.0, -45.97)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 91.0
+
+[node name="Tower1_4_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 206.93, 0.0, -40.97)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 101.5
+
+[node name="Tower1_6_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 199.5, 0.0, 20.59)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 84.0
+
+[node name="Tower2_0_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -136.75)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 73.5
+
+[node name="Tower2_1_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -109.39)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 77.0
+
+[node name="Spire_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -32.64)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 105.0
+
+[node name="Tower2_5_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 237.34, 0.0, -14.36)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 91.0
+
+[node name="Tower2_6_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, 14.31)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 91.0
+
+[node name="Tower3_0_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 279.5, 0.0, -119.84)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 59.5
+
+[node name="Tower3_1_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 279.71, 0.0, -95.83)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 49.0
+
+[node name="Tower3_3_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -56.39)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 84.0
+
+[node name="Tower3_4_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 279.76, 0.0, -24.36)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 98.0
+
+[node name="Tower3_5_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -2.73)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 91.0
+
+[node name="Tower3_7_Gondola" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 271.79, 0.0, 31.1)
+script = ExtResource("37_lift")
+kind = "gondola"
+height = 66.5
+
 [node name="RailEW0" parent="GrindRails" instance=ExtResource("8_rail")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.0, 17.1, -167.61)
 end_point = Vector3(26.0, -2.4, 0.0)
@@ -4766,6 +4869,36 @@ curved = true
 transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -163.29, 0, -217.0)
 script = ExtResource("26_launcher")
 curved = true
+
+[node name="Block40_0_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 82.0, 0.0, -196.21)
+script = ExtResource("37_lift")
+height = 28.0
+
+[node name="Block22_0_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -43.0, 0.0, -12.0)
+script = ExtResource("37_lift")
+height = 24.5
+
+[node name="Block11_0_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -111.0, 0.0, -142.0)
+script = ExtResource("37_lift")
+height = 21.0
+
+[node name="Block12_3_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -99.09, 0.0, -12.0)
+script = ExtResource("37_lift")
+height = 21.0
+
+[node name="Block41_0_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 113.0, 0.0, -142.0)
+script = ExtResource("37_lift")
+height = 21.0
+
+[node name="Block00_0_Hoist" type="Node3D" parent="WaysUp"]
+transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -196.79, 0.0, -152.0)
+script = ExtResource("37_lift")
+height = 21.0
 
 [node name="Block02_0_Ledges0" type="Node3D" parent="Ledges"]
 transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, -178.67, 0.0, -72.0)
@@ -4852,7 +4985,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -114.18, 0.0, -12.0)
 script = ExtResource("33_ledges")
 length = 32.18
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(14.09, 18.09, 12.84, 19.34)
 top = 21.0
 
 [node name="Block12_3_Ledges11" type="Node3D" parent="Ledges"]
@@ -4900,7 +5033,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, -72.0, 0.0, -12.0)
 script = ExtResource("33_ledges")
 length = 60.0
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(28.0, 32.0, 26.75, 33.25)
 top = 24.5
 
 [node name="Block22_0_Ledges17" type="Node3D" parent="Ledges"]
@@ -5004,7 +5137,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 82.0, 0.0, -212.0)
 script = ExtResource("33_ledges")
 length = 33.59
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(14.79, 18.79, 13.54, 20.04)
 top = 28.0
 
 [node name="Block40_0_Ledges30" type="Node3D" parent="Ledges"]
@@ -5044,7 +5177,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 166.0, 0.0, -119.84)
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(8.77, 13.77)
 top = 59.5
 
 [node name="Tower0_0_Ledges35" type="Node3D" parent="Ledges"]
@@ -5068,7 +5201,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 189.5, 0.0, -114.84
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(14.0, 28.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(10.23, 14.23, 9.73, 14.73)
 top = 42.0
 
 [node name="Tower0_1_Ledges38" type="Node3D" parent="Ledges"]
@@ -5220,7 +5353,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 166.0, 0.0, -24.36)
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(14.66, 18.16)
+gaps = PackedVector2Array(14.66, 18.16, 9.41, 14.41)
 top = 63.0
 
 [node name="Tower0_4_Ledges57" type="Node3D" parent="Ledges"]
@@ -5236,7 +5369,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 189.5, 0.0, -24.36)
 script = ExtResource("33_ledges")
 length = 16.61
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(5.81, 9.81, 5.31, 10.31)
 top = 63.0
 
 [node name="Tower0_5_Ledges59" type="Node3D" parent="Ledges"]
@@ -5244,7 +5377,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 189.5, 0.0, -14.36)
 script = ExtResource("33_ledges")
 length = 23.5
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(5.34, 8.84)
+gaps = PackedVector2Array(9.59, 13.59, 5.34, 8.84, 9.09, 14.09)
 top = 63.0
 
 [node name="Tower0_5_Ledges60" type="Node3D" parent="Ledges"]
@@ -5316,7 +5449,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 189.5, 0.0, 26.1)
 script = ExtResource("33_ledges")
 length = 18.8
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5)
-gaps = PackedVector2Array(8.86, 12.86)
+gaps = PackedVector2Array(8.86, 12.86, 3.01, 8.01)
 top = 63.0
 
 [node name="Tower0_6_Ledges69" type="Node3D" parent="Ledges"]
@@ -5540,7 +5673,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 199.5, 0.0, -45.97)
 script = ExtResource("33_ledges")
 length = 22.09
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(13.34, 17.34, 12.84, 17.84, 4.94, 9.94)
 top = 91.0
 
 [node name="Tower1_3_Ledges97" type="Node3D" parent="Ledges"]
@@ -5564,7 +5697,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 221.59, 0.0, -40.97
 script = ExtResource("33_ledges")
 length = 22.09
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0, 98.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(12.65, 16.65, 4.25, 9.25, 12.15, 17.15)
 top = 101.5
 
 [node name="Tower1_4_Ledges100" type="Node3D" parent="Ledges"]
@@ -5580,7 +5713,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 199.5, 0.0, -40.97)
 script = ExtResource("33_ledges")
 length = 16.61
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0, 98.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(6.31, 11.31)
 top = 101.5
 
 [node name="Tower1_4_Ledges102" type="Node3D" parent="Ledges"]
@@ -5692,7 +5825,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -119.84
 script = ExtResource("33_ledges")
 length = 22.16
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0)
-gaps = PackedVector2Array(3.27, 7.27)
+gaps = PackedVector2Array(14.91, 18.91, 3.27, 7.27, 14.41, 19.41)
 top = 73.5
 
 [node name="Tower2_0_Ledges116" type="Node3D" parent="Ledges"]
@@ -5732,7 +5865,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -95.83)
 script = ExtResource("33_ledges")
 length = 19.01
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0)
-gaps = PackedVector2Array(5.96, 9.96)
+gaps = PackedVector2Array(11.56, 15.56, 5.96, 9.96, 11.06, 16.06)
 top = 77.0
 
 [node name="Spire_Ledges121" type="Node3D" parent="Ledges"]
@@ -5748,7 +5881,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 231.59, 0.0, -24.36)
 script = ExtResource("33_ledges")
 length = 23.44
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0, 98.0)
-gaps = PackedVector2Array(9.42, 13.42)
+gaps = PackedVector2Array(9.42, 13.42, 3.26, 8.26)
 top = 105.0
 
 [node name="Spire_Ledges123" type="Node3D" parent="Ledges"]
@@ -5764,7 +5897,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, -24.36)
 script = ExtResource("33_ledges")
 length = 16.61
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0, 98.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(6.27, 10.27, 5.77, 10.77)
 top = 105.0
 
 [node name="Spire_Ledges125" type="Node3D" parent="Ledges"]
@@ -5804,7 +5937,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 255.03, 0.0, -14.36
 script = ExtResource("33_ledges")
 length = 23.44
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(10.03, 14.03, 10.03, 14.03)
+gaps = PackedVector2Array(10.03, 14.03, 15.69, 19.69, 10.03, 14.03, 15.19, 20.19)
 top = 91.0
 
 [node name="Tower2_5_Ledges130" type="Node3D" parent="Ledges"]
@@ -5828,7 +5961,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, 2.31)
 script = ExtResource("33_ledges")
 length = 16.67
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(9.46, 12.96)
+gaps = PackedVector2Array(9.46, 12.96, 2.54, 7.54)
 top = 91.0
 
 [node name="Tower2_6_Ledges133" type="Node3D" parent="Ledges"]
@@ -5860,7 +5993,7 @@ transform = Transform3D(0.0, 0, 1.0, 0, 1, 0, -1.0, 0, 0.0, 255.03, 0.0, 26.1)
 script = ExtResource("33_ledges")
 length = 18.8
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(9.79, 13.79, 9.29, 14.29)
 top = 91.0
 
 [node name="Tower2_7_Ledges137" type="Node3D" parent="Ledges"]
@@ -5932,7 +6065,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, -119.84)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(7.63, 11.63)
+gaps = PackedVector2Array(12.47, 16.47, 7.63, 11.63, 11.97, 16.97)
 top = 59.5
 
 [node name="Tower3_0_Ledges146" type="Node3D" parent="Ledges"]
@@ -5940,7 +6073,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -142.0)
 script = ExtResource("33_ledges")
 length = 22.16
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(14.89, 18.89, 14.89, 18.89)
+gaps = PackedVector2Array(14.89, 18.89, 14.89, 18.89, 2.75, 7.75)
 top = 59.5
 
 [node name="Tower3_0_Ledges147" type="Node3D" parent="Ledges"]
@@ -5956,7 +6089,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, -114.8
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(11.93, 15.93, 11.93, 15.93)
+gaps = PackedVector2Array(11.93, 15.93, 11.93, 15.93, 6.59, 11.59)
 top = 66.5
 
 [node name="Tower3_1_Ledges149" type="Node3D" parent="Ledges"]
@@ -5964,7 +6097,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, -95.83)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(12.68, 16.68, 12.18, 17.18)
 top = 49.0
 
 [node name="Tower3_1_Ledges150" type="Node3D" parent="Ledges"]
@@ -5972,7 +6105,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -114.84
 script = ExtResource("33_ledges")
 length = 11.68
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(9.05, 12.18)
+gaps = PackedVector2Array(9.05, 12.18, 2.95, 7.95)
 top = 66.5
 
 [node name="Tower3_1_Ledges151" type="Node3D" parent="Ledges"]
@@ -6012,7 +6145,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, -90.83
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(6.38, 11.38)
 top = 70.0
 
 [node name="Tower3_2_Ledges156" type="Node3D" parent="Ledges"]
@@ -6068,7 +6201,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -58.91)
 script = ExtResource("33_ledges")
 length = 12.93
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(0.52, 4.52, 0.02, 5.02)
 top = 84.0
 
 [node name="Tower3_3_Ledges163" type="Node3D" parent="Ledges"]
@@ -6100,7 +6233,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, -24.36)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(7.69, 11.69, 7.69, 11.69)
+gaps = PackedVector2Array(7.69, 11.69, 12.73, 16.73, 7.69, 11.69, 12.23, 17.23)
 top = 98.0
 
 [node name="Tower3_4_Ledges167" type="Node3D" parent="Ledges"]
@@ -6108,7 +6241,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -40.97)
 script = ExtResource("33_ledges")
 length = 16.61
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(5.84, 10.84)
 top = 98.0
 
 [node name="Tower3_4_Ledges168" type="Node3D" parent="Ledges"]
@@ -6124,7 +6257,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, -14.36
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(11.87, 15.87)
+gaps = PackedVector2Array(11.87, 15.87, 6.33, 11.33)
 top = 91.0
 
 [node name="Tower3_5_Ledges170" type="Node3D" parent="Ledges"]
@@ -6140,7 +6273,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, -14.36)
 script = ExtResource("33_ledges")
 length = 16.67
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0, 70.0, 84.0)
-gaps = PackedVector2Array(3.71, 7.21)
+gaps = PackedVector2Array(9.63, 13.63, 3.71, 7.21, 9.13, 14.13)
 top = 91.0
 
 [node name="Tower3_5_Ledges172" type="Node3D" parent="Ledges"]
@@ -6164,7 +6297,7 @@ transform = Transform3D(1.0, 0, 0.0, 0, 1, 0, 0.0, 0, 1.0, 265.03, 0.0, 26.1)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5, 70.0, 73.5)
-gaps = PackedVector2Array(10.79, 14.79)
+gaps = PackedVector2Array(10.79, 14.79, 4.26, 9.26)
 top = 77.0
 
 [node name="Tower3_6_Ledges175" type="Node3D" parent="Ledges"]
@@ -6172,7 +6305,7 @@ transform = Transform3D(0.0, 0, -1.0, 0, 1, 0, 1.0, 0, 0.0, 265.03, 0.0, 7.31)
 script = ExtResource("33_ledges")
 length = 18.8
 heights = PackedFloat32Array(3.5, 7.0, 10.5, 14.0, 17.5, 21.0, 24.5, 28.0, 31.5, 35.0, 38.5, 42.0, 45.5, 49.0, 52.5, 56.0, 59.5, 63.0, 66.5, 70.0, 73.5)
-gaps = PackedVector2Array()
+gaps = PackedVector2Array(4.5, 9.5)
 top = 77.0
 
 [node name="Tower3_6_Ledges176" type="Node3D" parent="Ledges"]
@@ -6188,7 +6321,7 @@ transform = Transform3D(-1.0, 0, 0.0, 0, 1, 0, 0.0, 0, -1.0, 288.59, 0.0, 31.1)
 script = ExtResource("33_ledges")
 length = 23.56
 heights = PackedFloat32Array(14.0, 28.0, 42.0, 56.0)
-gaps = PackedVector2Array(8.77, 12.77)
+gaps = PackedVector2Array(14.8, 18.8, 8.77, 12.77, 14.3, 19.3)
 top = 66.5
 
 [node name="Tower3_7_Ledges178" type="Node3D" parent="Ledges"]
@@ -8909,12 +9042,6 @@ use_collision = true
 size = Vector3(1.7, 1.1, 2.47)
 material = ExtResource("9_vault")
 
-[node name="Block00_SBench1" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -192.78, 0.3, -150.15)
-use_collision = true
-size = Vector3(2.0, 0.6, 0.7)
-material = ExtResource("9_vault")
-
 [node name="Block00_EBin1" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -150.1, 0.55, -205.3)
 use_collision = true
@@ -9083,25 +9210,7 @@ use_collision = true
 size = Vector3(0.8, 1.1, 0.8)
 material = ExtResource("9_vault")
 
-[node name="Block10_SBin1" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -124.23, 0.55, -150.1)
-use_collision = true
-size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block10_SBin2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -114.33, 0.55, -150.1)
-use_collision = true
-size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block10_SBench3" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -102.93, 0.3, -150.15)
-use_collision = true
-size = Vector3(2.0, 0.6, 0.7)
-material = ExtResource("9_vault")
-
-[node name="Block10_SBooth4" type="CSGBox3D" parent="StreetClutter"]
+[node name="Block10_SBooth1" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -94.73, 1.3, -149.9)
 use_collision = true
 size = Vector3(1.2, 2.6, 1.2)
@@ -9123,18 +9232,6 @@ material = ExtResource("9_vault")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -80.1, 0.55, -165.48)
 use_collision = true
 size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block11_NBin1" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -117.91, 0.55, -143.9)
-use_collision = true
-size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block11_NBench2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -105.75, 0.3, -143.85)
-use_collision = true
-size = Vector3(2.0, 0.6, 0.7)
 material = ExtResource("9_vault")
 
 [node name="Block11_SBench1" type="CSGBox3D" parent="StreetClutter"]
@@ -9208,12 +9305,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -113.93, 0.55, -10.1)
 use_collision = true
 size = Vector3(0.8, 1.1, 0.8)
 material = ExtResource("9_vault")
-
-[node name="Block12_SBooth2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -99.69, 1.3, -9.9)
-use_collision = true
-size = Vector3(1.2, 2.6, 1.2)
-material = ExtResource("7_climb")
 
 [node name="Block12_WBench1" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -143.85, 0.3, -65.08)
@@ -9456,24 +9547,12 @@ size = Vector3(2.0, 0.6, 0.7)
 material = ExtResource("9_vault")
 
 [node name="Block22_SBin2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -44.05, 0.55, -10.1)
-use_collision = true
-size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block22_SBench3" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -34.95, 0.3, -10.15)
-use_collision = true
-size = Vector3(2.0, 0.6, 0.7)
-material = ExtResource("9_vault")
-
-[node name="Block22_SBin4" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.91, 0.55, -10.1)
 use_collision = true
 size = Vector3(0.8, 1.1, 0.8)
 material = ExtResource("9_vault")
 
-[node name="Block22_SBench5" type="CSGBox3D" parent="StreetClutter"]
+[node name="Block22_SBench3" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.36, 0.3, -10.15)
 use_collision = true
 size = Vector3(2.0, 0.6, 0.7)
@@ -9624,18 +9703,6 @@ size = Vector3(1.2, 2.6, 1.2)
 material = ExtResource("7_climb")
 
 [node name="Block30_EBench1" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 73.85, 0.3, -197.74)
-use_collision = true
-size = Vector3(0.7, 0.6, 2.0)
-material = ExtResource("9_vault")
-
-[node name="Block30_EBooth2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.1, 1.3, -188.25)
-use_collision = true
-size = Vector3(1.2, 2.6, 1.2)
-material = ExtResource("7_climb")
-
-[node name="Block30_EBench3" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 73.85, 0.3, -177.29)
 use_collision = true
 size = Vector3(0.7, 0.6, 2.0)
@@ -9815,18 +9882,6 @@ use_collision = true
 size = Vector3(0.7, 0.6, 2.0)
 material = ExtResource("9_vault")
 
-[node name="Block40_WBin1" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.1, 0.55, -199.11)
-use_collision = true
-size = Vector3(0.8, 1.1, 0.8)
-material = ExtResource("9_vault")
-
-[node name="Block40_WBench2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80.15, 0.3, -185.33)
-use_collision = true
-size = Vector3(0.7, 0.6, 2.0)
-material = ExtResource("9_vault")
-
 [node name="Block40_EBench1" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 143.85, 0.3, -196.28)
 use_collision = true
@@ -9850,12 +9905,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96.67, 0.3, -143.85)
 use_collision = true
 size = Vector3(2.0, 0.6, 0.7)
 material = ExtResource("9_vault")
-
-[node name="Block41_NBooth2" type="CSGBox3D" parent="StreetClutter"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 106.12, 1.3, -144.1)
-use_collision = true
-size = Vector3(1.2, 2.6, 1.2)
-material = ExtResource("7_climb")
 
 [node name="Block41_SBench1" type="CSGBox3D" parent="StreetClutter"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 113.14, 0.3, -80.15)

@@ -325,6 +325,13 @@ const STONE_CHANCE := 0.6
 const STONE_TOWER_CHANCE := 0.4
 const GLASS_LEDGE_EVERY := 4
 const LEDGE_CLEAR := 2.0 ## Rows stop this far either side of a drainpipe or scaffolding.
+## Lifts (levels/lift.gd): counterweight hoists up some tall old-town
+## buildings (this many, this tall at least), and a window-washer's gondola up
+## every glass tower downtown. Each keeps this much of its wall clear.
+const HOISTS := 6
+const HOIST_MIN_STOREYS := 6
+const HOIST_CLEAR := 5.5
+const GONDOLA_CLEAR := 4.0
 
 ## Where each block starts, along x (columns) and z (rows), before centring.
 var _starts: Array[float] = []
@@ -455,6 +462,7 @@ func _write_scene() -> String:
 		rails += 1 if _write_rail(buildings, i, true) else 0
 		rails += 1 if _write_rail(buildings, i, false) else 0
 	var launchers := _write_launchers(buildings)
+	var hoists := _write_hoists(buildings)
 	var ledges := _write_facades(buildings) # (After the ways up and launchers: the rows keep clear of them.)
 	var pipes := _write_pipes(buildings)
 	# (After the ways up the outside: openings keep clear of them.)
@@ -481,9 +489,9 @@ func _write_scene() -> String:
 	var file := FileAccess.open(OUTPUT, FileAccess.WRITE)
 	file.store_string("\n".join(_out) + "\n")
 	file.close()
-	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
+	return "Wrote %s: %d buildings, %d towers, %d fire escapes, %d drainpipes or sills, %d walls of ledges, %d hoists, %d air vents, %d rails, %d launchers, %d pipes, %d interiors, %d relics, %d items, %d group runs, %d roof things, %d street things; downtown: %s (seed %d)" % [
 			OUTPUT, buildings.size(), buildings.filter(func(b: Dictionary) -> bool: return b.tower).size(),
-			staircases, ways_up, ledges, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
+			staircases, ways_up, ledges, hoists, vents, rails, launchers, pipes, interiors, relics, items, runs, roof_things, street_things, downtown, SEED]
 
 
 ## What the reachability checker says each relic in the scene just written
@@ -1498,8 +1506,90 @@ func _write_downtown(buildings: Array[Dictionary]) -> String:
 	var rails := _write_downtown_rails(gaps, dice)
 	var bridges := _write_rope_bridges(gaps, dice)
 	var nets := _write_nets(gaps, dice)
-	return "%d towers, %d scaffolds, %d drainpipes, %d rails, %d rope bridges, %d catch nets, %d walkways" % [
-			towers.size(), scaffolds, pipes, rails, bridges, nets, walkways]
+	var gondola_dice := RandomNumberGenerator.new() # (Its own: the rest stays put.)
+	gondola_dice.seed = hash([SEED, "gondolas"])
+	var gondolas := 0
+	for b: Dictionary in towers:
+		gondolas += 1 if _write_gondola(b, gaps, gondola_dice) else 0
+	return "%d towers, %d scaffolds, %d gondolas, %d drainpipes, %d rails, %d rope bridges, %d catch nets, %d walkways" % [
+			towers.size(), scaffolds, gondolas, pipes, rails, bridges, nets, walkways]
+
+
+## A window-washer's gondola (levels/lift.gd) up glass tower `t` from the
+## street, on a wall that goes all the way up to its top, onto a gap. False if
+## none fits (or it's stone: its ledges are its way up).
+func _write_gondola(t: Dictionary, gaps: Array, dice: RandomNumberGenerator) -> bool:
+	if t.facade != "glass":
+		return false
+	var sides := []
+	for gap: Dictionary in gaps:
+		if gap.a == t or gap.b == t:
+			sides.append([gap, "a" if gap.a == t else "b"])
+	_shuffle(sides, dice)
+	# Up a wall that goes all the way to its top if one's onto a gap, else the
+	# tallest that is (a wing's, the spire's terrace: its drainpipe goes on up).
+	var best := [] # [gap, side, along, storeys]
+	for full in [true, false]:
+		for side: Array in sides:
+			var gap: Dictionary = side[0]
+			var mine: String = side[1]
+			var along := _gap_spot(gap, GONDOLA_CLEAR / 2.0, dice, func(at: float) -> bool:
+					return _wall_level(gap, mine, at, GONDOLA_CLEAR / 2.0) and (not full or _wall_storeys(gap, mine, at) == t.storeys))
+			if is_nan(along):
+				continue
+			var storeys := _wall_storeys(gap, mine, along)
+			if best.is_empty() or storeys > best[3]:
+				best = [gap, mine, along, storeys]
+		if not best.is_empty():
+			break
+	if best.is_empty():
+		return false
+	var gap: Dictionary = best[0]
+	var at := _gap_point(gap, gap.from if best[1] == "a" else gap.to, best[2])
+	var out := _gap_point(gap, 1.0 if best[1] == "a" else -1.0, 0.0)
+	_way_up_spots.append(at)
+	_wall_node("%s_Gondola" % t.name, "WaysUp", "37_lift", Vector3(at.x, 0.0, at.y), out,
+			"kind = \"gondola\"\nheight = %s" % _num(best[3] * STOREY))
+	_gap_things.append(_gap_strip(gap, best[2], GONDOLA_CLEAR / 2.0))
+	return true
+
+
+## Counterweight hoists (levels/lift.gd) up tall old-town buildings from the
+## street (see HOISTS): one per block at most, on a street-facing wall, clear
+## of fire escapes, drainpipes and launchers. Says how many.
+func _write_hoists(buildings: Array[Dictionary]) -> int:
+	var dice := RandomNumberGenerator.new()
+	dice.seed = hash([SEED, "hoists"])
+	var candidates := buildings.filter(func(b: Dictionary) -> bool:
+			return b.roof == "flat" and not b.tower and b.style == "old" and b.storeys >= HOIST_MIN_STOREYS and b.interior == "" and b.block != Vector2i(-1, -1)) # (Not one with insides: its openings would have to move.)
+	_shuffle(candidates, dice)
+	var blocks := {}
+	var count := 0
+	for b: Dictionary in candidates:
+		if count >= HOISTS or blocks.has(b.block):
+			continue
+		var area := _block_rect(b.block)
+		for wall: Array in _walls(b):
+			var outside: Vector2 = wall[0] + wall[1] * wall[3] / 2.0 + wall[2] * 3.0
+			if area.has_point(outside) or wall[2] in b.get("escape_outs", []) or wall[3] < HOIST_CLEAR + 2.0 * WAY_UP_CORNER:
+				continue # (Onto a street, not where its fire escape is, long enough.)
+			var at: Vector2 = wall[0] + wall[1] * wall[3] / 2.0
+			var footprint := Rect2(at - wall[1] * HOIST_CLEAR / 2.0, Vector2.ZERO).expand(at + wall[1] * HOIST_CLEAR / 2.0 + wall[2] * 3.0)
+			if _fire_escapes.any(func(r: Rect2) -> bool: return r.grow(1.0).intersects(footprint)) \
+					or _way_up_spots.any(func(spot: Vector2) -> bool: return footprint.grow(1.5).has_point(spot)):
+				continue
+			_fire_escapes.append(footprint) # (Pavement clutter keeps clear...)
+			_launcher_rects.append(footprint) # (...and so do ledges.)
+			_way_up_spots.append(at)
+			# (Its counterweight hangs beside it along the wall, along its +X:
+			# the two either side of `at`.)
+			var x := Vector2(wall[2].y, -wall[2].x)
+			_wall_node("%s_Hoist" % b.name, "WaysUp", "37_lift", Vector3(at.x - x.x, 0.0, at.y - x.y), wall[2],
+					"height = %s" % _num(b.storeys * STOREY))
+			blocks[b.block] = true
+			count += 1
+			break
+	return count
 
 
 ## A drainpipe up a tower's top part from its lower part's roof (if it has one).
@@ -1775,6 +1865,7 @@ func _write_header() -> void:
 [ext_resource type="Script" path="res://levels/stairs.gd" id="34_stairs"]
 [ext_resource type="Material" path="res://materials/iron.tres" id="35_iron"]
 [ext_resource type="Material" path="res://materials/stone.tres" id="36_stone"]
+[ext_resource type="Script" path="res://levels/lift.gd" id="37_lift"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.22, 0.46, 0.85, 1)
