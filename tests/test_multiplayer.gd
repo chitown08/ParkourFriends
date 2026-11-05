@@ -54,7 +54,7 @@ func test_crouching_shows_up_on_the_other_screen() -> void:
 	Input.action_press(&"crouch")
 	await ticks(30)
 	var puppet: Player = _find(host_main, client_id)
-	expect(puppet.model.current_animation() == &"crouch_idle", "host should see the client crouching, playing %s" % puppet.model.current_animation())
+	expect(CharacterModel.move_of(puppet.model.current_animation()) == "crouch_idle", "host should see the client crouching, playing %s" % puppet.model.current_animation())
 	Input.action_release(&"crouch")
 	await ticks(40)
 	expect(puppet.model.current_animation() == &"idle", "and standing again afterwards, playing %s" % puppet.model.current_animation())

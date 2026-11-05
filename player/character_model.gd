@@ -1,6 +1,6 @@
 class_name CharacterModel
 extends Node3D
-## The character you see: a model rigged in Mixamo, and its animations (see
+## The character you see: a rigged model (Meshy), and its animations (see
 ## docs/CHARACTER_GUIDE.md). Each frame the Player says what you're doing
 ## (animate()), and this picks the animation to match and blends into it.
 ## Works the same for your friends' characters on your screen, from what the
@@ -33,7 +33,13 @@ const FLOW_VAULT_TIME := 0.35
 ## Moves whose animation climbs upward by itself (the game already lifts you).
 const RISING_MOVES: Array[String] = ["climb_up", "wall_scramble", "vault"]
 ## The bone that carries the whole body.
-const HIPS := "mixamorig_Hips"
+const HIPS := "Hips"
+## Every animation is retargeted onto Godot's standard humanoid skeleton when
+## it's imported (characters/*_bone_map.tres), so ones made on different rigs
+## (Meshy's, Mixamo's) all play on the character. The old Mixamo files don't
+## have a proper rest pose, which leaves their hips this many times too high:
+## put right as they load (they're the ones without an "Armature" track).
+const MIXAMO_HIPS_HIGH := 2.98
 ## The animation for each state that just plays one (see animate()).
 const STATE_MOVES := {
 	&"WallScramble": &"wall_scramble", &"Grind": &"grind", &"Glide": &"glide",
@@ -80,6 +86,7 @@ func _ready() -> void:
 				var animation: Animation = load(ANIM_DIR + file).duplicate()
 				var animation_name := file.get_basename()
 				var move := move_of(animation_name)
+				_fit_to_skeleton(animation)
 				_hold_in_place(animation, move in RISING_MOVES)
 				_library.add_animation(animation_name, animation)
 				if not _variants.has(move):
@@ -247,3 +254,21 @@ func wear(slot: StringName, item: String) -> void:
 ## The animation playing now (for tests).
 func current_animation() -> StringName:
 	return _current
+
+
+## Makes an animation fit the character's skeleton: takes out tracks moving
+## anything but its bones (Meshy's turn the whole rig over, left from the file
+## format), and puts the old Mixamo files' hips right (see MIXAMO_HIPS_HIGH).
+static func _fit_to_skeleton(animation: Animation) -> void:
+	var from_mixamo := true
+	for track in range(animation.get_track_count() - 1, -1, -1):
+		if not str(animation.track_get_path(track)).contains(":"):
+			from_mixamo = false
+			animation.remove_track(track)
+	if not from_mixamo:
+		return
+	for track in animation.get_track_count():
+		if animation.track_get_type(track) != Animation.TYPE_POSITION_3D or not str(animation.track_get_path(track)).ends_with(":" + HIPS):
+			continue
+		for key in animation.track_get_key_count(track):
+			animation.track_set_key_value(track, key, animation.track_get_key_value(track, key) / MIXAMO_HIPS_HIGH)

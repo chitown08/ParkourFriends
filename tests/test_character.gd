@@ -37,11 +37,11 @@ func test_the_character_stands_on_its_feet_facing_forward() -> void:
 	await place(Vector3(0, 0.05, 0), FACE_NORTH)
 	await ticks(30)
 	var feet := player.global_position.y
-	var head := _bone(&"mixamorig_HeadTop_End")
-	var toe := _bone(&"mixamorig_LeftToeBase")
+	var head := _bone(&"head_end")
+	var toe := _bone(&"LeftToes")
 	expect(head.y - feet > 1.4 and head.y - feet < 2.0, "the head should be about 1.8 m up, %.2f m" % (head.y - feet))
 	expect(absf(toe.y - feet) < 0.25, "the feet should be on the ground, %.2f m off" % (toe.y - feet))
-	var toes_point := (toe - _bone(&"mixamorig_LeftFoot")).slide(Vector3.UP).normalized()
+	var toes_point := (toe - _bone(&"LeftFoot")).slide(Vector3.UP).normalized()
 	expect(toes_point.dot(player.facing_direction()) > 0.5, "the character should face the way you're going")
 
 
@@ -76,12 +76,12 @@ func test_moves_that_travel_are_held_in_place() -> void:
 	var animations: AnimationPlayer = player.model.find_children("*", "AnimationPlayer", true, false)[0]
 	for move in ["slide", "vault", "jump", "sprint", "climb_up"]:
 		var animation := animations.get_animation("moves/" + move)
-		var hips := animation.find_track(NodePath("Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+		var hips := animation.find_track(NodePath("%GeneralSkeleton:Hips"), Animation.TYPE_POSITION_3D)
 		var last := animation.track_get_key_count(hips) - 1
 		var travel: Vector3 = animation.track_get_key_value(hips, last) - animation.track_get_key_value(hips, 0)
 		expect(Vector2(travel.x, travel.z).length() < 0.05, "%s shouldn't travel across the ground, %.2f m" % [move, Vector2(travel.x, travel.z).length()])
 	var climb := animations.get_animation("moves/climb_up")
-	var hips := climb.find_track(NodePath("Skeleton3D:mixamorig_Hips"), Animation.TYPE_POSITION_3D)
+	var hips := climb.find_track(NodePath("%GeneralSkeleton:Hips"), Animation.TYPE_POSITION_3D)
 	var rise: float = (climb.track_get_key_value(hips, climb.track_get_key_count(hips) - 1) - climb.track_get_key_value(hips, 0)).y
 	expect(absf(rise) < 0.05, "the climb-up shouldn't lift you by itself (the game does), %.2f m" % rise)
 
@@ -106,7 +106,7 @@ func _animation_speed() -> float:
 
 
 func _expect_playing(animation: StringName, doing: String) -> void:
-	expect(player.model.current_animation() == animation, "%s should play %s, playing %s" % [doing, animation, player.model.current_animation()])
+	expect(CharacterModel.move_of(player.model.current_animation()) == String(animation), "%s should play %s (or a variant), playing %s" % [doing, animation, player.model.current_animation()])
 
 
 # --- Cosmetics (player/cosmetics.gd, cosmetics/fits.cfg) ---------------------------
@@ -126,8 +126,11 @@ func test_every_cosmetic_has_a_fit() -> void:
 
 func test_cosmetics_sit_on_their_bones_with_pairs_mirrored() -> void:
 	var outfit := PackedStringArray()
-	for slot in Cosmetics.SLOTS:
-		outfit.append(Cosmetics.available(slot)[0])
+	var fits := ConfigFile.new()
+	fits.load(Cosmetics.FITS)
+	for slot in Cosmetics.SLOTS: # (The first of each with a fit: new ones may not be fitted yet.)
+		var fitted := Cosmetics.available(slot).filter(func(item: String) -> bool: return slot == &"trail" or fits.has_section("%s/%s" % [slot, item]))
+		outfit.append(fitted[0])
 	player.sync_outfit = outfit
 	await ticks(2)
 	# How far each item's middle may be from its bone (the waist bone is low in the belly).
@@ -145,7 +148,7 @@ func test_cosmetics_sit_on_their_bones_with_pairs_mirrored() -> void:
 			var mirrored := item.global_basis.determinant() < 0.0
 			expect(mirrored == (i == 1), "the %s %s should %sbe the mirror image" % [["left", "right"][i], slot, "" if i == 1 else "not "])
 	var hat := skeleton.get_node("%shead_0" % Cosmetics.PREFIX).get_child(0) as Node3D
-	expect(hat.global_position.y > _bone(&"mixamorig_Head").y + 0.15, "the hat should sit on top of the head")
+	expect(hat.global_position.y > _bone(&"Head").y + 0.15, "the hat should sit on top of the head")
 	player.sync_outfit = PackedStringArray()
 	await ticks(2)
 	expect(skeleton.get_children().all(func(node: Node) -> bool: return not node.name.begins_with(Cosmetics.PREFIX)),
@@ -187,10 +190,10 @@ func test_each_new_move_rolls_a_new_variant() -> void:
 
 func test_a_move_without_its_own_animation_plays_its_stand_in() -> void:
 	if CharacterModel.variants_of("brace").is_empty():
-		expect(player.model.pick(&"brace") == &"crouch_idle", "no brace animation yet: crouching stands in, got %s" % player.model.pick(&"brace"))
+		expect(CharacterModel.move_of(player.model.pick(&"brace")) == "crouch_idle", "no brace animation yet: crouching (or a variant of it) stands in, got %s" % player.model.pick(&"brace"))
 	for move: String in CharacterModel.STAND_INS:
 		expect(not CharacterModel.variants_of(String(CharacterModel.STAND_INS[move])).is_empty(), "the stand-in for %s exists" % move)
 	for state: StringName in CharacterModel.STATE_MOVES:
 		var move: StringName = CharacterModel.STATE_MOVES[state]
-		expect(not CharacterModel.variants_of(String(player.model.pick(move))).is_empty() or CharacterModel.variants_of(String(move)).size() > 0 \
+		expect(not CharacterModel.variants_of(CharacterModel.move_of(player.model.pick(move))).is_empty() or CharacterModel.variants_of(String(move)).size() > 0 \
 				or ["linked", "whip", "whipped"].has(String(move)), "%s plays something (%s)" % [state, move])

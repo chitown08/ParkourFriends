@@ -44,7 +44,7 @@ _subresources={
 "mixamo_com": {
 "save_to_file/enabled": true,
 "save_to_file/fallback_path": "res://characters/blob/anims/jump.res",
-"save_to_file/keep_custom_tracks": false,
+"save_to_file/keep_custom_tracks": "",
 "save_to_file/path": "uid://lekqtteo1ve8",
 "settings/loop_mode": 0,
 "slice_1/end_frame": 0,
@@ -2096,6 +2096,11 @@ _subresources={
 "slice_99/save_to_file/path": "",
 "slice_99/start_frame": 0,
 "slices/amount": 0
+}
+},
+"nodes": {
+"PATH:Skeleton3D": {
+"retarget/bone_map": Resource("res://characters/mixamo_bone_map.tres")
 }
 }
 }

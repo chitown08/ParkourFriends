@@ -51,10 +51,11 @@ built and the details the code relies on.
   all together. Numbers: `DRAFT_SPEED`, `DRAFT_FLOW`, `MOST_DRAFTING` in `player/player.gd`.
 - **Flow** builds while you keep moving at speed and drains only on the ground (stopping,
   letting go, crashing). Vaults come out at flow speed.
-- **The character** is a Meshy model rigged and animated in Mixamo (`characters/blob/`, see
-  `docs/CHARACTER_GUIDE.md`). Godot pulls each animation out of its FBX on import (scaled to 1.8 m,
-  looping set per move); `CharacterModel` picks one from your state and speed each frame (puppets
-  too, from what the network sends), strips any travel Mixamo baked in, and plays one-off moves
+- **The character** is a Meshy model, rigged in Meshy (`characters/blob/chubby.fbx`, see
+  `docs/CHARACTER_GUIDE.md`). Godot pulls each animation out of its FBX on import, retargeted onto
+  its standard humanoid skeleton so clips from any rig play on it (Meshy's, the older Mixamo
+  ones), looping set per move; `CharacterModel` picks one from your state and speed each frame (puppets
+  too, from what the network sends), strips any travel baked in, and plays one-off moves
   (swing, throw, toss, hard landing). Sounds are still stand-ins.
 - **Cosmetics** (`player/cosmetics.gd`, `docs/COSMETICS_GUIDE.md`): GLBs in `cosmetics/<slot>/`, each fitted
   onto the blob at rest by an entry in `cosmetics/fits.cfg` (check with `tools/cosmetics_lineup.gd`,

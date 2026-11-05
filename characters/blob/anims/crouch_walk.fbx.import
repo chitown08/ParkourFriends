@@ -3,7 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dtlkhnr0yj751"
+uid="uid://cnsn82uhjw0ri"
 path="res://.godot/imported/crouch_walk.fbx-a2b27b3fd258077b173a2b4b38ff661a.scn"
 
 [deps]
@@ -19,7 +19,7 @@ nodes/root_script=null
 mesh_library/use_node_names_as_mesh_names=false
 array_mesh/deduplicate_surfaces=true
 nodes/apply_root_scale=true
-nodes/root_scale=94.65
+nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
 nodes/use_name_suffixes=true
 nodes/use_node_type_suffixes=true
@@ -41,11 +41,11 @@ materials/extract_format=0
 materials/extract_path=""
 _subresources={
 "animations": {
-"mixamo_com": {
+"Armature|Armature|Armature|Armature|Cautious_Crouch_Walk_Forward|baselay": {
 "save_to_file/enabled": true,
 "save_to_file/fallback_path": "res://characters/blob/anims/crouch_walk.res",
-"save_to_file/keep_custom_tracks": false,
-"save_to_file/path": "uid://d35r2vfys3cb8",
+"save_to_file/keep_custom_tracks": "",
+"save_to_file/path": "uid://dhanegkkeb3o1",
 "settings/loop_mode": 1,
 "slice_1/end_frame": 0,
 "slice_1/loop_mode": 0,
@@ -2096,6 +2096,11 @@ _subresources={
 "slice_99/save_to_file/path": "",
 "slice_99/start_frame": 0,
 "slices/amount": 0
+}
+},
+"nodes": {
+"PATH:Armature/Skeleton3D": {
+"retarget/bone_map": Resource("res://characters/meshy_bone_map.tres")
 }
 }
 }

@@ -30,7 +30,7 @@ const FULL_RIPPLE_SPEED := 12.0
 const RIPPLE_RATE := 7.0
 ## The body it keeps out of: a capsule round this bone (the middle of the
 ## body), this far up and down it, this fat.
-const BODY_BONE := "mixamorig_Spine"
+const BODY_BONE := "Spine"
 const BODY_HALF_HEIGHT := 0.35
 const BODY_RADIUS := 0.48
 ## Jumps further than this in one frame (a respawn) lay it out afresh.

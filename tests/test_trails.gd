@@ -87,7 +87,7 @@ func test_banners_and_streamers_fly_from_a_pole_and_scarves_from_your_neck() -> 
 	await ticks(2)
 	expect(_skeleton().has_node(Cosmetics.PREFIX + "trail_pole"), "a banner needs its pole")
 	expect(_trails().size() == 1, "one banner")
-	expect(_trails()[0].anchor.global_position.y > _bone_y(&"mixamorig_HeadTop_End") + 0.5, "flying from well over your head")
+	expect(_trails()[0].anchor.global_position.y > _bone_y(&"head_end") + 0.5, "flying from well over your head")
 	_wear("scarf/" + _first("scarf"))
 	await ticks(2)
 	expect(not _skeleton().has_node(Cosmetics.PREFIX + "trail_pole"), "swapping to a scarf takes the pole off")

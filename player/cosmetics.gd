@@ -4,12 +4,14 @@ class_name Cosmetics
 ## res://cosmetics/<slot>/ (see docs/COSMETICS_GUIDE.md), fitted by an entry in
 ## cosmetics/fits.cfg, and hung from a bone of the skeleton so it moves with the body.
 ##
-## A body item's fit says where it sits on the blob standing in its rest pose,
-## in the blob's own space: metres, the blob facing +Z, its left hand at +X, its
-## feet at y = -0.9 (it's 1.8 m tall, centred on its middle). Each entry:
+## A body item's fit says where it sits on the character standing in its rest
+## pose (a T-pose), in its own space ("body space"): metres, facing +Z, its left
+## hand at +X, its feet at y = 0 (the body's measurements are at the top of
+## fits.cfg). Each entry:
 ##   position  where the item's middle goes
 ##   rotation  degrees to turn the model (x, y, z, applied y then x then z)
 ##   scale     the models come about 1 m across, so this is about their size
+##             (or a Vector3, in the model's own axes, to fit a shape)
 ##   mirror    true if the model was made for the right side (fits are for the left)
 ## Pairs (hands, feet) are fitted on the left; the right gets the mirror image.
 ##
@@ -25,24 +27,24 @@ const FITS := "res://cosmetics/fits.cfg"
 const SLOTS: Array[StringName] = [&"head", &"hands", &"waist", &"feet", &"trail"]
 ## The bones each body slot hangs from (left first).
 const BONES := {
-	&"head": ["mixamorig_Head"],
-	&"hands": ["mixamorig_LeftHand", "mixamorig_RightHand"],
-	&"waist": ["mixamorig_Hips"],
-	&"feet": ["mixamorig_LeftFoot", "mixamorig_RightFoot"],
+	&"head": ["Head"],
+	&"hands": ["LeftHand", "RightHand"],
+	&"waist": ["Hips"],
+	&"feet": ["LeftFoot", "RightFoot"],
 }
 ## The node name every attached cosmetic gets a prefix of (so it can be taken off).
 const PREFIX := "Cosmetic_"
 
 ## The pole banners and streamers fly from: up your back, from the waist to
-## well over your head (blob space), on the upper spine.
-const POLE_BONE := "mixamorig_Spine2"
-const POLE_BOTTOM := Vector3(0, -0.25, -0.4)
-const POLE_TOP := Vector3(0, 1.8, -0.4)
+## well over your head (body space), on the upper spine.
+const POLE_BONE := "UpperChest"
+const POLE_BOTTOM := Vector3(0, 0.74, -0.38)
+const POLE_TOP := Vector3(0, 2.79, -0.38)
 const POLE_RADIUS := 0.03
 const POLE_COLOR := Color(0.32, 0.22, 0.14)
 ## Scarf tails start from the back of the neck, this far apart.
-const NECK_BONE := "mixamorig_Neck"
-const SCARF_TAILS_FROM := Vector3(0, 0.44, -0.24)
+const NECK_BONE := "Neck"
+const SCARF_TAILS_FROM := Vector3(0, 1.33, -0.38)
 const SCARF_TAILS_APART := 0.14
 
 static var _fits: ConfigFile
@@ -144,7 +146,7 @@ static func _wear_trail(skeleton: Skeleton3D, item: String) -> void:
 
 
 ## Hangs `node` from `bone_name` (in a BoneAttachment3D named `attachment_name`),
-## at `placed` on the blob at rest. Returns `node`.
+## at `placed` on the character at rest (body space). Returns `node`.
 static func _attach(skeleton: Skeleton3D, attachment_name: String, bone_name: String, node: Node3D, placed: Transform3D) -> Node3D:
 	var attachment := BoneAttachment3D.new()
 	attachment.name = attachment_name
@@ -161,7 +163,7 @@ static func _instance(path: String) -> Node3D:
 	return (load(path) as PackedScene).instantiate() as Node3D
 
 
-## Where `item` sits on the blob at rest (see the top of this file).
+## Where `item` sits on the character at rest (see the top of this file).
 static func fit_of(slot: StringName, item: String) -> Transform3D:
 	_load_fits()
 	var section := "%s/%s" % [slot, item]
