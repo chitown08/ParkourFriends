@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1dyt4jgmkhdi"
-path="res://.godot/imported/reflective_belt_1.jpg-27d77253b1ad15d182aa7e21e257953f.ctex"
+path.s3tc="res://.godot/imported/reflective_belt_1.jpg-27d77253b1ad15d182aa7e21e257953f.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "7de7097d44c854c852f446f56e2fd0f5"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://cosmetics/waist/reflective_belt_1.jpg"
-dest_files=["res://.godot/imported/reflective_belt_1.jpg-27d77253b1ad15d182aa7e21e257953f.ctex"]
+dest_files=["res://.godot/imported/reflective_belt_1.jpg-27d77253b1ad15d182aa7e21e257953f.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -39,5 +40,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=0
+process/size_limit=1024
 detect_3d/compress_to=1

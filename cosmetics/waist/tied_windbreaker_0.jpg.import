@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://caamulkuxj0ag"
-path="res://.godot/imported/tied_windbreaker_0.jpg-7eca05c295604510f4a4319acf823e82.ctex"
+path.s3tc="res://.godot/imported/tied_windbreaker_0.jpg-7eca05c295604510f4a4319acf823e82.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "d68f1b0da1bf221f39604833badb9a0a"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://cosmetics/waist/tied_windbreaker_0.jpg"
-dest_files=["res://.godot/imported/tied_windbreaker_0.jpg-7eca05c295604510f4a4319acf823e82.ctex"]
+dest_files=["res://.godot/imported/tied_windbreaker_0.jpg-7eca05c295604510f4a4319acf823e82.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -39,5 +40,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=0
+process/size_limit=1024
 detect_3d/compress_to=1

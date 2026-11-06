@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwefpftrb07cd"
-path="res://.godot/imported/hydration_belt_0.jpg-8c3b2263e5746b5a136bf54ce75160b5.ctex"
+path.s3tc="res://.godot/imported/hydration_belt_0.jpg-8c3b2263e5746b5a136bf54ce75160b5.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "6101ef96c8dbb9355eb40de95e599841"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://cosmetics/waist/hydration_belt_0.jpg"
-dest_files=["res://.godot/imported/hydration_belt_0.jpg-8c3b2263e5746b5a136bf54ce75160b5.ctex"]
+dest_files=["res://.godot/imported/hydration_belt_0.jpg-8c3b2263e5746b5a136bf54ce75160b5.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -39,5 +40,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=0
+process/size_limit=1024
 detect_3d/compress_to=1

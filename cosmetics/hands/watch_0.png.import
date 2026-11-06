@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://5wv7tdlwuxvi"
-path="res://.godot/imported/watch_0.png-20d9ffd6a2d4d15dacd0afcdffb2ecaf.ctex"
+path.s3tc="res://.godot/imported/watch_0.png-20d9ffd6a2d4d15dacd0afcdffb2ecaf.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "91ce5e5abfd1f9c086ba5bda319c3e29"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://cosmetics/hands/watch_0.png"
-dest_files=["res://.godot/imported/watch_0.png-20d9ffd6a2d4d15dacd0afcdffb2ecaf.ctex"]
+dest_files=["res://.godot/imported/watch_0.png-20d9ffd6a2d4d15dacd0afcdffb2ecaf.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0

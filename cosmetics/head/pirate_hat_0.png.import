@@ -3,9 +3,10 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c64ogn0yaxx3q"
-path="res://.godot/imported/pirate_hat_0.png-ee5fd2d2e02a738b66537e48c0c3ac9c.ctex"
+path.s3tc="res://.godot/imported/pirate_hat_0.png-ee5fd2d2e02a738b66537e48c0c3ac9c.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 generator_parameters={
 "md5": "b4713f83d2912f02a57c8d96b36c62ea"
@@ -14,11 +15,11 @@ generator_parameters={
 [deps]
 
 source_file="res://cosmetics/head/pirate_hat_0.png"
-dest_files=["res://.godot/imported/pirate_hat_0.png-ee5fd2d2e02a738b66537e48c0c3ac9c.ctex"]
+dest_files=["res://.godot/imported/pirate_hat_0.png-ee5fd2d2e02a738b66537e48c0c3ac9c.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
