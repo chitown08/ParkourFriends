@@ -74,6 +74,9 @@ properties/11/replication_mode = 2
 properties/12/path = NodePath(".:sync_move")
 properties/12/spawn = false
 properties/12/replication_mode = 2
+properties/13/path = NodePath(".:sync_color")
+properties/13/spawn = false
+properties/13/replication_mode = 2
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_host"]
 properties/0/path = NodePath(".:color_index")

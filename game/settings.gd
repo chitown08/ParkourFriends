@@ -16,6 +16,8 @@ const NAME_LENGTH := 16
 ## What you wear: an item name (or "" for nothing) for each slot in
 ## Cosmetics.SLOTS, in order. Nothing at all to start with.
 static var outfit := PackedStringArray()
+## Your colour (an index into Player.COLORS), or -1 to be given one nobody else has.
+static var color := -1
 ## Multiplies the camera's turning speed with the mouse. 1.0 = default.
 static var mouse_sensitivity := 1.0
 ## Which movement feel to use: "superhuman" or "human" (see player/profiles/).
@@ -52,6 +54,7 @@ static func load_from_disk() -> void:
 		return # No saved settings yet: keep the defaults.
 	player_name = file.get_value("player", "name", player_name)
 	outfit = file.get_value("player", "outfit", outfit)
+	color = file.get_value("player", "color", color)
 	mouse_sensitivity = file.get_value("camera", "mouse_sensitivity", mouse_sensitivity)
 	invert_y = file.get_value("camera", "invert_y", invert_y)
 	movement_profile = file.get_value("movement", "profile", movement_profile)
@@ -70,6 +73,7 @@ static func save_to_disk() -> void:
 	var file := ConfigFile.new()
 	file.set_value("player", "name", player_name)
 	file.set_value("player", "outfit", outfit)
+	file.set_value("player", "color", color)
 	file.set_value("camera", "mouse_sensitivity", mouse_sensitivity)
 	file.set_value("camera", "invert_y", invert_y)
 	file.set_value("movement", "profile", movement_profile)

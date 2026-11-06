@@ -10,7 +10,7 @@ extends Node
 ## co-op game where nobody needs to be stopped from cheating.
 
 const DEFAULT_PORT := 7777
-const MAX_PLAYERS := 4
+const MAX_PLAYERS := 8 ## (Designed for 1-4; room for a bigger crew.)
 
 
 ## Starts hosting a game on this computer. Returns OK or an error code.

@@ -48,7 +48,13 @@ const COLORS: Array[Color] = [
 	Color(0.95, 0.5, 0.15), # orange
 	Color(0.3, 0.8, 0.35), # green
 	Color(0.85, 0.3, 0.75), # pink
+	Color(0.15, 0.75, 0.75), # teal
+	Color(0.95, 0.85, 0.2), # yellow
+	Color(0.55, 0.35, 0.9), # purple
+	Color(0.9, 0.25, 0.25), # red
 ]
+## Their names, for the menu (in the same order).
+const COLOR_NAMES: Array[String] = ["Blue", "Orange", "Green", "Pink", "Teal", "Yellow", "Purple", "Red"]
 
 ## Grey colour for the practice buddy.
 const BUDDY_COLOR := Color(0.75, 0.75, 0.72)
@@ -213,11 +219,19 @@ var spawn_position := Vector3.ZERO:
 			respawn_position = value
 			sync_position = value
 
-## Which of COLORS this player wears. Chosen by the host and sent to everyone
-## (HostSync node), so it's the same on every screen.
+## Which of COLORS this player is given: the host hands out one nobody else
+## has and sends it to everyone (HostSync node), so it's the same on every screen.
 var color_index := 0:
 	set(value):
 		color_index = value
+		if is_node_ready():
+			_apply_color()
+## The colour this player picked for themselves (an index into COLORS), or -1
+## for the one they were given. Chosen on their own computer (Settings.color)
+## and sent to everyone.
+var sync_color := -1:
+	set(value):
+		sync_color = value
 		if is_node_ready():
 			_apply_color()
 
@@ -382,6 +396,7 @@ func _ready() -> void:
 		# You: your name and outfit, from your settings, sent to everyone.
 		sync_player_name = Settings.player_name if Settings.player_name else "Player"
 		sync_outfit = Cosmetics.tidy(Settings.outfit)
+		sync_color = Settings.color
 	elif is_bot:
 		sync_player_name = "Buddy"
 	_light_trail = LightTrail.new()
@@ -791,7 +806,7 @@ func _apply_color() -> void:
 	# Each player gets their own copy of the material, so recolouring one
 	# doesn't recolour everyone.
 	var material := _body_mesh.mesh.surface_get_material(0).duplicate() as StandardMaterial3D
-	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
+	material.albedo_color = BUDDY_COLOR if is_bot else COLORS[shown_color() % COLORS.size()]
 	_body_mesh.material_override = material
 	if _light_trail:
 		_light_trail.color = material.albedo_color
@@ -1347,7 +1362,7 @@ func _show_rally_beam(delta: float) -> void:
 		_rally_beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(_rally_beam)
 	_rally_beam.visible = true
-	var colour := BUDDY_COLOR if is_bot else COLORS[color_index % COLORS.size()]
+	var colour := BUDDY_COLOR if is_bot else COLORS[shown_color() % COLORS.size()]
 	colour.a = 0.6 * minf(rally_timer, 1.0) # Fades out over the last second.
 	(_rally_beam.mesh.surface_get_material(0) as StandardMaterial3D).albedo_color = colour
 
@@ -1858,3 +1873,8 @@ func ledge_lip_under() -> Ledge:
 		if rows:
 			return rows.ledge_near(global_position)
 	return null
+
+
+## Which of COLORS this player wears: the one they picked, or the one they were given.
+func shown_color() -> int:
+	return sync_color if sync_color >= 0 and sync_color < COLORS.size() else color_index

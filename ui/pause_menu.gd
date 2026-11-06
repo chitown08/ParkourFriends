@@ -16,6 +16,8 @@ signal music_changed
 signal time_of_day_changed(time: String)
 ## Something picked in "Your outfit" (the new outfit is in Settings.outfit).
 signal outfit_changed
+## You picked a colour (Settings.color).
+signal color_changed
 
 ## What "nothing" is called in each outfit slot's list.
 const NOTHING := "None"
@@ -31,6 +33,7 @@ const NOTHING := "None"
 @onready var _effects: HSlider = %Effects
 ## One list per outfit slot, in Cosmetics.SLOTS order.
 var _slots: Array[OptionButton] = []
+var _colour: OptionButton
 
 
 func _ready() -> void:
@@ -91,6 +94,9 @@ func open(can_invite := false, is_host := true, time := "day") -> void:
 		if _movement.get_item_metadata(i) == Settings.movement_profile:
 			_movement.select(i)
 	%DevSettings.visible = Settings.dev_tools # (Not for the build friends play.)
+	for i in _colour.item_count:
+		if _colour.get_item_metadata(i) == Settings.color:
+			_colour.select(i)
 	var outfit := Cosmetics.tidy(Settings.outfit)
 	for i in _slots.size():
 		var list := _slots[i]
@@ -102,8 +108,27 @@ func open(can_invite := false, is_host := true, time := "day") -> void:
 	%Resume.grab_focus()
 
 
-## A list for each outfit slot: "None", then everything made for it.
+## Your colour ("Automatic": the host gives you one nobody else has), then a
+## list for each outfit slot: "None", then everything made for it.
 func _make_outfit_lists() -> void:
+	var colour_label := Label.new()
+	colour_label.text = "Colour"
+	%Slots.add_child(colour_label)
+	_colour = OptionButton.new()
+	_colour.name = "Colour"
+	_colour.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_colour.add_item("Automatic")
+	_colour.set_item_metadata(0, -1)
+	for i in Player.COLORS.size():
+		var swatch := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+		swatch.fill(Player.COLORS[i])
+		_colour.add_icon_item(ImageTexture.create_from_image(swatch), Player.COLOR_NAMES[i])
+		_colour.set_item_metadata(_colour.item_count - 1, i)
+	_colour.item_selected.connect(func(index: int) -> void:
+		Settings.color = _colour.get_item_metadata(index)
+		Settings.save_to_disk()
+		color_changed.emit())
+	%Slots.add_child(_colour)
 	for slot in Cosmetics.SLOTS:
 		var label := Label.new()
 		label.text = String(slot).capitalize()

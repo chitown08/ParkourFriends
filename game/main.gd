@@ -112,6 +112,9 @@ func _ready() -> void:
 	pause_menu.outfit_changed.connect(func() -> void:
 		if local_player:
 			local_player.sync_outfit = Cosmetics.tidy(Settings.outfit))
+	pause_menu.color_changed.connect(func() -> void:
+		if local_player:
+			local_player.sync_color = Settings.color)
 
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -329,7 +332,7 @@ func spawn_player(peer_id: int) -> void:
 func _free_color_index() -> int:
 	var taken := {}
 	for player: Player in players.get_children():
-		taken[player.color_index] = true
+		taken[player.shown_color()] = true # (Given, or picked.)
 	for index in Player.COLORS.size():
 		if not taken.has(index):
 			return index

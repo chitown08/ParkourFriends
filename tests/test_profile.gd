@@ -8,12 +8,14 @@ extends GameTest
 func before_each() -> void:
 	Settings.player_name = ""
 	Settings.outfit = PackedStringArray()
+	Settings.color = -1
 	await super()
 
 
 func after_each() -> void:
 	Settings.player_name = ""
 	Settings.outfit = PackedStringArray()
+	Settings.color = -1
 	Settings.dev_tools = true
 	Settings.master_volume = 1.0
 	Settings.effects_volume = 1.0
@@ -70,6 +72,27 @@ func test_pick_an_outfit_in_the_pause_menu() -> void:
 	expect(main.get_node("Players/1").sync_outfit[0] == hat, "next game, you're still wearing it")
 	main.set_paused(true)
 	expect(main.pause_menu.get_node("%Slots/Head").selected == 1, "and the menu shows it")
+
+
+func test_pick_your_colour_in_the_pause_menu() -> void:
+	main.set_paused(true)
+	var list: OptionButton = main.pause_menu.get_node("%Slots/Colour")
+	expect(list.get_item_text(0) == "Automatic" and list.selected == 0, "the colour list starts on Automatic")
+	expect(list.item_count == Player.COLORS.size() + 1, "then every colour")
+	var red := Player.COLOR_NAMES.find("Red")
+	list.select(red + 1)
+	list.item_selected.emit(red + 1)
+	await ticks(2)
+	var body := player._body_mesh.material_override as StandardMaterial3D
+	expect(player.shown_color() == red and body.albedo_color == Player.COLORS[red], "you turn red")
+	Settings.color = -1
+	Settings.load_from_disk()
+	expect(Settings.color == red, "and it's saved for next time")
+	list.select(0)
+	list.item_selected.emit(0)
+	await ticks(2)
+	expect(player.shown_color() == player.color_index, "Automatic: back to the colour you were given")
+	main.set_paused(false)
 
 
 func test_an_outfit_item_no_longer_made_is_left_off() -> void:

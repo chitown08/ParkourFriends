@@ -140,6 +140,14 @@ func test_outfits_show_up_on_the_other_screen() -> void:
 	expect(puppet_skeleton.has_node(Cosmetics.PREFIX + "head_0"), "and the client's hat should be on their head on the host's screen")
 
 
+func test_a_picked_colour_shows_up_on_the_other_screen() -> void:
+	var client_id: int = client_main.multiplayer.get_unique_id()
+	client_main.local_player.sync_color = 5
+	await ticks(30)
+	expect(_find(host_main, client_id).shown_color() == 5, "host should see the colour the client picked")
+	expect(host_main._free_color_index() != 5, "and Automatic won't hand it to anyone else")
+
+
 func test_a_readied_leap_shows_up_on_the_other_screen() -> void:
 	host_main.local_player.set_controls_enabled(false)
 	var client_id: int = client_main.multiplayer.get_unique_id()
